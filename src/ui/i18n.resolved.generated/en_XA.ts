@@ -780,6 +780,7 @@ export const en_XA: EnTranslations = {
       "dismount": "[Ðíšɱóúñţ]",
       "summoning": "[Šúɱɱóñíñĝ {name}…]",
       "riding": "[Ŕíðíñĝ]",
+      "flies": "[Ƒļíéš]",
       "locked": "[Ļóçķéð]",
       "speed": "[+{percent}% šþééð]",
       "unlockAt": "[Úñļóçķš áţ {amount} $ŴÓÇ]",

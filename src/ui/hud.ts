@@ -6472,7 +6472,9 @@ export class Hud {
       row.innerHTML =
         `<span class="mount-swatch" style="--mount-tint:${tintHex}">${svgIcon('mount')}</span>` +
         `<div class="mount-text">` +
-        `<div class="mount-name">${esc(m.name)}${isActive ? `<span class="mount-active-tag">${esc(t('hud.mounts.riding'))}</span>` : ''}</div>` +
+        `<div class="mount-name">${esc(m.name)}` +
+        `${m.flying ? `<span class="mount-fly-tag">${esc(t('hud.mounts.flies'))}</span>` : ''}` +
+        `${isActive ? `<span class="mount-active-tag">${esc(t('hud.mounts.riding'))}</span>` : ''}</div>` +
         `<div class="mount-flavor">${esc(m.flavor)}</div>` +
         `<div class="mount-meta">${meta}</div>` +
         `</div>`;

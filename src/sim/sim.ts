@@ -2,7 +2,7 @@ import {
   ABILITIES, ARENA_SLOT_COUNT, CAMPS, CLASSES, DUNGEONS, DUNGEON_LIST, DungeonDef, arenaOrigin, dungeonAt,
   DUNGEON_X_THRESHOLD, GROUND_OBJECTS, GROUP_XP_BONUS, INSTANCE_SLOT_COUNT, isArenaPos,
   ITEMS, MOBS, NPCS, PLAYER_START, PROPS, QUESTS, questRewardItemId, abilitiesKnownAt, instanceOrigin,
-  DEEPFEN_SHALLOWS_LAKE,
+  DEEPFEN_SHALLOWS_LAKE, WORLD_SIZE,
   zoneAt, ZONES, FISHING_TABLES, FISHING_RARE_ID,
 } from './data';
 import { ARENA_SPAWN_A, ARENA_SPAWN_B, ARENA_SPAWNS_A_2v2, ARENA_SPAWNS_B_2v2 } from './dungeon_layout';
@@ -41,7 +41,7 @@ import {
   EVENT_SKIN_TOKEN_ID, MECH_CHROMAS, classHasSkin, mechChromaItemId, mechChromaSkinIndex,
   rankAllowsMechChroma, rankAllowsSkin, rollSkinRank,
 } from './content/skins';
-import { MOUNTS, mountUnlockedAtTier } from './content/mounts';
+import { MOUNTS, mountUnlockedAtTier, isFlyingMount } from './content/mounts';
 
 const LEASH_DISTANCE = 45;
 const DUNGEON_LEASH_DISTANCE = 70;
@@ -55,6 +55,13 @@ const CORPSE_DURATION = 60;
 // cast, or entering water cancels it (updateMountCast). Matches the vanilla
 // ground-mount cast time.
 const MOUNT_SUMMON_CAST_TIME = 1.5;
+// $WOC flying mounts (5% of supply and up): a weightless flight movement model.
+// Hold jump to climb; release to drift down to a low hover that skims terrain and
+// water (so you never touch down or swim). Soars over props — no ground collision.
+const FLIGHT_HOVER_CLEARANCE = 2.6; // resting altitude above ground/water surface
+const FLIGHT_CLIMB_SPEED = 11; // yd/s ascent while holding jump (and on takeoff)
+const FLIGHT_SINK_SPEED = 5; // yd/s gentle descent toward the hover when not climbing
+const FLIGHT_MAX_ALTITUDE = 55; // ceiling above the local surface, so you can clear peaks
 const EVADE_SPEED_MULT = 1.6;
 // An evading mob walks a straight line home (no pathfinding) and stalls if deep
 // water or a collider sits between it and its spawn. Since evading mobs are
@@ -1150,6 +1157,41 @@ export class Sim {
     }
   }
 
+  /** Weightless flight for $WOC flying mounts (5%+ of supply). Horizontal motion
+   *  at the steed's flight speed with no prop collision; vertical control via
+   *  jump (climb) with a gentle auto-sink to a low hover over the local surface,
+   *  so you skim terrain and water without touching down. `mx`/`mz` are the local
+   *  movement input (z forward, x strafe-right) already read by the caller. */
+  private updateFlightMovement(p: Entity, meta: PlayerMeta, mx: number, mz: number): void {
+    if (p.sitting) this.standUp(p);
+    if ((mx !== 0 || mz !== 0) && !this.isRooted(p)) {
+      const len = Math.hypot(mx, mz);
+      const fx = mx / len, fz = mz / len;
+      const speed = RUN_SPEED * this.moveSpeedMult(p);
+      const sin = Math.sin(p.facing), cos = Math.cos(p.facing);
+      const wx = fz * sin - fx * cos;
+      const wz = fz * cos + fx * sin;
+      const bound = WORLD_SIZE / 2 - 2; // stay inside the world rim
+      p.pos.x = Math.max(-bound, Math.min(bound, p.pos.x + wx * speed * DT));
+      p.pos.z = Math.max(-bound, Math.min(bound, p.pos.z + wz * speed * DT));
+    }
+    // Altitude: rise onto the hover at takeoff, climb while jump is held, else
+    // drift down — but never below the hover clearance (no landing/swimming) nor
+    // above the ceiling (so the world still bounds you).
+    const surface = Math.max(groundHeight(p.pos.x, p.pos.z, this.cfg.seed), WATER_LEVEL);
+    const floor = surface + FLIGHT_HOVER_CLEARANCE;
+    const ceiling = surface + FLIGHT_MAX_ALTITUDE;
+    if (p.pos.y < floor) p.pos.y = Math.min(floor, p.pos.y + FLIGHT_CLIMB_SPEED * DT);
+    else if (meta.moveInput.jump) p.pos.y = Math.min(ceiling, p.pos.y + FLIGHT_CLIMB_SPEED * DT);
+    else p.pos.y = Math.max(floor, p.pos.y - FLIGHT_SINK_SPEED * DT);
+    // Weightless: cancel any carried velocity and never report grounded so the
+    // ground branch's gravity kicks in the instant the rider is dismounted.
+    p.onGround = false;
+    p.vx = 0; p.vz = 0; p.vy = 0;
+    p.jumping = false;
+    p.fallStartY = p.pos.y;
+  }
+
   /** Cosmetic skin-select event: rolls a rarity rank (once) and emits the
    *  personal `skinEvent` cue that opens the client overlay. Re-using the token
    *  re-shows the already-rolled rank — no reroll — so a player can't spam-roll.
@@ -2063,6 +2105,12 @@ export class Sim {
 
     const wantsMove = mx !== 0 || mz !== 0 || inp.jump;
     if (wantsMove && p.sitting) this.standUp(p);
+
+    // $WOC flying mount: a weightless flight branch (lift off, soar over
+    // terrain/water, no prop collision). Bypasses gravity, ground collision, and
+    // the swim-dismount below entirely. Dismounting up here lets gravity resume —
+    // the ground branch then takes over and the rider falls.
+    if (isFlyingMount(p.mountId)) { this.updateFlightMovement(p, meta, mx, mz); return; }
 
     const hasMoveInput = mx !== 0 || mz !== 0;
     const moving = hasMoveInput && !this.isRooted(p);

@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { Sim } from '../src/sim/sim';
 import { terrainHeight } from '../src/sim/world';
 import {
-  mountTierForBalance, mountUnlockedAtTier, MOUNT_LIST, MOUNTS,
-  MOUNT_SPEED_NORMAL, MOUNT_SPEED_EPIC,
+  mountTierForBalance, mountUnlockedAtTier, isFlyingMount, MOUNT_LIST, MOUNTS,
+  MOUNT_SPEED_NORMAL, MOUNT_SPEED_EPIC, FIRST_FLYING_TIER,
+  MOUNT_FLIGHT_SPEED_MIN, MOUNT_FLIGHT_SPEED_MAX,
 } from '../src/sim/content/mounts';
 
 // The mount summon cast is 1.5s = 30 ticks at 20 Hz; 40 ticks clears it.
@@ -39,15 +40,30 @@ describe('mount tier ladder', () => {
     expect(mountTierForBalance(250_000_000)).toBe(11); // capped at the top rung
   });
 
-  it('has exactly 11 rungs with monotonic thresholds and the chosen speeds', () => {
+  it('has 11 rungs: 0.1%-4% ground (normal/epic), 5%-10% flying with scaled speed', () => {
     expect(MOUNT_LIST.length).toBe(11);
     for (let i = 0; i < MOUNT_LIST.length; i++) {
       expect(MOUNT_LIST[i].tier).toBe(i + 1);
       if (i > 0) expect(MOUNT_LIST[i].threshold).toBeGreaterThan(MOUNT_LIST[i - 1].threshold);
     }
-    // 0.1% rides the normal ground mount, 1%+ rides the epic — no invented gradient.
+    // Ground band: 0.1% rides the normal mount, 1%-4% the epic; none fly.
     expect(MOUNT_LIST[0].speedMult).toBe(MOUNT_SPEED_NORMAL);
-    for (let i = 1; i < MOUNT_LIST.length; i++) expect(MOUNT_LIST[i].speedMult).toBe(MOUNT_SPEED_EPIC);
+    for (let i = 1; i < FIRST_FLYING_TIER - 1; i++) {
+      expect(MOUNT_LIST[i].speedMult).toBe(MOUNT_SPEED_EPIC);
+      expect(MOUNT_LIST[i].flying).toBe(false);
+    }
+    // Flight band (tiers 6-11): all fly, speed ramps min→max, monotonic, top = 2.5.
+    const flyers = MOUNT_LIST.filter((m) => m.flying);
+    expect(flyers.map((m) => m.tier)).toEqual([6, 7, 8, 9, 10, 11]);
+    expect(flyers[0].speedMult).toBe(MOUNT_FLIGHT_SPEED_MIN);
+    expect(flyers[flyers.length - 1].speedMult).toBe(MOUNT_FLIGHT_SPEED_MAX);
+    for (let i = 1; i < flyers.length; i++) {
+      expect(flyers[i].speedMult).toBeGreaterThan(flyers[i - 1].speedMult);
+    }
+    expect(isFlyingMount('goldcrest')).toBe(true);   // 5%
+    expect(isFlyingMount('stormhoof')).toBe(false);  // 4%
+    expect(isFlyingMount('sovereign')).toBe(true);   // 10%
+    expect(isFlyingMount('not-a-mount')).toBe(false);
   });
 
   it('gates ids against an eligibility tier', () => {
@@ -170,6 +186,66 @@ describe('dynamic eligibility (sell-below-threshold)', () => {
     p.mountTier = 3; // still ≥ rung 1
     sim.enforceMountEligibility(sim.playerId);
     expect(p.mountId).toBe('ashmane');
+  });
+});
+
+describe('flight (5%+ steeds soar)', () => {
+  // Pacify the roster so flying near a camp can't aggro → combat → dismount.
+  const pacify = (sim: Sim) => {
+    for (const e of sim.entities.values()) {
+      if (e.kind === 'mob') { e.hostile = false; e.aggroTargetId = null; e.targetId = null; e.aiState = 'idle'; }
+    }
+  };
+
+  it('lifts the rider off the ground and soars horizontally without touching down', () => {
+    const { sim, p } = makeRider();
+    p.mountTier = 11;
+    pacify(sim);
+    const groundY = terrainHeight(p.pos.x, p.pos.z, sim.cfg.seed);
+    summonAndComplete(sim, 'goldcrest'); // tier 6 — the first flying rung (5%)
+    expect(p.mountId).toBe('goldcrest');
+    for (let i = 0; i < 20; i++) sim.tick(); // rise onto the hover
+    expect(p.pos.y).toBeGreaterThan(groundY + 1.5);
+    expect(p.onGround).toBe(false);
+
+    const x0 = p.pos.x, z0 = p.pos.z;
+    sim.moveInput.forward = true;
+    for (let i = 0; i < 20; i++) sim.tick();
+    sim.moveInput.forward = false;
+    expect(Math.hypot(p.pos.x - x0, p.pos.z - z0)).toBeGreaterThan(5);
+    expect(p.mountId).toBe('goldcrest'); // never dismounted mid-flight
+  });
+
+  it('climbs while jump is held and settles back toward the hover on release', () => {
+    const { sim, p } = makeRider();
+    p.mountTier = 11;
+    pacify(sim);
+    summonAndComplete(sim, 'sovereign'); // the 10% dreadwyrm
+    for (let i = 0; i < 12; i++) sim.tick();
+    const hoverY = p.pos.y;
+    sim.moveInput.jump = true;
+    for (let i = 0; i < 30; i++) sim.tick();
+    sim.moveInput.jump = false;
+    expect(p.pos.y).toBeGreaterThan(hoverY + 3); // gained real altitude
+
+    for (let i = 0; i < 80; i++) sim.tick(); // drift back down
+    sim.moveInput.jump = false;
+    expect(p.pos.y).toBeLessThan(hoverY + 1);
+  });
+
+  it('restores gravity when dismounted in the air (the rider falls)', () => {
+    const { sim, p } = makeRider();
+    p.mountTier = 11;
+    pacify(sim);
+    summonAndComplete(sim, 'sovereign');
+    sim.moveInput.jump = true;
+    for (let i = 0; i < 25; i++) sim.tick(); // climb up
+    sim.moveInput.jump = false;
+    const airY = p.pos.y;
+    sim.dismissMount();
+    expect(p.mountId).toBeUndefined();
+    for (let i = 0; i < 10; i++) sim.tick();
+    expect(p.pos.y).toBeLessThan(airY); // gravity took over — falling
   });
 });
 
