@@ -652,6 +652,7 @@ async function startGame(world: IWorld, offlineSim: Sim | null, online: ClientWo
         case 'map': hud.toggleMap(); break;
         case 'nameplates': renderer.showNameplates = !renderer.showNameplates; break;
         case 'talents': hud.toggleTalents(); break;
+        case 'mounts': hud.toggleMounts(); break;
         case 'meters': hud.toggleMeters(); break;
         case 'social': hud.toggleSocial(); break;
         case 'arena': hud.toggleArena(); break;
@@ -686,6 +687,7 @@ async function startGame(world: IWorld, offlineSim: Sim | null, online: ClientWo
     onBags: () => hud.toggleBags(),
     onSpellbook: () => hud.toggleSpellbook(),
     onTalents: () => hud.toggleTalents(),
+    onMounts: () => hud.toggleMounts(),
     onMap: () => hud.toggleMap(),
     onLeaderboard: () => hud.toggleLeaderboard(),
     onNameplates: () => (renderer.showNameplates = !renderer.showNameplates),

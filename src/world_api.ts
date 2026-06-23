@@ -290,6 +290,16 @@ export interface IWorld {
   // the event token; the offline Sim resolves it directly.
   claimEventSkin(skin: number): void;
   unequipMechChroma(chromaId: string): void;
+  // $WOC holder travel mounts. Eligibility (`player.mountTier`, 0-11) and the
+  // active steed (`player.mountId`) are read directly off the player Entity —
+  // both are server-set and ride the wire like `skin`/`holderTier`. `mountCast`
+  // is the in-progress summon (off-entity, session/self-only) for the cast bar.
+  // summonMount begins the cast (or instantly swaps while already mounted);
+  // dismissMount throws you off. The server re-validates every summon against the
+  // wallet's live balance, so a client cannot ride a mount it doesn't hold.
+  mountCast: { id: string; remaining: number; total: number } | null;
+  summonMount(mountId: string): void;
+  dismissMount(): void;
   releaseSpirit(): void;
   chat(text: string): void;
   playEmote(emoteId: OverheadEmoteId): void;

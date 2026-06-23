@@ -321,6 +321,7 @@ describe("i18n Localization Key Coverage", () => {
     delta: "+13",
     dps: "7.4",
     duration: "15s",
+    flavor: "swift and proud",
     form: "Bear",
     fps: 60,
     guild: "Night Watch",

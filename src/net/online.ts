@@ -404,6 +404,10 @@ export class ClientWorld implements IWorld {
   vendorBuyback: InvSlot[] = [];
   equipment: Partial<Record<EquipSlot, string>> = {};
   accountCosmetics: AccountCosmetics = { completedQuestIds: [], mechChromaIds: [] };
+  // $WOC holder mount summon-in-progress, mirrored from snapshot self (`mtc`) for
+  // the HUD's summon cast bar. Active mount + eligibility ride on the player
+  // Entity (mountId/mountTier), decoded in applyWire like skin/holderTier.
+  mountCast: { id: string; remaining: number; total: number } | null = null;
   copper = 0;
   xp = 0;
   // Post-cap progression (Max-Level XP Overflow), mirrored from snapshot self.
@@ -699,6 +703,7 @@ export class ClientWorld implements IWorld {
         e.skinCatalog = w.cat === 'mech' ? 'mech' : 'class';
         e.holderTier = w.ht ?? 0; // $WOC holder-tier flair (cosmetic, server-set)
         e.holderBalance = typeof w.hb === 'number' ? w.hb : undefined; // exact $WOC, for inspect
+        e.mountTier = w.mte ?? 0; // highest $WOC mount rung this player qualifies for (0-11)
         e.scale = w.sc ?? 1;
         e.color = w.c ?? 0xffffff;
         e.dungeonId = w.dgn ?? null;
@@ -775,6 +780,9 @@ export class ClientWorld implements IWorld {
       e.ownerId = w.own ?? null;
       e.petMode = w.pm ?? 'defensive';
       e.petTauntTimer = w.pt ?? 0;
+      // $WOC holder mount (dynamic, conditional): absent ⇒ dismounted. The
+      // renderer attaches/removes the steed from this id (src/render/characters/mount.ts).
+      e.mountId = typeof w.mt === 'string' ? w.mt : undefined;
       e.threat = new Map(w.thr ?? []);
       e.auras = (w.auras ?? []).map((a: any) => ({
         id: a.id, name: a.name, kind: a.kind, remaining: a.rem, duration: a.dur,
@@ -832,6 +840,12 @@ export class ClientWorld implements IWorld {
       e.drinking = s.drk
         ? { itemId: '', kind: 'drink', hpPer2s: 0, manaPer2s: 0, remaining: s.drk.remaining }
         : null;
+      // $WOC mount summon-in-progress (self-only, delta-sent: present while a
+      // summon cast runs, a final null when it ends, omitted otherwise). Guard on
+      // `undefined` per the delta invariant — an absent field means "unchanged".
+      if (s.mtc !== undefined) {
+        this.mountCast = s.mtc ? { id: s.mtc.id, remaining: s.mtc.rem, total: s.mtc.tot } : null;
+      }
       this.xp = s.xp ?? 0;
       this.lifetimeXp = s.lxp ?? 0;
       this.restedXp = s.rxp ?? 0;
@@ -992,6 +1006,18 @@ export class ClientWorld implements IWorld {
   claimEventSkin(skin: number): void {
     const idx = Math.max(0, Math.floor(skin));
     this.cmd({ cmd: 'claim_event_skin', skin: idx });
+  }
+  summonMount(mountId: string): void {
+    // No optimism on summon: the cast bar + final mounted state are
+    // server-authoritative (the server re-validates the wallet balance).
+    this.cmd({ cmd: 'summon_mount', mount: mountId });
+  }
+  dismissMount(): void {
+    // Clear the local summon bar at once (self-only state); the active mount
+    // itself is driven off the authoritative snapshot to avoid a re-mount flicker
+    // if a snapshot generated before the server processed this still carries `mt`.
+    this.mountCast = null;
+    this.cmd({ cmd: 'dismiss_mount' });
   }
   unequipMechChroma(chromaId: string): void {
     const itemId = mechChromaItemId(chromaId);

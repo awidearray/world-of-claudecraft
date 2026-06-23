@@ -6,6 +6,7 @@ import { parseMoveInputFrame } from '../src/sim/move_input';
 import { stealthDetectionRadius, threatEntries } from '../src/sim/threat';
 import { zoneAt, DUNGEONS } from '../src/sim/data';
 import { MECH_CHROMAS, mechChromaItemId, mechChromaSkinIndex } from '../src/sim/content/skins';
+import { MOUNT_LIST, mountTierForBalance } from '../src/sim/content/mounts';
 import {
   grantAccountMechChroma, markAccountQuestComplete, revokeAccountMechChroma, saveCharacterState, openPlaySession, closePlaySession,
   insertChatLogs, pool, loadMarketState, saveMarketState, walletForAccount,
@@ -210,6 +211,7 @@ function identityFields(e: Entity): Record<string, unknown> {
   if (e.skin) out.sk = e.skin;
   if (e.holderTier) out.ht = e.holderTier; // $WOC holder-tier flair (cosmetic)
   if (e.holderBalance) out.hb = Math.round(e.holderBalance); // exact $WOC, for inspect
+  if (e.mountTier) out.mte = e.mountTier; // highest $WOC mount rung this player qualifies for
   if (e.dungeonId) out.dgn = e.dungeonId;
   if (e.objectItemId) out.obj = e.objectItemId;
   if (e.scale !== 1) out.sc = e.scale;
@@ -234,6 +236,9 @@ function dynamicFields(e: Entity): Record<string, unknown> {
     if (e.channeling) out.chan = 1;
   }
   if (e.sitting || e.eating || e.drinking) out.sit = 1;
+  // $WOC holder mount (conditional dynamic): present only while mounted, so an
+  // absent `mt` cleanly means dismounted (the renderer removes the steed).
+  if (e.mountId) out.mt = e.mountId;
   if (e.aggroTargetId !== null) out.aggro = e.aggroTargetId;
   if (e.tappedById !== null) out.tap = e.tappedById;
   if (e.ownerId !== null) out.own = e.ownerId;
@@ -549,10 +554,15 @@ export class GameServer {
     // session for this pid.
     if (this.clients.get(session.pid) !== session) return;
     const e = this.sim.entities.get(session.pid);
-    if (e && ((e.holderTier ?? 0) !== tier || (e.holderBalance ?? 0) !== balance)) {
+    const mountTier = mountTierForBalance(balance);
+    if (e && ((e.holderTier ?? 0) !== tier || (e.holderBalance ?? 0) !== balance || (e.mountTier ?? 0) !== mountTier)) {
       e.holderTier = tier; // identity diff re-broadcasts it to nearby players
       e.holderBalance = balance;
-      console.log(`[woc] ${session.name} holder tier → ${tier} (${balance} $WOC)`);
+      e.mountTier = mountTier; // gates summon + rides identity as `mte`
+      // If holdings fell below the rung of the steed they're currently riding,
+      // throw them off (a lower mount they still qualify for is left alone).
+      this.sim.enforceMountEligibility(session.pid);
+      console.log(`[woc] ${session.name} holder tier → ${tier}, mount tier → ${mountTier} (${balance} $WOC)`);
     }
   }
 
@@ -1252,6 +1262,11 @@ export class GameServer {
       // raid/target markers
       case 'setMarker': if (typeof msg.id === 'number' && typeof msg.marker === 'number') sim.setMarker(msg.id, msg.marker, pid); break;
       case 'clearMarker': if (typeof msg.id === 'number') sim.clearMarker(msg.id, pid); break;
+      // $WOC holder travel mounts. summonMount re-validates the requested id
+      // against the server-set eligibility tier (e.mountTier), so a forged id or a
+      // mount above the wallet's holdings is silently rejected inside the Sim.
+      case 'summon_mount': if (typeof msg.mount === 'string') sim.summonMount(msg.mount, pid); break;
+      case 'dismiss_mount': sim.dismissMount(pid); break;
       // hunter pets
       case 'pet_abandon': sim.abandonPet(pid); break;
       case 'pet_rename':
@@ -1571,6 +1586,9 @@ export class GameServer {
     // talents/spec/loadouts ride the wire only when they change (PR-5: never
     // every snapshot). The client recomputes its known abilities from this.
     maybe('tal', { alloc: meta.talents, spec: meta.talentMods.spec, role: meta.talentMods.role, loadouts: meta.loadouts, activeLoadout: meta.activeLoadout });
+    // $WOC mount summon-in-progress: only rides the wire while a summon cast is
+    // running (it changes every tick then), so it costs nothing between casts.
+    maybe('mtc', meta.mountCast ? { id: meta.mountCast.id, rem: round2(meta.mountCast.remaining), tot: round2(meta.mountCast.total) } : null);
     return extra === '' ? json : json.slice(0, -1) + extra + '}';
   }
 
@@ -1687,6 +1705,21 @@ export class GameServer {
       }
       this.devTierPids.add(pid); // keep the chain refresh from clobbering it
       this.broadcastSystem(`[dev] ${session.name} $WOC holder tier → ${n}`);
+      return null;
+    }
+    // Dev-only: force this character's $WOC mount eligibility tier (0-11) so the
+    // mount window + rideable steeds can be exercised without a funded wallet.
+    // Pins via devTierPids so the balance-refresh chain won't clobber it. If the
+    // new tier is below the steed currently ridden, enforce dismounts them.
+    if (process.env.ALLOW_DEV_COMMANDS === '1' && /^\/wocmount\b/.test(text)) {
+      const n = Math.max(0, Math.min(MOUNT_LIST.length, parseInt(text.split(/\s+/)[1] ?? '', 10) || 0));
+      const e = this.sim.entities.get(pid);
+      if (e) {
+        e.mountTier = n;
+        this.sim.enforceMountEligibility(pid);
+      }
+      this.devTierPids.add(pid);
+      this.broadcastSystem(`[dev] ${session.name} $WOC mount tier → ${n}`);
       return null;
     }
     if (!text.startsWith('/')) {

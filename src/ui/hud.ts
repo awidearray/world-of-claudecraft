@@ -15,6 +15,7 @@ import {
 import type { ZoneDef } from '../sim/data';
 import type { AbilityDef, EquipSlot, InvSlot, PetMode, PlayerClass, ResourceType, SkinRank, Stats } from '../sim/types';
 import { EVENT_SKIN_TIERS, MECH_CHROMAS, SKIN_RANKS, skinRankOrder, type SkinTier } from '../sim/content/skins';
+import { MOUNT_LIST, MOUNTS, type MountDef } from '../sim/content/mounts';
 import {
   AbilityEffect, CONSUME_DURATION, Entity, FISHING_CAST_ID, GCD, ItemDef, SimEvent,
   dist2d, xpForLevel, MAX_LEVEL, MELEE_RANGE, MILESTONES, virtualLevel, canPrestige, xpUntilNextPrestige,
@@ -215,6 +216,7 @@ const BIND_ACTION_LABEL_KEYS: Partial<Record<string, TranslationKey>> = {
   interact: 'hud.keybinds.actions.interact',
   char: 'hud.keybinds.actions.char',
   spellbook: 'hud.keybinds.actions.spellbook',
+  mounts: 'hud.mounts.title',
   questlog: 'hud.keybinds.actions.questlog',
   map: 'hud.keybinds.actions.map',
   bags: 'hud.keybinds.actions.bags',
@@ -361,6 +363,10 @@ export class Hud {
   private castbarFillEl = this.castbarEl.querySelector('.fill') as HTMLElement;
   private castbarLabelEl = this.castbarEl.querySelector('.label') as HTMLElement;
   private castbarTimerEl = this.castbarEl.querySelector('.timer') as HTMLElement;
+  // $WOC holder-mount state, diffed each frame: a summon-complete/dismount edge
+  // banners + live-refreshes the open mount window; a tier change re-locks rows.
+  private lastMountId: string | null = null;
+  private lastMountTier = 0;
   private actionbarEl = $('#actionbar');
   private xpFillEl = $('#xpbar .fill');
   private xpLabelEl = $('#xpbar .label');
@@ -582,6 +588,7 @@ export class Hud {
     $('#mm-char').addEventListener('click', () => this.toggleChar());
     $('#mm-spell').addEventListener('click', () => this.toggleSpellbook());
     $('#mm-talents')?.addEventListener('click', () => this.toggleTalents());
+    $('#mm-mount')?.addEventListener('click', () => this.toggleMounts());
     $('#mm-quest').addEventListener('click', () => this.toggleQuestLog());
     $('#mm-map').addEventListener('click', () => this.toggleMap());
     $('#map-close').addEventListener('click', () => { $('#map-window').style.display = 'none'; });
@@ -2013,6 +2020,7 @@ export class Hud {
       ['#mm-char', 'char', 'Character'],
       ['#mm-spell', 'spellbook', 'Spellbook'],
       ['#mm-talents', 'talents', 'Talents'],
+      ['#mm-mount', 'mounts', 'Mounts'],
       ['#mm-quest', 'questlog', 'Quest Log'],
       ['#mm-map', 'map', 'Map'],
       ['#mm-bag', 'bags', 'Bags'],
@@ -2249,6 +2257,15 @@ export class Hud {
       this.setWidth(this.castbarFillEl, `${(frac * 100).toFixed(1)}%`);
       this.setText(this.castbarLabelEl, castDisplayName(p.castingAbility));
       this.setText(this.castbarTimerEl, formatNumber(Math.max(0, p.castRemaining), { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+    } else if (this.sim.mountCast) {
+      // $WOC holder mount summon — a filling cast bar like an ability cast.
+      const mc = this.sim.mountCast;
+      this.setDisplay(this.castbarEl, 'block');
+      this.castbarEl.classList.remove('channel');
+      const frac = 1 - mc.remaining / Math.max(0.01, mc.total);
+      this.setWidth(this.castbarFillEl, `${(frac * 100).toFixed(1)}%`);
+      this.setText(this.castbarLabelEl, t('hud.mounts.summoning', { name: mountDisplayName(mc.id) }));
+      this.setText(this.castbarTimerEl, formatNumber(Math.max(0, mc.remaining), { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
     } else if (p.eating || p.drinking) {
       this.setDisplay(this.castbarEl, 'block');
       this.castbarEl.classList.add('channel');
@@ -2264,6 +2281,20 @@ export class Hud {
       this.setWidth(this.castbarFillEl, '0%');
       this.setText(this.castbarLabelEl, '');
       this.setText(this.castbarTimerEl, '');
+    }
+
+    // $WOC holder mount: react to summon-complete / dismount / eligibility edges.
+    // A fresh steed banners; any change re-renders an open mount window so the
+    // Active/Summon/Dismount controls and locked rows stay live.
+    const curMountId = p.mountId ?? null;
+    const curMountTier = p.mountTier ?? 0;
+    if (curMountId !== this.lastMountId || curMountTier !== this.lastMountTier) {
+      if (curMountId && curMountId !== this.lastMountId) {
+        this.showBanner(t('hud.mounts.summonedBanner', { name: mountDisplayName(curMountId) }));
+      }
+      this.lastMountId = curMountId;
+      this.lastMountTier = curMountTier;
+      if ($('#mount-window').style.display === 'block') this.renderMounts();
     }
 
     // swing timer — fills between melee/ranged auto-attack swings. swingTimer
@@ -6381,6 +6412,118 @@ export class Hud {
   }
 
   // -------------------------------------------------------------------------
+  // $WOC holder travel mounts (bound to 'Y'). Holding a share of supply unlocks
+  // rideable ground steeds (a classic move-speed boost). The window lists every
+  // rung with its unlock threshold + speed; unlocked rungs Summon, the active
+  // one Dismounts. Eligibility (player.mountTier) and the active steed
+  // (player.mountId) are server-authoritative — every summon is re-validated
+  // server-side, so the pre-flight checks here are courtesy feedback only.
+  // -------------------------------------------------------------------------
+
+  toggleMounts(): void {
+    const el = $('#mount-window');
+    if (el.style.display === 'block') { el.style.display = 'none'; this.hideTooltip(); return; }
+    this.closeOtherWindows('#mount-window');
+    this.renderMounts();
+    el.style.display = 'block';
+  }
+
+  renderMounts(): void {
+    const el = $('#mount-window');
+    const p = this.sim.player;
+    const eligible = p.mountTier ?? 0;
+    const activeId = p.mountId ?? null;
+    const total = MOUNT_LIST.length;
+    const unlocked = Math.max(0, Math.min(eligible, total));
+    const fmt0 = (n: number) => formatNumber(n, { maximumFractionDigits: 0 });
+    const pctOf = (share: number) => `${formatNumber(share * 100, { maximumFractionDigits: 1 })}%`;
+    el.setAttribute('aria-label', t('hud.mounts.title'));
+    el.innerHTML = `<div class="panel-title"><span>${esc(t('hud.mounts.title'))} <span class="mount-subtitle">${esc(t('hud.mounts.subtitle'))}</span></span><button type="button" class="x-btn" data-close aria-label="${esc(t('hud.mounts.close'))}">${svgIcon('close')}</button></div>`;
+
+    const summary = document.createElement('div');
+    summary.className = 'mount-summary';
+    if (eligible <= 0) {
+      summary.textContent = t('hud.mounts.noWallet', { amount: fmt0(MOUNT_LIST[0].threshold) });
+    } else {
+      let line = t('hud.mounts.qualifyHeader', { count: fmt0(unlocked), total: fmt0(total) });
+      if (typeof p.holderBalance === 'number' && p.holderBalance > 0) {
+        line += ' ' + t('hud.mounts.holdingHint', { amount: fmt0(Math.floor(p.holderBalance)) });
+      }
+      summary.textContent = line;
+    }
+    el.appendChild(summary);
+
+    const list = document.createElement('div');
+    list.className = 'mount-list';
+    list.setAttribute('role', 'list');
+    el.appendChild(list);
+
+    for (const m of MOUNT_LIST) {
+      const isUnlocked = eligible >= m.tier;
+      const isActive = activeId === m.id;
+      const row = document.createElement('div');
+      row.className = 'mount-row' + (isUnlocked ? '' : ' locked') + (isActive ? ' active' : '');
+      row.setAttribute('role', 'listitem');
+      const tintHex = `#${m.tint.toString(16).padStart(6, '0')}`;
+      const speedPct = Math.round((m.speedMult - 1) * 100);
+      const meta = isUnlocked
+        ? `<span class="mount-speed">${esc(t('hud.mounts.speed', { percent: fmt0(speedPct) }))}</span><span class="mount-dot">·</span><span class="mount-share">${esc(t('hud.mounts.supplyShare', { percent: pctOf(m.supplyShare) }))}</span>`
+        : `<span class="mount-locktag">${svgIcon('lock')} ${esc(t('hud.mounts.unlockAt', { amount: fmt0(m.threshold) }))}</span><span class="mount-dot">·</span><span class="mount-share">${esc(pctOf(m.supplyShare))}</span>`;
+      row.innerHTML =
+        `<span class="mount-swatch" style="--mount-tint:${tintHex}">${svgIcon('mount')}</span>` +
+        `<div class="mount-text">` +
+        `<div class="mount-name">${esc(m.name)}${isActive ? `<span class="mount-active-tag">${esc(t('hud.mounts.riding'))}</span>` : ''}</div>` +
+        `<div class="mount-flavor">${esc(m.flavor)}</div>` +
+        `<div class="mount-meta">${meta}</div>` +
+        `</div>`;
+      if (isUnlocked) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mount-action' + (isActive ? ' is-dismount' : '');
+        btn.textContent = isActive ? t('hud.mounts.dismount') : t('hud.mounts.summon');
+        btn.setAttribute('aria-label', isActive
+          ? t('hud.mounts.dismountAria', { name: m.name })
+          : t('hud.mounts.summonAria', { name: m.name }));
+        btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this.onMountAction(m, isActive); });
+        row.appendChild(btn);
+        row.setAttribute('aria-label', isActive
+          ? t('hud.mounts.activeAria', { name: m.name })
+          : t('hud.mounts.cardAria', { name: m.name, flavor: m.flavor }));
+      } else {
+        row.setAttribute('aria-label', t('hud.mounts.lockedAria', { name: m.name, amount: fmt0(m.threshold) }));
+      }
+      list.appendChild(row);
+    }
+    el.querySelector('[data-close]')?.addEventListener('click', () => { el.style.display = 'none'; this.hideTooltip(); });
+  }
+
+  private onMountAction(m: MountDef, active: boolean): void {
+    if (active) {
+      this.sim.dismissMount();
+      audio.click();
+      this.renderMounts();
+      return;
+    }
+    const p = this.sim.player;
+    // Courtesy pre-flight cues; the sim re-checks all of these authoritatively.
+    if (p.dead) { this.showError(t('hud.mounts.cantDead')); return; }
+    if (p.inCombat) { this.showError(t('hud.mounts.cantInCombat')); return; }
+    if (this.playerLikelySwimming(p)) { this.showError(t('hud.mounts.cantSwimming')); return; }
+    if ((p.mountTier ?? 0) < m.tier) { this.showError(t('hud.mounts.notEligible')); return; }
+    this.sim.summonMount(m.id);
+    audio.click();
+  }
+
+  // Presentation-side swimming probe mirroring the renderer's derivation (the
+  // sim's isSwimming isn't on the IWorld seam). Used only for the early "can't
+  // mount while swimming" cue — the sim is the real authority.
+  private playerLikelySwimming(p: Entity): boolean {
+    return terrainHeight(p.pos.x, p.pos.z, this.sim.cfg.seed) < WATER_LEVEL - 0.8
+      && p.pos.y <= WATER_LEVEL - 0.5;
+  }
+
+  // -------------------------------------------------------------------------
   // Talents & Specializations panel (bound to 'N'). Staged-edit model: the user
   // edits a local copy (talentStage), then Apply commits the whole build via the
   // server-authoritative IWorld.applyTalents (which re-validates). Class/Spec
@@ -8314,6 +8457,13 @@ function abilityDisplayDescription(def: AbilityDef, damageText: string): string 
 
 function classDisplayName(cls: PlayerClass): string {
   return tEntity({ kind: 'class', id: cls, field: 'name' });
+}
+
+// $WOC mount proper name. Like the holder-tier rung names (src/ui/holder_tier.ts),
+// these are English proper nouns held in sim content; the unknown-id fallback keeps
+// a stale/forged id from rendering blank.
+function mountDisplayName(id: string): string {
+  return MOUNTS[id]?.name ?? id;
 }
 
 function itemDisplayName(item: ItemDef): string {

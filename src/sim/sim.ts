@@ -41,6 +41,7 @@ import {
   EVENT_SKIN_TOKEN_ID, MECH_CHROMAS, classHasSkin, mechChromaItemId, mechChromaSkinIndex,
   rankAllowsMechChroma, rankAllowsSkin, rollSkinRank,
 } from './content/skins';
+import { MOUNTS, mountUnlockedAtTier } from './content/mounts';
 
 const LEASH_DISTANCE = 45;
 const DUNGEON_LEASH_DISTANCE = 70;
@@ -49,6 +50,11 @@ const DUNGEON_LEASH_DISTANCE = 70;
 // attacked). Elites, rares, and bosses are never trivial.
 const TRIVIAL_LEVEL_GAP = 10;
 const CORPSE_DURATION = 60;
+// $WOC holder mounts: the classic summon cast. Standing still for this long
+// completes the summon; any translational movement, combat, damage, an ability
+// cast, or entering water cancels it (updateMountCast). Matches the vanilla
+// ground-mount cast time.
+const MOUNT_SUMMON_CAST_TIME = 1.5;
 const EVADE_SPEED_MULT = 1.6;
 // An evading mob walks a straight line home (no pathfinding) and stalls if deep
 // water or a collider sits between it and its spawn. Since evading mobs are
@@ -481,6 +487,11 @@ export interface PlayerMeta {
   // Session-only: name of the last player who whispered us, for "/r" replies.
   // Never persisted — a fresh login starts with no reply target.
   lastWhisperFrom?: string;
+  // $WOC holder mount summon-in-progress (the classic ~1.5s mount cast). Session
+  // -only, never persisted; cancelled by movement/combat/damage/an ability
+  // cast/swimming/death. On completion it sets the entity's mountId. Surfaced to
+  // the owner via the self snapshot (`mtc`) so the HUD can draw the summon bar.
+  mountCast: { id: string; remaining: number; total: number } | null;
 }
 
 // Away-from-keyboard / do-not-disturb presence. `afk` still delivers whispers
@@ -888,6 +899,7 @@ export class Sim {
       loadouts: [],
       activeLoadout: -1,
       away: null,
+      mountCast: null,
     };
     this.players.set(player.id, meta);
     player.skinCatalog = meta.skinCatalog;
@@ -1053,6 +1065,91 @@ export class Sim {
     this.setPlayerSkin(this.primaryId, skin, catalog);
   }
 
+  // -------------------------------------------------------------------------
+  // $WOC holder travel mounts. Server-authoritative: eligibility (`mountTier`)
+  // is set server-side from the connected wallet's live balance, so a client
+  // cannot summon a mount it does not hold. Summoning begins a short cast that
+  // any movement/combat/damage cancels (updateMountCast); the rule resolves
+  // entirely here in the Sim. All player-facing messaging is derived client-side
+  // from the resulting state change — the sim stays string-free (no i18n debt).
+  // -------------------------------------------------------------------------
+
+  /** Begin (or, while already mounted, instantly swap to) the holder mount `id`.
+   *  Returns true when the request was accepted (a cast started or a swap
+   *  applied), false when rejected (unknown id, not eligible, dead, in combat,
+   *  swimming, mid-cast, or already on exactly this mount). The server validates
+   *  nothing extra — this method is the single authority. */
+  summonMount(mountId: string, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const { meta, e: p } = r;
+    if (p.dead) return false;
+    if (!MOUNTS[mountId]) return false;
+    if (!mountUnlockedAtTier(mountId, p.mountTier ?? 0)) return false;
+    if (p.inCombat) return false;
+    if (this.isSwimming(p)) return false;
+    if (p.castingAbility) return false;
+    // Already astride this exact mount and not re-casting: nothing to do.
+    if (p.mountId === mountId && !meta.mountCast) return false;
+    if (p.sitting) this.standUp(p);
+    // Already mounted on a different steed: swap in the saddle, no re-cast.
+    if (p.mountId) {
+      p.mountId = mountId;
+      meta.mountCast = null;
+      return true;
+    }
+    // Fresh summon from the ground: begin the classic mount cast.
+    meta.mountCast = { id: mountId, remaining: MOUNT_SUMMON_CAST_TIME, total: MOUNT_SUMMON_CAST_TIME };
+    return true;
+  }
+
+  /** Explicit player dismount (or cancel an in-progress summon). */
+  dismissMount(pid?: number): void {
+    const r = this.resolve(pid);
+    if (!r) return;
+    this.dismount(r.e);
+  }
+
+  /** Clear any active mount AND any in-progress summon cast for `e`. Safe to call
+   *  on any entity (no-op for non-players / the unmounted); the dismount triggers
+   *  (combat, damage, casting, swimming, death, dungeon entry, holdings drop) all
+   *  funnel through here. */
+  private dismount(e: Entity): void {
+    if (e.kind === 'player') {
+      const meta = this.players.get(e.id);
+      if (meta) meta.mountCast = null;
+    }
+    if (e.mountId !== undefined) e.mountId = undefined;
+  }
+
+  /** Force-dismount a player whose holdings no longer cover their active mount.
+   *  Called by the server after a balance refresh lowers `mountTier`. Leaves a
+   *  lower-but-still-eligible mount alone. */
+  enforceMountEligibility(pid: number): void {
+    const e = this.entities.get(pid);
+    if (!e || e.mountId === undefined) return;
+    if (!mountUnlockedAtTier(e.mountId, e.mountTier ?? 0)) this.dismount(e);
+  }
+
+  /** Advance an in-progress mount summon: cancel it on movement/combat/damage/an
+   *  ability cast/entering water/death; complete it (set mountId) when the cast
+   *  elapses, re-checking eligibility in case holdings changed mid-cast. */
+  private updateMountCast(p: Entity, meta: PlayerMeta): void {
+    const mc = meta.mountCast;
+    if (!mc) return;
+    const inp = meta.moveInput;
+    const movedThisTick = inp.forward || inp.back || inp.strafeLeft || inp.strafeRight || inp.jump;
+    if (movedThisTick || p.inCombat || p.castingAbility || p.dead || this.isSwimming(p)) {
+      meta.mountCast = null;
+      return;
+    }
+    mc.remaining -= DT;
+    if (mc.remaining <= 0) {
+      meta.mountCast = null;
+      if (mountUnlockedAtTier(mc.id, p.mountTier ?? 0)) p.mountId = mc.id;
+    }
+  }
+
   /** Cosmetic skin-select event: rolls a rarity rank (once) and emits the
    *  personal `skinEvent` cue that opens the client overlay. Re-using the token
    *  re-shows the already-rolled rank — no reroll — so a player can't spam-roll.
@@ -1162,6 +1259,9 @@ export class Sim {
   }
   get moveInput(): MoveInput {
     return this.primary.moveInput;
+  }
+  get mountCast(): { id: string; remaining: number; total: number } | null {
+    return this.primary.mountCast;
   }
   get inventory(): InvSlot[] {
     return this.primary.inventory;
@@ -1564,6 +1664,7 @@ export class Sim {
       if (!p) continue;
       if (!p.dead) {
         this.updatePlayerMovement(p, meta);
+        this.updateMountCast(p, meta);
         this.updateDoorTriggers(p);
         this.updateCasting(p, meta);
         this.updatePlayerAutoAttack(p, meta);
@@ -1743,6 +1844,14 @@ export class Sim {
     if (e.kind === 'player') {
       const ms = this.players.get(e.id)?.fiestaSpecial.moveSpeedPct;
       if (ms) speed += ms;
+    }
+    // $WOC holder travel mount: a classic ground-mount boost while mounted and
+    // out of combat (combat/damage dismounts, but guard regardless). The mount is
+    // the dominant travel source — take the max so it never stacks on top of
+    // other speed buffs into pay-to-win territory; a slow still scales it down.
+    if (e.mountId && !e.inCombat) {
+      const m = MOUNTS[e.mountId];
+      if (m) speed = Math.max(speed, m.speedMult);
     }
     return slow * speed;
   }
@@ -1958,6 +2067,9 @@ export class Sim {
     const hasMoveInput = mx !== 0 || mz !== 0;
     const moving = hasMoveInput && !this.isRooted(p);
     const swimming = this.isSwimming(p);
+    // Mounts don't swim — entering deep water throws the rider. (The summon cast
+    // is cancelled separately in updateMountCast.)
+    if (p.mountId && swimming) this.dismount(p);
     let wishX = 0, wishZ = 0, wishSpeed = 0;
     if (moving) {
       if (p.castingAbility) this.cancelCast(p);
@@ -2287,6 +2399,9 @@ export class Sim {
     const res = this.resolvedAbility(abilityId, p.id);
     if (!res || p.dead) return;
     const ability = res.def;
+    // You can't act from the saddle — pressing an ability throws you off first
+    // (classic), then the ability resolves on foot.
+    if (p.mountId !== undefined) this.dismount(p);
     if (this.isStunned(p)) { this.error(p.id, 'You are stunned!'); return; }
     if (ability.school !== 'physical' && this.isSilenced(p)) { this.error(p.id, 'You are silenced!'); return; }
     if (ability.school !== 'physical' && this.isLockedOut(p, ability.school)) { this.error(p.id, 'You are silenced!'); return; }
@@ -3609,6 +3724,7 @@ export class Sim {
     if (!r) return;
     const p = r.e;
     if (p.dead) return;
+    if (p.mountId !== undefined) this.dismount(p); // engaging dismounts you
     const t = p.targetId !== null ? this.entities.get(p.targetId) : null;
     if (!t || t.dead || !this.isHostileTo(p, t)) { this.error(p.id, 'Invalid attack target.'); return; }
     if (p.sitting) this.standUp(p);
@@ -3763,6 +3879,11 @@ export class Sim {
     // so it can't be chipped down — or killed outright — for a risk-free kill.
     if (target.kind === 'mob' && target.aiState === 'evade') return;
     amount = Math.max(0, amount);
+
+    // Any damage that lands throws a mounted rider — including sourceless hits
+    // (falling, environmental, reflected) that never reach the enterCombat call
+    // below, so "take damage ⇒ dismount" holds even off the combat path.
+    if (amount > 0 && target.mountId !== undefined) this.dismount(target);
 
     // Defensive Stance, classic: deal 10% less, take 10% less (and +30% threat below)
     if (source && source.id !== target.id && source.auras.some((a) => a.kind === 'defensive_stance')) {
@@ -4022,6 +4143,9 @@ export class Sim {
     b.combatTimer = 0;
     a.inCombat = true;
     b.inCombat = true;
+    // Combat throws you from a holder mount — whether you struck or were struck.
+    if (a.mountId !== undefined) this.dismount(a);
+    if (b.mountId !== undefined) this.dismount(b);
     // players and their pets pull wild mobs; pets never run wild-mob AI
     const aAttacker = a.kind === 'player' || (a.kind === 'mob' && a.ownerId !== null);
     if (b.kind === 'mob' && b.ownerId === null && !b.dead && aAttacker && b.aiState !== 'evade') {
@@ -4036,6 +4160,7 @@ export class Sim {
   private handleDeath(e: Entity, killer: Entity | null): void {
     e.dead = true;
     e.hp = 0;
+    if (e.mountId !== undefined) this.dismount(e);
     this.clearNonPlayerStatAuras(e);
     e.auras = [];
     e.ccDr.clear();
@@ -9585,6 +9710,7 @@ export class Sim {
     }
     const origin = this.instanceOriginOf(inst);
     const p = r.e;
+    if (p.mountId !== undefined) this.dismount(p); // no mounts inside instances
     p.pos = this.groundPos(origin.x + dungeon.entry.x, origin.z + dungeon.entry.z);
     p.prevPos = { ...p.pos };
     this.rebucket(p);

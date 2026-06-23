@@ -8,7 +8,7 @@ import {
 } from '../sim/data';
 import { cameraOcclusion } from '../sim/colliders';
 import type { BiomeId } from '../sim/types';
-import { AnimState, CharacterVisual, createCharacterVisual } from './characters';
+import { AnimState, CharacterVisual, createCharacterVisual, MountVisual, createMountVisual } from './characters';
 import { visualKeyFor } from './characters/manifest';
 import { mechAssetsReady, preloadMechAssets } from './characters/assets';
 import { isVisuallyDead } from './anim_state';
@@ -131,6 +131,8 @@ interface EntityView {
   sheepVisual: CharacterVisual | null; // polymorph form, built lazily
   bearVisual: CharacterVisual | null; // druid bear form, built lazily
   catVisual: CharacterVisual | null; // druid cat form, built lazily
+  mount: MountVisual | null; // $WOC holder travel steed, built when entity.mountId is set
+  mountId: string | null; // last-rendered mount id, diffed each frame for live summon/dismount/swap
   skin: number; // last-rendered appearance skin — diffed each frame for live swaps
   /** unscaled height — nameplate/vfx anchor reads height * e.scale */
   height: number;
@@ -1078,7 +1080,7 @@ export class Renderer {
     const objectCasters: THREE.Object3D[] = [];
     if (!visual) collectCasters(group, objectCasters);
     this.views.set(e.id, {
-      group, visual, visualKey: visual ? visualKeyFor(e) : null, sheepVisual: null, bearVisual: null, catVisual: null, height, clickTarget,
+      group, visual, visualKey: visual ? visualKeyFor(e) : null, sheepVisual: null, bearVisual: null, catVisual: null, mount: null, mountId: null, height, clickTarget,
       nameplate: np, nameEl, hpBar, hpFill, emoteEl, emoteIconEl, emoteLabelEl, markerEl: marker, raidMarkEl: raidMark, comboRow, comboPips, castBar, castFill, castLabel, tierEl, sparkle, objectMesh, portal,
       nameplateDisplay: 'none', nameplateTransform: '', nameplateSig: '', nameplateHpWidth: '', comboSig: '', tierValue: 0,
       objectCasters, shadowOn: true, isFar: false, lastOverheadEmoteKey: null,
@@ -1284,6 +1286,7 @@ export class Renderer {
       v.sheepVisual?.dispose();
       v.bearVisual?.dispose();
       v.catVisual?.dispose();
+      v.mount?.dispose(); // releases the steed's per-instance geometries
     } else {
       // Object views (door arch, loot crates) own their geometries; their
       // materials are shared caches (door stone / crate planks / sparkle) and
@@ -1388,6 +1391,7 @@ export class Renderer {
           v.sheepVisual?.setShadow(wantFormShadow);
           v.bearVisual?.setShadow(wantFormShadow);
           v.catVisual?.setShadow(wantFormShadow);
+          v.mount?.setShadow(wantShadow);
         } else if (wantShadow !== v.shadowOn) {
           v.shadowOn = wantShadow;
           for (const caster of v.objectCasters) (caster as THREE.Mesh).castShadow = wantShadow;
@@ -1494,10 +1498,24 @@ export class Renderer {
         !e.onGround
         || (e.kind === 'player'
           && ay - groundHeight(ax, az, this.sim.cfg.seed) > AIRBORNE_EPS));
+      // $WOC holder travel mount: attach / detach / swap the procedural steed and
+      // lift the rider onto the saddle. A mounted rider is forced to a standing
+      // idle pose (below) so their legs don't pump mid-air while the steed gaits.
+      const mounted = e.mountId != null && !visuallyDead && !swimming;
+      const wantMountId = mounted ? e.mountId! : null;
+      if (wantMountId !== v.mountId) {
+        if (v.mount) { v.mount.dispose(); v.mount = null; }
+        v.mountId = wantMountId;
+        if (wantMountId) {
+          const mv = createMountVisual(wantMountId);
+          if (mv) { v.group.add(mv.root); v.mount = mv; }
+        }
+        v.visual.root.position.y = v.mount ? v.mount.riderLift : 0;
+      }
       const st: AnimState = {
-        speed: loco.speed,
-        moving,
-        airborne,
+        speed: mounted ? 0 : loco.speed,
+        moving: mounted ? false : moving,
+        airborne: mounted ? false : airborne,
         backwards: loco.backwards,
         reverseBackpedal: ghostWolf,
         dead: visuallyDead,
@@ -1519,7 +1537,7 @@ export class Renderer {
         } else if (swimming) {
           v.stepAccum += loco.speed * dt;
           if (v.stepAccum >= SWIM_STRIDE) { v.stepAccum = 0; sink.movement('swim', ax, ay, az, isSelf); }
-        } else if (moving && !airborne) {
+        } else if (moving && !airborne && !mounted) {
           v.stepAccum += loco.speed * dt;
           const stride = loco.speed >= FOOT_RUN_SPEED ? FOOT_STRIDE_RUN : FOOT_STRIDE_WALK;
           if (v.stepAccum >= stride) {
@@ -1542,6 +1560,8 @@ export class Renderer {
         else if (d2 > ENTITY_SHADOW_RANGE_SQ) animate = ((this.frameIdx + e.id) & 1) === 0;
       }
       active.update(dt, st, animate);
+      // gait the steed off the rider's real travel speed (the lifted rider idles)
+      if (v.mount && animate) v.mount.update(dt, loco.speed);
 
       const emoteId = e.kind === 'player' && e.overheadEmoteId && !e.dead ? e.overheadEmoteId : null;
       const emoteKey = emoteId ? `${emoteId}:${e.overheadEmoteSeq}` : null;
@@ -1873,6 +1893,7 @@ export class Renderer {
       }
       this.tmpV.copy(v.group.position);
       this.tmpV.y += v.height * e.scale + (isSelf && hasOverheadEmote ? 0.2 : 0.8);
+      if (v.mount) this.tmpV.y += v.mount.riderLift; // float the plate above the lifted rider
       if (!isProjectedNameplateAnchorVisible(this.camera, this.tmpV, this.tmpV2)) {
         if (v.nameplateDisplay !== 'none') {
           v.nameplate.style.display = 'none';
