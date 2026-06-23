@@ -1246,9 +1246,19 @@ export class Sim {
     if (!def) return false;
     if (def.flyingOnly && !isFlyingMount(p.mountId)) return false; // ground mounts ineligible
     if (meta.courseRun && meta.courseRun.state === 'active') return false; // already running
+    // Place the rider just behind the first gate, facing it, at the gate's
+    // altitude — so a run starts cleanly without a cross-map flight to find it.
+    const c0 = def.checkpoints[0];
+    const c1 = def.checkpoints[1 % def.checkpoints.length];
+    const ax = c0.x - c1.x, az = c0.z - c1.z;
+    const al = Math.hypot(ax, az) || 1;
+    p.pos = { x: c0.x + (ax / al) * 8, y: c0.y, z: c0.z + (az / al) * 8 };
+    p.prevPos = { ...p.pos };
+    p.facing = Math.atan2(c0.x - p.pos.x, c0.z - p.pos.z); // face gate 0 (f → (sin,cos))
+    this.rebucket(p);
     meta.courseRun = {
       courseId,
-      startTick: this.tickCount,
+      startTick: -1, // armed; the clock starts when the first gate is crossed
       nextCheckpoint: 0,
       lap: 0,
       splits: [],
@@ -1287,6 +1297,9 @@ export class Sim {
     const gate = def.checkpoints[run.nextCheckpoint];
     if (!segmentHitsSphere(p.prevPos, p.pos, gate.x, gate.y, gate.z, gate.radius)) return;
 
+    // The very first gate is the start line: the clock begins here, so the time
+    // measures the run itself, not the approach to it.
+    if (run.splits.length === 0) run.startTick = this.tickCount;
     run.splits.push(this.tickCount);
     run.nextCheckpoint++;
     if (run.nextCheckpoint >= def.checkpoints.length) {

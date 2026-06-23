@@ -1267,6 +1267,10 @@ export class GameServer {
       // mount above the wallet's holdings is silently rejected inside the Sim.
       case 'summon_mount': if (typeof msg.mount === 'string') sim.summonMount(msg.mount, pid); break;
       case 'dismiss_mount': sim.dismissMount(pid); break;
+      // Mount-activity courses. startCourse re-validates flyer-only + eligibility
+      // inside the Sim, so a forged id / ground mount is rejected server-side.
+      case 'start_course': if (typeof msg.course === 'string') sim.startCourse(msg.course, pid); break;
+      case 'abort_course': sim.abortCourse(pid); break;
       // hunter pets
       case 'pet_abandon': sim.abandonPet(pid); break;
       case 'pet_rename':
@@ -1589,6 +1593,9 @@ export class GameServer {
     // $WOC mount summon-in-progress: only rides the wire while a summon cast is
     // running (it changes every tick then), so it costs nothing between casts.
     maybe('mtc', meta.mountCast ? { id: meta.mountCast.id, rem: round2(meta.mountCast.remaining), tot: round2(meta.mountCast.total) } : null);
+    // Active mount-course run: rides the wire only while a run exists (it changes
+    // each gate then), null once when it ends. The HUD draws the timer/gate overlay.
+    maybe('crun', meta.courseRun);
     return extra === '' ? json : json.slice(0, -1) + extra + '}';
   }
 

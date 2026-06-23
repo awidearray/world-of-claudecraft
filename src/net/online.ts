@@ -8,7 +8,7 @@ import {
 } from '../sim/content/talents';
 import { mechChromaItemId, mechChromaSkinIndex } from '../sim/content/skins';
 import {
-  Entity, EquipSlot, InvSlot, MoveInput, PlayerClass, QuestProgress, QuestState, SimEvent,
+  CourseRunState, Entity, EquipSlot, InvSlot, MoveInput, PlayerClass, QuestProgress, QuestState, SimEvent,
   emptyMoveInput,
 } from '../sim/types';
 import { normalizeMoveFacing, sanitizeMoveInput } from '../sim/move_input';
@@ -408,6 +408,9 @@ export class ClientWorld implements IWorld {
   // the HUD's summon cast bar. Active mount + eligibility ride on the player
   // Entity (mountId/mountTier), decoded in applyWire like skin/holderTier.
   mountCast: { id: string; remaining: number; total: number } | null = null;
+  // Active mount-course run, mirrored from snapshot self (`crun`); drives the HUD
+  // course timer/gate overlay. Null when idle.
+  courseRun: CourseRunState | null = null;
   copper = 0;
   xp = 0;
   // Post-cap progression (Max-Level XP Overflow), mirrored from snapshot self.
@@ -846,6 +849,8 @@ export class ClientWorld implements IWorld {
       if (s.mtc !== undefined) {
         this.mountCast = s.mtc ? { id: s.mtc.id, remaining: s.mtc.rem, total: s.mtc.tot } : null;
       }
+      // Active course run (delta-sent: present while running + a final null).
+      if (s.crun !== undefined) this.courseRun = s.crun ?? null;
       this.xp = s.xp ?? 0;
       this.lifetimeXp = s.lxp ?? 0;
       this.restedXp = s.rxp ?? 0;
@@ -1018,6 +1023,15 @@ export class ClientWorld implements IWorld {
     // if a snapshot generated before the server processed this still carries `mt`.
     this.mountCast = null;
     this.cmd({ cmd: 'dismiss_mount' });
+  }
+  startCourse(courseId: string): void {
+    // Server-authoritative (re-validates flyer-only + eligibility); the run state
+    // arrives back on the next self snapshot as `crun`.
+    this.cmd({ cmd: 'start_course', course: courseId });
+  }
+  abortCourse(): void {
+    this.courseRun = null; // optimistic clear; the snapshot confirms
+    this.cmd({ cmd: 'abort_course' });
   }
   unequipMechChroma(chromaId: string): void {
     const itemId = mechChromaItemId(chromaId);

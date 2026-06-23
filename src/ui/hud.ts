@@ -16,6 +16,7 @@ import type { ZoneDef } from '../sim/data';
 import type { AbilityDef, EquipSlot, InvSlot, PetMode, PlayerClass, ResourceType, SkinRank, Stats } from '../sim/types';
 import { EVENT_SKIN_TIERS, MECH_CHROMAS, SKIN_RANKS, skinRankOrder, type SkinTier } from '../sim/content/skins';
 import { MOUNT_LIST, MOUNTS, type MountDef } from '../sim/content/mounts';
+import { COURSE_LIST, courseDef, courseTotalGates } from '../sim/content/courses';
 import {
   AbilityEffect, CONSUME_DURATION, Entity, FISHING_CAST_ID, GCD, ItemDef, SimEvent,
   dist2d, xpForLevel, MAX_LEVEL, MELEE_RANGE, MILESTONES, virtualLevel, canPrestige, xpUntilNextPrestige,
@@ -367,6 +368,14 @@ export class Hud {
   // banners + live-refreshes the open mount window; a tier change re-locks rows.
   private lastMountId: string | null = null;
   private lastMountTier = 0;
+  // Mount-course HUD: a local stopwatch (the official time is server-measured),
+  // armed when the run's clock starts (startTick crosses 0), plus the brief
+  // post-finish hold and the last-rendered key for cheap transition detection.
+  private courseHudEl = $('#course-hud');
+  private courseTimerStartMs = 0;
+  private courseTimerRunning = false;
+  private courseFinishHoldUntil = 0;
+  private lastCourseSig = '';
   private actionbarEl = $('#actionbar');
   private xpFillEl = $('#xpbar .fill');
   private xpLabelEl = $('#xpbar .label');
@@ -589,6 +598,7 @@ export class Hud {
     $('#mm-spell').addEventListener('click', () => this.toggleSpellbook());
     $('#mm-talents')?.addEventListener('click', () => this.toggleTalents());
     $('#mm-mount')?.addEventListener('click', () => this.toggleMounts());
+    this.courseHudEl.querySelector('.ch-abort')?.addEventListener('click', () => { this.sim.abortCourse(); audio.click(); });
     $('#mm-quest').addEventListener('click', () => this.toggleQuestLog());
     $('#mm-map').addEventListener('click', () => this.toggleMap());
     $('#map-close').addEventListener('click', () => { $('#map-window').style.display = 'none'; });
@@ -2296,6 +2306,7 @@ export class Hud {
       this.lastMountTier = curMountTier;
       if ($('#mount-window').style.display === 'block') this.renderMounts();
     }
+    this.updateCourseHud();
 
     // swing timer — fills between melee/ranged auto-attack swings. swingTimer
     // counts DOWN to 0 (ready); we recover the full interval from the reset
@@ -3539,6 +3550,14 @@ export class Hud {
         }
         case 'learnAbility': break; // logged by sim
         case 'comboPoint': break;
+        // Mount-course cues. The overlay/timer is state-driven (updateCourseHud);
+        // these add the audio/banner feel. (Finish is celebrated in updateCourseHud.)
+        case 'courseStart': audio.click(); break;
+        case 'courseCheckpoint': audio.click(); break;
+        case 'courseFinish': break; // handled (audio + overlay) in updateCourseHud
+        case 'courseFail':
+          this.showBanner(t(ev.reason === 'dismounted' ? 'hud.course.failed' : 'hud.course.aborted'));
+          break;
         case 'loot': {
           this.log(this.localizeLootText(ev.text), '#7fdc4f');
           if (ev.text.includes('loot') || ev.text.includes('Sold') || ev.text.includes('Bought back')) audio.coin();
@@ -6497,6 +6516,45 @@ export class Hud {
       }
       list.appendChild(row);
     }
+
+    // Skytrials — fly a timed ring course (flying mount required).
+    const onFlyer = !!(p.mountId && MOUNTS[p.mountId]?.flying);
+    const secTitle = document.createElement('div');
+    secTitle.className = 'mount-section-title';
+    secTitle.innerHTML = `<span>${esc(t('hud.course.skytrials'))}</span><span class="sub">${esc(t('hud.course.skytrialsHint'))}</span>`;
+    el.appendChild(secTitle);
+    if (!onFlyer) {
+      const note = document.createElement('div');
+      note.className = 'course-locked';
+      note.textContent = t('hud.course.needFlyer');
+      el.appendChild(note);
+    } else {
+      for (const c of COURSE_LIST) {
+        const crow = document.createElement('div');
+        crow.className = 'course-row';
+        const lapsText = c.laps > 1 ? t('hud.course.laps', { count: fmt0(c.laps) }) : t('hud.course.onePass');
+        crow.innerHTML =
+          `<div class="course-text"><div class="course-name">${esc(c.name)}</div>` +
+          `<div class="course-meta"><span class="fly">${esc(t('hud.mounts.flies'))}</span><span class="mount-dot">·</span>` +
+          `<span>${esc(lapsText)}</span><span class="mount-dot">·</span><span>${esc(t('hud.course.par', { time: formatRunTime(c.parTicks / 20) }))}</span></div></div>`;
+        const cbtn = document.createElement('button');
+        cbtn.type = 'button';
+        cbtn.className = 'mount-action';
+        cbtn.textContent = t('hud.course.start');
+        cbtn.setAttribute('aria-label', `${t('hud.course.start')} — ${c.name}`);
+        cbtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        cbtn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          this.sim.startCourse(c.id);
+          audio.click();
+          el.style.display = 'none'; // close so the rider can fly the course
+          this.hideTooltip();
+        });
+        crow.appendChild(cbtn);
+        el.appendChild(crow);
+      }
+    }
+
     el.querySelector('[data-close]')?.addEventListener('click', () => { el.style.display = 'none'; this.hideTooltip(); });
   }
 
@@ -6523,6 +6581,77 @@ export class Hud {
   private playerLikelySwimming(p: Entity): boolean {
     return terrainHeight(p.pos.x, p.pos.z, this.sim.cfg.seed) < WATER_LEVEL - 0.8
       && p.pos.y <= WATER_LEVEL - 0.5;
+  }
+
+  // -------------------------------------------------------------------------
+  // Mount-course run overlay (timer + ring/lap progress). Driven by the
+  // server-authoritative courseRun state; the live timer is a local stopwatch
+  // armed when the run's clock starts (the official result is courseRun
+  // elapsedTicks, set by the sim). Rings are drawn by the renderer.
+  // -------------------------------------------------------------------------
+
+  private updateCourseHud(): void {
+    const el = this.courseHudEl;
+    const run = this.sim.courseRun;
+    const now = performance.now();
+
+    if (!run) {
+      this.courseTimerRunning = false;
+      if (!el.hidden) { el.hidden = true; el.classList.remove('finished'); this.lastCourseSig = ''; }
+      return;
+    }
+    const def = courseDef(run.courseId);
+    if (!def) return;
+
+    if (run.state === 'active') {
+      el.hidden = false;
+      el.classList.remove('finished');
+      // arm the local stopwatch the instant the clock starts (first ring crossed)
+      if (run.startTick > 0 && !this.courseTimerRunning) { this.courseTimerRunning = true; this.courseTimerStartMs = now; }
+      if (run.startTick <= 0) this.courseTimerRunning = false;
+      const elapsed = this.courseTimerRunning ? (now - this.courseTimerStartMs) / 1000 : 0;
+      const total = courseTotalGates(def);
+      const passed = run.lap * def.checkpoints.length + run.nextCheckpoint;
+      const sub = run.startTick <= 0
+        ? t('hud.course.starting')
+        : def.laps > 1
+          ? `${t('hud.course.gate', { n: formatNumber(Math.min(passed + 1, total)), total: formatNumber(total) })} · ${t('hud.course.lap', { n: formatNumber(run.lap + 1), total: formatNumber(def.laps) })}`
+          : t('hud.course.gate', { n: formatNumber(Math.min(passed + 1, total)), total: formatNumber(total) });
+      this.setText(el.querySelector('.ch-name') as HTMLElement, def.name);
+      this.setText(el.querySelector('.ch-time') as HTMLElement, formatRunTime(elapsed));
+      this.setText(el.querySelector('.ch-sub') as HTMLElement, sub);
+      this.setText(el.querySelector('.ch-abort') as HTMLElement, t('hud.course.give_up'));
+      this.lastCourseSig = `active:${run.courseId}`;
+      return;
+    }
+
+    if (run.state === 'done') {
+      const sig = `done:${run.courseId}:${run.elapsedTicks}`;
+      if (sig !== this.lastCourseSig) {
+        // first frame of the finish: hold the banner ~5.5s and play the cue
+        this.lastCourseSig = sig;
+        this.courseFinishHoldUntil = now + 5500;
+        this.courseTimerRunning = false;
+        audio.levelUp();
+      }
+      if (now > this.courseFinishHoldUntil) { el.hidden = true; el.classList.remove('finished'); return; }
+      el.hidden = false;
+      el.classList.add('finished');
+      const seconds = run.elapsedTicks / 20;
+      const par = def.parTicks / 20;
+      const delta = par - seconds;
+      const sub = delta >= 0
+        ? t('hud.course.beatPar', { time: formatRunTime(delta) })
+        : t('hud.course.offPar', { time: formatRunTime(-delta) });
+      this.setText(el.querySelector('.ch-name') as HTMLElement, `${def.name} — ${t('hud.course.finish')}`);
+      this.setText(el.querySelector('.ch-time') as HTMLElement, formatRunTime(seconds));
+      this.setText(el.querySelector('.ch-sub') as HTMLElement, sub);
+      return;
+    }
+
+    // failed (rarely seen — the server usually nulls the run on fail)
+    el.hidden = true;
+    this.courseTimerRunning = false;
   }
 
   // -------------------------------------------------------------------------
@@ -8466,6 +8595,16 @@ function classDisplayName(cls: PlayerClass): string {
 // a stale/forged id from rendering blank.
 function mountDisplayName(id: string): string {
   return MOUNTS[id]?.name ?? id;
+}
+
+// Course timer display: "12.3s" under a minute, "1:05.2" beyond. A fixed numeric
+// format (not translatable copy) for the run clock.
+function formatRunTime(seconds: number): string {
+  const s = Math.max(0, seconds);
+  if (s < 60) return `${s.toFixed(1)}s`;
+  const m = Math.floor(s / 60);
+  const rem = s - m * 60;
+  return `${m}:${rem < 10 ? '0' : ''}${rem.toFixed(1)}`;
 }
 
 function itemDisplayName(item: ItemDef): string {

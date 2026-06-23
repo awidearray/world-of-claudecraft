@@ -1014,6 +1014,36 @@
   .mount-action.is-dismount { color: #f4e6c8; background: #2a2118; border-color: #6a5524; }
   .mount-action.is-dismount:hover { background: #352a1d; }
 
+  /* Skytrials list inside the mount window */
+  .mount-section-title { margin: 12px 2px 6px; font-family: var(--title-font); font-size: 13px; color: #cbb472;
+    border-top: 1px solid #463a1c; padding-top: 10px; display: flex; align-items: baseline; gap: 8px; }
+  .mount-section-title .sub { font-family: inherit; font-size: 11px; color: var(--color-text-muted); }
+  .course-row { display: flex; gap: 10px; align-items: center; padding: 7px 8px; border-radius: 5px; background: #ffffff06; }
+  .course-row + .course-row { margin-top: 4px; }
+  .course-row .course-text { flex: 1; min-width: 0; }
+  .course-row .course-name { font-family: var(--title-font); font-size: 13px; color: #fff; }
+  .course-row .course-meta { font-size: 11px; color: var(--color-text-muted); margin-top: 2px;
+    display: flex; gap: 6px; flex-wrap: wrap; }
+  .course-row .course-meta .fly { color: #9fe6ff; }
+  .course-locked { font-size: 11px; color: var(--color-text-muted); padding: 6px 2px; }
+
+  /* In-world course run overlay (timer + ring/lap progress) */
+  #course-hud { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); z-index: 60;
+    min-width: 220px; text-align: center; pointer-events: none;
+    font-family: var(--title-font); color: #f6ecd2;
+    background: rgba(12,14,20,0.6); border: 1px solid rgba(95,195,240,0.45); border-radius: 12px;
+    padding: 10px 18px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.45); }
+  #course-hud[hidden] { display: none; }
+  #course-hud.finished { border-color: rgba(216,178,74,0.7); box-shadow: 0 0 22px rgba(216,178,74,0.3); }
+  #course-hud .ch-name { font-size: 13px; color: #9fe6ff; letter-spacing: 0.04em; }
+  #course-hud.finished .ch-name { color: #ffd24a; }
+  #course-hud .ch-time { font-size: 30px; font-variant-numeric: tabular-nums; line-height: 1.05; margin: 2px 0; }
+  #course-hud .ch-sub { font-size: 12px; color: #cdbf98; }
+  #course-hud .ch-abort { pointer-events: auto; margin-top: 8px; min-height: 32px; padding: 0 14px; cursor: pointer;
+    font-family: inherit; font-size: 12px; color: #f4e6c8; background: #2a2118; border: 1px solid #6a5524; border-radius: 5px; }
+  #course-hud .ch-abort:hover { background: #352a1d; }
+  #course-hud.finished .ch-abort { display: none; }
+
   /* quest log */
   #quest-log-window { width: 520px; }
   #quest-log-window .ql-cols { display: flex; gap: 12px; }
@@ -6961,6 +6991,12 @@
 
     <div id="castbar"><div class="fill"></div><div class="label"></div><div class="timer"></div></div>
     <div id="swingbar"><div class="fill"></div><div class="label"></div></div>
+    <div id="course-hud" hidden>
+      <div class="ch-name"></div>
+      <div class="ch-time"></div>
+      <div class="ch-sub"></div>
+      <button class="ch-abort" type="button"></button>
+    </div>
 
     <div id="minimap-wrap">
       <div id="zone-label" data-i18n="entities.zones.eastbrook_vale.name">Eastbrook Vale</div>

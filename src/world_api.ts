@@ -1,4 +1,4 @@
-import { OVERHEAD_EMOTE_IDS, type ArenaCombatant, type ArenaFormat, type ArenaStanding, type Entity, type EquipSlot, type InvSlot, type MoveInput, type OverheadEmoteId, type PetMode, type PlayerClass, type QuestProgress, type QuestState, type ResourceType } from './sim/types';
+import { OVERHEAD_EMOTE_IDS, type ArenaCombatant, type ArenaFormat, type ArenaStanding, type CourseRunState, type Entity, type EquipSlot, type InvSlot, type MoveInput, type OverheadEmoteId, type PetMode, type PlayerClass, type QuestProgress, type QuestState, type ResourceType } from './sim/types';
 import type { ResolvedAbility } from './sim/sim';
 import type { TalentAllocation, SavedLoadout, Role } from './sim/content/talents';
 
@@ -300,6 +300,13 @@ export interface IWorld {
   mountCast: { id: string; remaining: number; total: number } | null;
   summonMount(mountId: string): void;
   dismissMount(): void;
+  // Mount-activity course runs (hoop / time-trial / race). `courseRun` is the
+  // server-authoritative in-progress run (null when idle); the HUD draws the
+  // timer/gate overlay from it. startCourse begins one (server gates flyer-only
+  // + eligibility); abortCourse bails.
+  courseRun: CourseRunState | null;
+  startCourse(courseId: string): void;
+  abortCourse(): void;
   releaseSpirit(): void;
   chat(text: string): void;
   playEmote(emoteId: OverheadEmoteId): void;

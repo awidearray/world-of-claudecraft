@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { Entity, SimEvent } from '../sim/types';
+import type { CourseDef } from '../sim/types';
+import { COURSES } from '../sim/content/courses';
 import { OVERHEAD_EMOTES, type IWorld } from '../world_api';
 import { groundHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
 import {
@@ -240,6 +242,12 @@ export class Renderer {
   camera: THREE.PerspectiveCamera;
   webgl: THREE.WebGLRenderer;
   views = new Map<number, EntityView>();
+  // Mount-activity course rings (procedural tori at the active course's
+  // checkpoints; the next gate glows gold). Built lazily for the active course.
+  private courseRingsGroup = new THREE.Group();
+  private courseRingsFor: string | null = null;
+  private courseRings: THREE.Mesh[] = [];
+  private courseRingGeom: THREE.TorusGeometry | null = null;
   nameplateLayer: HTMLDivElement;
   selectionRing: THREE.Mesh;
   raycaster = new THREE.Raycaster();
@@ -500,6 +508,8 @@ export class Renderer {
 
     this.foliage = buildFoliage(this.sim.cfg.seed);
     this.scene.add(this.foliage.group);
+    this.courseRingsGroup.visible = false;
+    this.scene.add(this.courseRingsGroup);
     this.fish = buildFish(this.sim.cfg.seed);
     this.scene.add(this.fish.group);
     this.critters = buildCritters(this.sim.cfg.seed);
@@ -815,6 +825,55 @@ export class Renderer {
   // A school-flavoured nova pops on a takedown.
   fiestaKillBurst(entityId: number, school = 'fire'): void {
     this.vfx.nova(entityId, school);
+  }
+
+  // Mount-activity course rings: procedural tori at the active course's
+  // checkpoints, the hole of each aimed at the next gate so you fly straight
+  // through. The next gate to clear glows gold and pulses; the rest sit cyan.
+  private buildCourseRings(def: CourseDef): void {
+    for (const m of this.courseRings) { this.courseRingsGroup.remove(m); (m.material as THREE.Material).dispose(); }
+    this.courseRings.length = 0;
+    if (!this.courseRingGeom) this.courseRingGeom = new THREE.TorusGeometry(3.4, 0.42, 10, 28);
+    const pts = def.checkpoints;
+    for (let i = 0; i < pts.length; i++) {
+      const c = pts[i];
+      const next = pts[(i + 1) % pts.length];
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x5fc3f0, emissive: 0x2a6fa0, emissiveIntensity: 1.0,
+        roughness: 0.4, metalness: 0.1, transparent: true, opacity: 0.82,
+      });
+      const ring = new THREE.Mesh(this.courseRingGeom, mat);
+      ring.position.set(c.x, c.y, c.z);
+      ring.lookAt(next.x, next.y, next.z); // torus hole (local +Z) points down the line
+      this.courseRings.push(ring);
+      this.courseRingsGroup.add(ring);
+    }
+    this.courseRingsFor = def.id;
+  }
+
+  private updateCourseRings(_dt: number): void {
+    const run = this.sim.courseRun;
+    if (!run || run.state !== 'active') {
+      if (this.courseRingsGroup.visible) this.courseRingsGroup.visible = false;
+      return;
+    }
+    const def = COURSES[run.courseId];
+    if (!def) { this.courseRingsGroup.visible = false; return; }
+    if (this.courseRingsFor !== def.id) this.buildCourseRings(def);
+    this.courseRingsGroup.visible = true;
+    const pulse = 1.5 + Math.sin(this.time * 4) * 0.6;
+    const scale = 1 + Math.sin(this.time * 4) * 0.06;
+    for (let i = 0; i < this.courseRings.length; i++) {
+      const ring = this.courseRings[i];
+      const mat = ring.material as THREE.MeshStandardMaterial;
+      if (i === run.nextCheckpoint) {
+        mat.color.setHex(0xffd24a); mat.emissive.setHex(0xc79a35); mat.emissiveIntensity = pulse; mat.opacity = 1;
+        ring.scale.setScalar(scale);
+      } else {
+        mat.color.setHex(0x5fc3f0); mat.emissive.setHex(0x2a6fa0); mat.emissiveIntensity = 1.0; mat.opacity = 0.82;
+        ring.scale.setScalar(1);
+      }
+    }
   }
 
   // The shrinking hazard-ring wall. Built once on first use, then positioned and
@@ -1639,6 +1698,7 @@ export class Renderer {
     // water shimmer (low-tier texture scroll; shader water rides uTime)
     this.waterView.update(this.time);
     this.vfx.update(dt);
+    this.updateCourseRings(dt);
     this.updateFiestaRing(dt);
     this.updateFiestaPowerups(dt);
     this.tickFiestaGlows(dt);
