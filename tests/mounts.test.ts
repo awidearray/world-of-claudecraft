@@ -126,11 +126,11 @@ describe('mount move-speed (the gameplay perk)', () => {
 });
 
 describe('dismount triggers', () => {
-  it('throws the rider on entering combat', () => {
+  it('throws the rider on entering combat (ground mounts; flyers are immune — see below)', () => {
     const { sim, p } = makeRider();
     p.mountTier = 11;
-    summonAndComplete(sim, 'sovereign');
-    expect(p.mountId).toBe('sovereign');
+    summonAndComplete(sim, 'emberhoof'); // a GROUND mount — combat dismounts it
+    expect(p.mountId).toBe('emberhoof');
     (sim as unknown as { enterCombat(a: typeof p, b: typeof p): void }).enterCombat(p, p);
     expect(p.mountId).toBeUndefined();
   });
@@ -169,23 +169,59 @@ describe('dismount triggers', () => {
 });
 
 describe('dynamic eligibility (sell-below-threshold)', () => {
-  it('force-dismounts when holdings fall below the active rung, but keeps a still-eligible lower steed', () => {
+  it('gracefully downgrades to the lesser mount on a holdings drop; dismounts only at tier 0', () => {
     const { sim, p } = makeRider();
-    p.mountTier = 11;
-    summonAndComplete(sim, 'sovereign'); // rung 11
-    expect(p.mountId).toBe('sovereign');
+    p.mountTier = 5;
+    summonAndComplete(sim, 'stormhoof'); // rung 5 (ground)
+    expect(p.mountId).toBe('stormhoof');
 
-    p.mountTier = 5; // sold down below rung 11
+    p.mountTier = 2; // sold down below rung 5
+    sim.enforceMountEligibility(sim.playerId);
+    expect(p.mountId).toBe('emberhoof'); // downgraded to the best rung still held (tier 2)
+
+    // A rung the rider still covers is left untouched.
+    p.mountTier = 4;
+    sim.enforceMountEligibility(sim.playerId);
+    expect(p.mountId).toBe('emberhoof'); // tier 2 ≤ 4, no change
+
+    p.mountTier = 0; // holdings gone entirely
     sim.enforceMountEligibility(sim.playerId);
     expect(p.mountId).toBeUndefined();
+  });
+});
 
-    // A rung the rider still covers is left in the saddle.
+describe('flight combat-immunity (airborne flyers are non-combatants vs wild mobs)', () => {
+  it('a flyer cannot be put into combat (enterCombat is a no-op), so it is never dismounted', () => {
+    const { sim, p } = makeRider();
     p.mountTier = 11;
-    summonAndComplete(sim, 'ashmane'); // rung 1
-    expect(p.mountId).toBe('ashmane');
-    p.mountTier = 3; // still ≥ rung 1
-    sim.enforceMountEligibility(sim.playerId);
-    expect(p.mountId).toBe('ashmane');
+    summonAndComplete(sim, 'sovereign'); // a flyer
+    expect(p.mountId).toBe('sovereign');
+    expect(p.inCombat).toBe(false);
+    // Force a combat attempt against the airborne rider.
+    (sim as unknown as { enterCombat(a: typeof p, b: typeof p): void }).enterCombat(p, p);
+    expect(p.inCombat).toBe(false); // still no combat
+    expect(p.mountId).toBe('sovereign'); // still mounted
+  });
+
+  it('wild-mob damage does not land on (or dismount) an airborne flyer', () => {
+    const { sim, p } = makeRider();
+    p.mountTier = 11;
+    summonAndComplete(sim, 'goldcrest'); // a flyer
+    const hp0 = p.hp;
+    const wild = { kind: 'mob', ownerId: null } as unknown as typeof p;
+    (sim as unknown as { dealDamage(s: typeof p, t: typeof p, a: number, c: boolean, sc: string, ab: string, k: string): void })
+      .dealDamage(wild, p, 50, false, 'physical', 'Cleave', 'hit');
+    expect(p.hp).toBe(hp0);          // immune to wild-mob damage
+    expect(p.mountId).toBe('goldcrest'); // not thrown off
+  });
+
+  it('a grounded mount is NOT immune — combat still dismounts it', () => {
+    const { sim, p } = makeRider();
+    p.mountTier = 11;
+    summonAndComplete(sim, 'emberhoof'); // a GROUND mount (tier 2)
+    expect(p.mountId).toBe('emberhoof');
+    (sim as unknown as { enterCombat(a: typeof p, b: typeof p): void }).enterCombat(p, p);
+    expect(p.mountId).toBeUndefined(); // ground mounts still get thrown on combat
   });
 });
 

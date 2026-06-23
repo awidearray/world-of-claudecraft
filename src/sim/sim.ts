@@ -41,7 +41,7 @@ import {
   EVENT_SKIN_TOKEN_ID, MECH_CHROMAS, classHasSkin, mechChromaItemId, mechChromaSkinIndex,
   rankAllowsMechChroma, rankAllowsSkin, rollSkinRank,
 } from './content/skins';
-import { MOUNTS, mountUnlockedAtTier, isFlyingMount } from './content/mounts';
+import { MOUNTS, mountUnlockedAtTier, isFlyingMount, mountForTier } from './content/mounts';
 
 const LEASH_DISTANCE = 45;
 const DUNGEON_LEASH_DISTANCE = 70;
@@ -1135,7 +1135,13 @@ export class Sim {
   enforceMountEligibility(pid: number): void {
     const e = this.entities.get(pid);
     if (!e || e.mountId === undefined) return;
-    if (!mountUnlockedAtTier(e.mountId, e.mountTier ?? 0)) this.dismount(e);
+    if (mountUnlockedAtTier(e.mountId, e.mountTier ?? 0)) return; // still covers this rung
+    // Holdings fell below the active steed's rung: gracefully DOWNGRADE to the best
+    // mount the rider still qualifies for, rather than throwing them off entirely.
+    // Only a drop to no eligibility (tier 0) dismounts.
+    const lesser = mountForTier(e.mountTier ?? 0);
+    if (lesser) e.mountId = lesser.id;
+    else this.dismount(e);
   }
 
   /** Advance an in-progress mount summon: cancel it on movement/combat/damage/an
@@ -3921,6 +3927,9 @@ export class Sim {
   ): void {
     if (target.dead) return;
     if (target.gm) return; // GM characters are invulnerable — every damage path funnels here
+    // Airborne $WOC flyers shrug off wild-mob damage (incl. AoE/ground hazards) —
+    // mobs-only immunity, so player/pet (PvP) hits still land and matter.
+    if (isFlyingMount(target.mountId) && source !== null && source.kind === 'mob' && source.ownerId === null) return;
     // A mob that broke leash (or a pet freed to the wild) is in 'evade': it has
     // dropped its hate table and walks home without fighting back, healing to
     // full only on arrival. Classic mechanics make it immune while it retreats,
@@ -4187,6 +4196,10 @@ export class Sim {
   }
 
   private enterCombat(a: Entity, b: Entity): void {
+    // Airborne $WOC flyers are non-combatants — neither party enters combat (so the
+    // rider is never dismounted by a path mob). Gate BEFORE the inCombat/dismount
+    // below, or it would dismount the very flyer it's meant to protect.
+    if (isFlyingMount(a.mountId) || isFlyingMount(b.mountId)) return;
     a.combatTimer = 0;
     b.combatTimer = 0;
     a.inCombat = true;
@@ -4752,6 +4765,9 @@ export class Sim {
         let detectedD = Infinity;
         this.playerGrid.forEachInRadius(mob.pos.x, mob.pos.z, 25, (e, d2) => {
           if (e.dead) return;
+          // Airborne $WOC flyers are above the fray: wild mobs never detect them,
+          // so travel over hostile ground can't pull aggro / dismount the rider.
+          if (isFlyingMount(e.mountId)) return;
           if (this.isTrivialTo(mob, e)) return;
           let radius = Math.max(4, Math.min(20, template.aggroRadius + (mob.level - e.level) * 1.5));
           // stealthed rogues are harder to detect, relative to observer level
