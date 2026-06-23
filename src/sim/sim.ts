@@ -35,13 +35,14 @@ import {
   angleTo, armorReduction, dist2d, emptyMoveInput, isConsuming, meleeMissChance, mobXpValue, normAngle,
   rageFromDealing, rageFromTaking, spellHitChance, xpForLevel,
   MILESTONES, virtualLevel, xpToReachLevel, canPrestige,
-  ArenaFormat, ArenaStanding, ArenaCombatant, SkinCatalog, SkinRank,
+  ArenaFormat, ArenaStanding, ArenaCombatant, SkinCatalog, SkinRank, CourseRunState,
 } from './types';
 import {
   EVENT_SKIN_TOKEN_ID, MECH_CHROMAS, classHasSkin, mechChromaItemId, mechChromaSkinIndex,
   rankAllowsMechChroma, rankAllowsSkin, rollSkinRank,
 } from './content/skins';
 import { MOUNTS, mountUnlockedAtTier, isFlyingMount, mountForTier } from './content/mounts';
+import { COURSES, courseTotalGates } from './content/courses';
 
 const LEASH_DISTANCE = 45;
 const DUNGEON_LEASH_DISTANCE = 70;
@@ -62,6 +63,10 @@ const FLIGHT_HOVER_CLEARANCE = 2.6; // resting altitude above ground/water surfa
 const FLIGHT_CLIMB_SPEED = 11; // yd/s ascent while holding jump (and on takeoff)
 const FLIGHT_SINK_SPEED = 5; // yd/s gentle descent toward the hover when not climbing
 const FLIGHT_MAX_ALTITUDE = 55; // ceiling above the local surface, so you can clear peaks
+// Inside a course run, every flyer is NORMALIZED to this one speed multiplier
+// (between the 2.1× and 2.5× tier range) so races/time-trials measure piloting
+// skill, not $WOC holdings — keeping earned-mount riders competitive.
+const COURSE_FLIGHT_MULT = 2.3;
 const EVADE_SPEED_MULT = 1.6;
 // An evading mob walks a straight line home (no pathfinding) and stalls if deep
 // water or a collider sits between it and its spawn. Since evading mobs are
@@ -499,6 +504,10 @@ export interface PlayerMeta {
   // cast/swimming/death. On completion it sets the entity's mountId. Surfaced to
   // the owner via the self snapshot (`mtc`) so the HUD can draw the summon bar.
   mountCast: { id: string; remaining: number; total: number } | null;
+  // Active mount-course run (hoop / time-trial / race). Session-only; the sim
+  // advances it each tick (pass-through + timing) and surfaces it to the owner via
+  // the self snapshot so the HUD can draw the course timer/splits.
+  courseRun: CourseRunState | null;
 }
 
 // Away-from-keyboard / do-not-disturb presence. `afk` still delivers whispers
@@ -672,6 +681,20 @@ function ignoresDamagePushback(abilityId: string): boolean {
 
 function isPetClass(cls: PlayerClass): boolean {
   return cls === 'hunter' || cls === 'warlock';
+}
+
+// Does the 3D segment a→b pass within `r` of the sphere centred at (cx,cy,cz)?
+// Used for course checkpoint pass-through: a tier-11 flyer crosses several yards
+// per 0.05 s tick, so testing only the current point would tunnel a thin ring.
+// Closest-point-on-segment distance; pure + deterministic (no RNG).
+function segmentHitsSphere(a: Vec3, b: Vec3, cx: number, cy: number, cz: number, r: number): boolean {
+  const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z;
+  const acx = cx - a.x, acy = cy - a.y, acz = cz - a.z;
+  const ab2 = abx * abx + aby * aby + abz * abz;
+  let t = ab2 > 0 ? (acx * abx + acy * aby + acz * abz) / ab2 : 0;
+  t = t < 0 ? 0 : t > 1 ? 1 : t;
+  const dx = cx - (a.x + abx * t), dy = cy - (a.y + aby * t), dz = cz - (a.z + abz * t);
+  return dx * dx + dy * dy + dz * dz <= r * r;
 }
 
 export class Sim {
@@ -907,6 +930,7 @@ export class Sim {
       activeLoadout: -1,
       away: null,
       mountCast: null,
+      courseRun: null,
     };
     this.players.set(player.id, meta);
     player.skinCatalog = meta.skinCatalog;
@@ -1173,7 +1197,11 @@ export class Sim {
     if ((mx !== 0 || mz !== 0) && !this.isRooted(p)) {
       const len = Math.hypot(mx, mz);
       const fx = mx / len, fz = mz / len;
-      const speed = RUN_SPEED * this.moveSpeedMult(p);
+      // Normalize speed during a course run (skill, not holdings); else the
+      // steed's own tier speed.
+      const speed = meta.courseRun?.state === 'active'
+        ? RUN_SPEED * COURSE_FLIGHT_MULT
+        : RUN_SPEED * this.moveSpeedMult(p);
       const sin = Math.sin(p.facing), cos = Math.cos(p.facing);
       const wx = fz * sin - fx * cos;
       const wz = fz * cos + fx * sin;
@@ -1196,6 +1224,88 @@ export class Sim {
     p.vx = 0; p.vz = 0; p.vy = 0;
     p.jumping = false;
     p.fallStartY = p.pos.y;
+  }
+
+  // -------------------------------------------------------------------------
+  // Mount-activity COURSES (shared substrate: hoop minigame / time-trial / race).
+  // A run is an ordered set of 3D checkpoint spheres; the sim times it on the
+  // integer tick clock and detects pass-through by segment-vs-sphere so a fast
+  // flyer can't tunnel a thin ring in one tick. Server-authoritative: the timer
+  // is the sim's measured tick delta, never a client-reported number.
+  // -------------------------------------------------------------------------
+
+  /** Begin a course run. Server-authoritative gates: the course must exist, the
+   *  rider must be on a flying mount for a flyingOnly course (feature 5), and no
+   *  run may already be in progress. Returns true when the run started. */
+  startCourse(courseId: string, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const { meta, e: p } = r;
+    if (p.dead) return false;
+    const def = COURSES[courseId];
+    if (!def) return false;
+    if (def.flyingOnly && !isFlyingMount(p.mountId)) return false; // ground mounts ineligible
+    if (meta.courseRun && meta.courseRun.state === 'active') return false; // already running
+    meta.courseRun = {
+      courseId,
+      startTick: this.tickCount,
+      nextCheckpoint: 0,
+      lap: 0,
+      splits: [],
+      state: 'active',
+      elapsedTicks: 0,
+    };
+    this.emit({ type: 'courseStart', courseId, pid: p.id });
+    return true;
+  }
+
+  /** Abandon the active run (player bailed). */
+  abortCourse(pid?: number): void {
+    const r = this.resolve(pid);
+    if (!r || !r.meta.courseRun || r.meta.courseRun.state !== 'active') return;
+    const courseId = r.meta.courseRun.courseId;
+    r.meta.courseRun = null;
+    this.emit({ type: 'courseFail', courseId, reason: 'aborted', pid: r.e.id });
+  }
+
+  /** Advance an active course run for one tick: fail it if the rider lost flight,
+   *  else test the prev→cur segment against the next checkpoint sphere (ordered),
+   *  advancing the cursor / lap and finishing on the last gate. */
+  private updateCourseRun(p: Entity, meta: PlayerMeta): void {
+    const run = meta.courseRun;
+    if (!run || run.state !== 'active') return;
+    const def = COURSES[run.courseId];
+    if (!def) { meta.courseRun = null; return; }
+    // Losing flight (dismount / downgrade to a ground mount / death) voids a
+    // flyingOnly run — you can't finish on foot.
+    if (def.flyingOnly && !isFlyingMount(p.mountId)) {
+      run.state = 'failed';
+      this.emit({ type: 'courseFail', courseId: def.id, reason: 'dismounted', pid: p.id });
+      meta.courseRun = null;
+      return;
+    }
+    const gate = def.checkpoints[run.nextCheckpoint];
+    if (!segmentHitsSphere(p.prevPos, p.pos, gate.x, gate.y, gate.z, gate.radius)) return;
+
+    run.splits.push(this.tickCount);
+    run.nextCheckpoint++;
+    if (run.nextCheckpoint >= def.checkpoints.length) {
+      run.nextCheckpoint = 0;
+      run.lap++;
+    }
+    if (run.lap >= def.laps) {
+      run.state = 'done';
+      run.elapsedTicks = this.tickCount - run.startTick;
+      this.emit({ type: 'courseFinish', courseId: def.id, elapsedTicks: run.elapsedTicks, pid: p.id });
+      // Leave the finished run on meta for one tick so the server can read the
+      // result into persistence/leaderboards; the next startCourse overwrites it.
+    } else {
+      this.emit({
+        type: 'courseCheckpoint', courseId: def.id,
+        index: run.splits.length, total: courseTotalGates(def),
+        lap: run.lap, laps: def.laps, atTick: this.tickCount, pid: p.id,
+      });
+    }
   }
 
   /** Cosmetic skin-select event: rolls a rarity rank (once) and emits the
@@ -1310,6 +1420,9 @@ export class Sim {
   }
   get mountCast(): { id: string; remaining: number; total: number } | null {
     return this.primary.mountCast;
+  }
+  get courseRun(): CourseRunState | null {
+    return this.primary.courseRun;
   }
   get inventory(): InvSlot[] {
     return this.primary.inventory;
@@ -1712,6 +1825,7 @@ export class Sim {
       if (!p) continue;
       if (!p.dead) {
         this.updatePlayerMovement(p, meta);
+        this.updateCourseRun(p, meta); // pass-through uses the just-moved prev→pos segment
         this.updateMountCast(p, meta);
         this.updateDoorTriggers(p);
         this.updateCasting(p, meta);

@@ -928,6 +928,47 @@ export interface Entity {
   mountTier?: number;
 }
 
+// ---------------------------------------------------------------------------
+// Mount activity "Courses" — the shared substrate under the hoop minigame, the
+// solo time-trial, and (later) multi-party racing. A course is an ordered set of
+// 3D checkpoint spheres a flyer passes through; the sim times the run on the
+// integer tick clock and detects pass-through by segment-vs-sphere (a tier-11
+// flyer crosses several yards per 0.05 s tick, so a point-in-sphere test would
+// tunnel). Content lives in src/sim/content/courses.ts.
+// ---------------------------------------------------------------------------
+export interface Checkpoint {
+  x: number;
+  y: number; // 3D — flight maintains a true p.pos.y, so altitude is load-bearing
+  z: number;
+  radius: number; // pass-through sphere radius, yards
+}
+
+export type CourseKind = 'hoop' | 'race' | 'trial';
+
+export interface CourseDef {
+  id: string;
+  name: string;
+  kind: CourseKind;
+  checkpoints: Checkpoint[]; // ordered; index = required pass order
+  /** Only flying mounts may run it (gates ground mounts out — feature 5). */
+  flyingOnly: boolean;
+  /** Number of times the checkpoint loop must be flown (1 = single pass). */
+  laps: number;
+  /** Target time in TICKS (×1/20 s), shown as the "par" to beat. */
+  parTicks: number;
+}
+
+/** Per-player in-progress run state (lives on PlayerMeta; never persisted). */
+export interface CourseRunState {
+  courseId: string;
+  startTick: number; // sim.tickCount at the green light
+  nextCheckpoint: number; // ordered-gate cursor into the current lap
+  lap: number; // 0-based
+  splits: number[]; // tickCount at each checkpoint pass (for live splits)
+  state: 'active' | 'done' | 'failed';
+  elapsedTicks: number; // filled on 'done'
+}
+
 // `pid` (when present) marks a personal event that should only be delivered to
 // that player entity's owner; events without pid are world-visible.
 export type SimEvent = { pid?: number } & (
@@ -940,6 +981,12 @@ export type SimEvent = { pid?: number } & (
   // level past the cap, and unlocking a cosmetic lifetime-XP milestone
   | { type: 'virtualLevelUp'; level: number }
   | { type: 'milestoneUnlocked'; milestoneId: string }
+  // Mount course runs (hoop / trial / race). All personal (carry `pid`); the
+  // client renders timers/banners from the ids + tick numbers (no sim strings).
+  | { type: 'courseStart'; courseId: string }
+  | { type: 'courseCheckpoint'; courseId: string; index: number; total: number; lap: number; laps: number; atTick: number }
+  | { type: 'courseFinish'; courseId: string; elapsedTicks: number }
+  | { type: 'courseFail'; courseId: string; reason: 'dismounted' | 'aborted' }
   | { type: 'learnAbility'; abilityId: string; rank: number }
   | { type: 'loot'; text: string }
   | { type: 'error'; text: string }
