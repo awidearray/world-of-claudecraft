@@ -735,11 +735,15 @@ export function emptyZoneProps(): ZonePropsDef {
 }
 
 export interface QuestObjective {
-  type: 'kill' | 'collect' | 'interact';
+  type: 'kill' | 'collect' | 'interact' | 'finish_course';
   targetMobId?: string; // for kill
   itemId?: string; // for collect
   targetObjectItemId?: string; // for interactable ground objects
   targetNpcId?: string; // for interactable NPC objectives
+  courseId?: string; // for finish_course: the Skytrial/circuit that must be completed
+  // for finish_course: an optional time gate (ticks) — only a run finishing in
+  // <= parTicks credits the objective. Omitted ⇒ any completion credits.
+  parTicks?: number;
   count: number;
   label: string;
 }

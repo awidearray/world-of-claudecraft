@@ -3609,6 +3609,11 @@ export const ko_KR: EnTranslations = {
         "name": "온드렐 베인",
         "title": "조수지기",
         "greeting": "이 호수는 달빛을 마시고, {className}, 익사한 자들을 되돌려 보낸다네. 나는 서른 밤 동안 저 관문을 지켜보았지 — 그리고 오늘 밤, 마침내 그것이 열렸네."
+      },
+      "skytrial_master": {
+        "name": "Skymaster Vael",
+        "title": "Warden of the Skytrials",
+        "greeting": "The sky is a road few dare to walk, {className}. Earn it, and it carries you."
       }
     },
     "quests": {
@@ -4553,6 +4558,36 @@ export const ko_KR: EnTranslations = {
         "objectives": {
           "0": {
             "label": "글리머미어 물거리 처치"
+          }
+        }
+      },
+      "q_skyward_first_flight": {
+        "title": "First Flight",
+        "text": "You sit a winged steed well enough on the ground, {playerName} — now take it up. Fly the Vale Skytrial: eight rings in one looping pass. Do not chase the clock yet. Just stay aloft and thread every ring.",
+        "completion": "You did not fall. That is more than most manage on a first loop. The sky remembers who keeps coming back.",
+        "objectives": {
+          "0": {
+            "label": "Vale Skytrial completed"
+          }
+        }
+      },
+      "q_skyward_time_trial": {
+        "title": "Beat the Clock",
+        "text": "Now do it with intent. Fly the Vale Skytrial again, {playerName}, but finish before the sand runs out. A clean line through every ring, no wasted air. Precision, not panic.",
+        "completion": "A clean line, ring to ring. You are not riding the sky any longer — you are flying it.",
+        "objectives": {
+          "0": {
+            "label": "Vale Skytrial flown under par"
+          }
+        }
+      },
+      "q_skyward_ascendant": {
+        "title": "Ascendant",
+        "text": "One trial remains, {playerName}: the Vale Circuit. Three laps of the long ring, flown under par — no luck, only craft. Master it and the open sky is yours to claim, from rim to rim.",
+        "completion": "Skyward and unbroken. The sky is yours now, {playerName}. Take this charter — a steed of the air, earned and not bought, to carry you wherever you mean to go.",
+        "objectives": {
+          "0": {
+            "label": "Vale Circuit flown under par"
           }
         }
       }

@@ -1404,6 +1404,9 @@ export class Sim {
         const prev = meta.mountTrialBests[def.id];
         if (prev === undefined || run.elapsedTicks < prev) meta.mountTrialBests[def.id] = run.elapsedTicks;
         this.emit({ type: 'courseFinish', courseId: def.id, elapsedTicks: run.elapsedTicks, pid: p.id });
+        // Credit any active Skyward-Trials quest objective for this course (solo
+        // runs only — a race finish has a synchronized clock and doesn't count).
+        this.creditQuestCourse(def.id, run.elapsedTicks, meta);
       }
     } else {
       this.emit({
@@ -7482,6 +7485,27 @@ export class Sim {
       let changed = false;
       quest.objectives.forEach((obj, i) => {
         if (obj.type === 'kill' && obj.targetMobId === mob.templateId && qp.counts[i] < obj.count) {
+          qp.counts[i]++;
+          changed = true;
+          meta.counters.questProgress++;
+          this.emit({ type: 'questProgress', questId: qp.questId, text: `${obj.label}: ${qp.counts[i]}/${obj.count}`, pid: meta.entityId });
+        }
+      });
+      if (changed) this.checkQuestReady(qp, meta);
+    }
+  }
+
+  // Credit 'finish_course' objectives when a Skytrial/circuit is completed solo.
+  // A par-time gate (obj.parTicks) only credits a run that finished fast enough,
+  // so a "beat the clock" quest is a real skill gate, not a participation trophy.
+  private creditQuestCourse(courseId: string, elapsedTicks: number, meta: PlayerMeta): void {
+    for (const qp of meta.questLog.values()) {
+      if (qp.state !== 'active') continue;
+      const quest = QUESTS[qp.questId];
+      let changed = false;
+      quest.objectives.forEach((obj, i) => {
+        if (obj.type === 'finish_course' && obj.courseId === courseId && qp.counts[i] < obj.count
+            && (obj.parTicks === undefined || elapsedTicks <= obj.parTicks)) {
           qp.counts[i]++;
           changed = true;
           meta.counters.questProgress++;
