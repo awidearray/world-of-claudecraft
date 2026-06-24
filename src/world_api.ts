@@ -270,6 +270,25 @@ export interface AccountCosmetics {
 // The surface the renderer + HUD need from a game world. The offline `Sim`
 // satisfies this structurally; the online `ClientWorld` implements it by
 // mirroring server snapshots and sending commands over the socket.
+// One live ad on a placement (newspaper-featured, billboard-*, ticker,
+// classifieds). Mirrors the server's ActiveAd (server/ad_service.ts) and the
+// {t:'ad'} wire shape. Defined here (not in net/) so both worlds — the offline
+// Sim and the online ClientWorld — can satisfy IWorld.activeAds() without
+// sim/ importing net/.
+export interface AdContent {
+  placementId: string;
+  kind: 'image' | 'text';
+  creativeId: number | null;
+  text: string;
+  clickUrl: string;
+  cta: string;
+  advertiser: string;
+  endSec: number;
+}
+export type AdActiveMap = Record<string, AdContent[]>;
+// The three assets an advertiser can pay in (mirrors server/woc_config AdAsset).
+export type AdAssetClient = 'USDC' | 'SOL' | 'WOC';
+
 export interface IWorld {
   cfg: { seed: number; playerClass: PlayerClass };
   entities: Map<number, Entity>;
@@ -429,4 +448,9 @@ export interface IWorld {
   saveLoadout(name: string, bar: (string | null)[], alloc?: TalentAllocation): void;
   switchLoadout(index: number): void;
   deleteLoadout(index: number): void;
+
+  // In-game advertising: the current live ad(s) per placement (billboards,
+  // ticker), pushed by the server over the {t:'ad'} frame. Offline returns an
+  // empty map (the renderer/HUD show a localized house-ad fallback).
+  activeAds(): AdActiveMap;
 }

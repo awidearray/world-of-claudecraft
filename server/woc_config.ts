@@ -114,6 +114,97 @@ export function splitPrice(priceBase: bigint): { burnBase: bigint; treasuryBase:
   return { burnBase, treasuryBase: priceBase - burnBase };
 }
 
+// ── In-game advertising marketplace — "The Claudemoon Gazette" ───────────────
+// Advertisers buy ad time by the minute on specific days, paying in USDC, SOL,
+// or $WOC, displayed across the newspaper landing page, in-world billboards, and
+// the HUD ticker. The whole surface is gated behind AD_MARKET_ENABLED and stays
+// OFF until the treasuries are funded and a rate card is set. Pricing is a fixed
+// native rate card (no price oracle): an explicit per-minute price per asset.
+// $WOC ad revenue is credited 100% to the treasury at payment and a configurable
+// portion (WOC_AD_BURN_BPS) is burned only AFTER admin approval — so a rejected
+// booking can be refunded in full (the burn is deferred past the refund window).
+export const AD_MARKET_ENABLED = boolEnv(process.env.AD_MARKET_ENABLED, false);
+
+export type AdAsset = 'USDC' | 'SOL' | 'WOC';
+export const AD_ASSETS: readonly AdAsset[] = ['USDC', 'SOL', 'WOC'];
+export function isAdAsset(v: unknown): v is AdAsset {
+  return v === 'USDC' || v === 'SOL' || v === 'WOC';
+}
+
+// Native SOL has 9 decimals (lamports).
+export const SOL_DECIMALS = 9;
+
+// Default per-minute rate card in HUMAN units of each asset. These only SEED the
+// ad_rate_card table on first boot; the DB row is authoritative thereafter and
+// is editable from the admin CRM. Placeholders — tune before any mainnet launch.
+export const AD_PRICE_PER_MIN_USDC = numEnv(process.env.AD_PRICE_PER_MIN_USDC, 0.5);
+export const AD_PRICE_PER_MIN_SOL = numEnv(process.env.AD_PRICE_PER_MIN_SOL, 0.004);
+export const AD_PRICE_PER_MIN_WOC = numEnv(process.env.AD_PRICE_PER_MIN_WOC, 250);
+
+// Per-asset treasuries that collect ad revenue. For USDC/$WOC these are wallet
+// OWNERS (the ATA is derived); for SOL it is a native system account. Recommended:
+// set these to the refund keeper's own addresses so collected == refundable.
+export const AD_USDC_TREASURY = (process.env.AD_USDC_TREASURY ?? '').trim() || null;
+export const AD_SOL_TREASURY = (process.env.AD_SOL_TREASURY ?? '').trim() || null;
+export const AD_WOC_TREASURY = (process.env.AD_WOC_TREASURY ?? '').trim() || null;
+
+// Deferred $WOC burn: portion of a $WOC ad payment burned AFTER admin approval
+// (basis points). Default 50%; the remainder stays as treasury revenue. 0 = never burn.
+export const WOC_AD_BURN_BPS = clampInt(process.env.WOC_AD_BURN_BPS, 5000, 0, 10000);
+
+// A booking must start at least this far in the future, giving admins a review
+// buffer before its window opens.
+export const AD_MIN_LEAD_MINUTES = clampInt(process.env.AD_MIN_LEAD_MINUTES, 60, 0, 100000);
+// How long a price-locked quote stays valid (minutes). Kept SHORTER than the
+// reservation TTL below so a quote always expires before its held slot lapses —
+// that closes the "pay after the reservation was already released" race.
+export const AD_QUOTE_TTL_MINUTES = clampInt(process.env.AD_QUOTE_TTL_MINUTES, 10, 1, 120);
+// Longest single booking (minutes) — a sanity cap on one purchase.
+export const AD_MAX_MINUTES = clampInt(process.env.AD_MAX_MINUTES, 1440, 1, 100000);
+// How long an unpaid reservation holds its slot before the sweeper releases it.
+// Must exceed AD_QUOTE_TTL_MINUTES (see above).
+export const AD_RESERVE_TTL_MINUTES = clampInt(process.env.AD_RESERVE_TTL_MINUTES, 20, 1, 240);
+
+// Refund keeper: when an admin rejects a booking, this server-held wallet returns
+// the paid asset to the payer. The one custodial seam for ads — store via KMS,
+// fund with the treasury assets, never commit. Off by default.
+export const AD_REFUND_ENABLED = boolEnv(process.env.AD_REFUND_ENABLED, false);
+export const AD_REFUND_KEEPER_SECRET = (process.env.AD_REFUND_KEEPER_SECRET ?? '').trim();
+
+/** Decimals for an ad asset. */
+export function adDecimals(asset: AdAsset): number {
+  return asset === 'USDC' ? USDC_DECIMALS : asset === 'SOL' ? SOL_DECIMALS : WOC_DECIMALS;
+}
+
+/** The SPL mint for an ad asset, or null for native SOL. */
+export function adMint(asset: AdAsset): string | null {
+  return asset === 'USDC' ? USDC_MINT : asset === 'WOC' ? WOC_MINT : null;
+}
+
+/** The treasury (wallet owner / system account) that collects an ad asset, or null if unset. */
+export function adTreasury(asset: AdAsset): string | null {
+  return asset === 'USDC' ? AD_USDC_TREASURY : asset === 'SOL' ? AD_SOL_TREASURY : AD_WOC_TREASURY;
+}
+
+/** Convert a human amount of an asset to integer base units (rounded to the nearest unit). */
+export function adToBase(asset: AdAsset, human: number): bigint {
+  if (!Number.isFinite(human) || human < 0) return 0n;
+  return BigInt(Math.round(human * Number(pow10(adDecimals(asset)))));
+}
+
+/** Default per-minute price (base units) for an asset — used only to seed the rate card. */
+export function adDefaultRatePerMinuteBase(asset: AdAsset): bigint {
+  const human =
+    asset === 'USDC' ? AD_PRICE_PER_MIN_USDC : asset === 'SOL' ? AD_PRICE_PER_MIN_SOL : AD_PRICE_PER_MIN_WOC;
+  return adToBase(asset, human);
+}
+
+/** Split a $WOC ad price into the (post-approval) burn and treasury portions (base units). */
+export function splitAdPrice(priceBase: bigint): { burnBase: bigint; treasuryBase: bigint } {
+  const burnBase = (priceBase * BigInt(WOC_AD_BURN_BPS)) / 10000n;
+  return { burnBase, treasuryBase: priceBase - burnBase };
+}
+
 function numEnv(v: string | undefined, dflt: number): number {
   if (v === undefined) return dflt;
   const n = Number(v);

@@ -11,9 +11,10 @@ import { voice } from './game/voice';
 import { sfx } from './game/sfx';
 import { activePvpOpponentIds, handlePickedEntity, hoverCursorKind, isAttackableEntity } from './game/interactions';
 import { clickMoveShouldCancel, clickMoveShouldWalk, clickMoveStep, distance2d, latencyAdjustedStopDistance, stepAngleToward } from './game/click_move';
-import { Api, ClientWorld, CharacterSummary, type ReleaseEntry } from './net/online';
+import { Api, ClientWorld, CharacterSummary, type ReleaseEntry, type AdContent } from './net/online';
 import { setWocBalance, setWalletUiEnabled } from './ui/wallet_balance';
 import { setCardUploader, setReferralProvider, setStandingProvider } from './ui/player_card_share';
+import { AdBuyPanel } from './ui/ad_buy';
 // The wallet module (Reown AppKit + @solana/web3.js, ~1MB) is loaded lazily via
 // dynamic import() in the wallet controller below, so it stays out of the main
 // entry chunk and only loads when the feature is enabled + used.
@@ -506,6 +507,137 @@ function enterLoadingState(statusText: string): void {
   $('#start-screen').style.display = 'none';
 }
 
+// ---------------------------------------------------------------------------
+// The Claudemoon Gazette — newspaper interstitial + Continue gate. Replaces the
+// auto-advance into the world: assets preload in the background while the player
+// reads the paper, and Continue (enabled once assets are ready) enters the world.
+// ---------------------------------------------------------------------------
+
+let npButtonsWired = false;
+
+function enterNewspaperState(): void {
+  hideMobilePreflightPrompt();
+  $('#loading-screen').classList.remove('visible', 'fade');
+  $('#start-screen').style.display = 'none';
+  const np = $('#newspaper-screen');
+  np.classList.remove('fade');
+  np.classList.add('visible');
+  np.setAttribute('aria-hidden', 'false');
+  if (!npButtonsWired) {
+    npButtonsWired = true;
+    $('#np-buy-ad').addEventListener('click', () => openAdBuyPanel());
+  }
+}
+
+// The self-serve "place an ad" panel, opened from the Gazette's "Advertise"
+// button (and reachable from the start screen). Lazily constructed once.
+let adBuyPanel: AdBuyPanel | null = null;
+function openAdBuyPanel(): void {
+  if (!adBuyPanel) adBuyPanel = new AdBuyPanel();
+  void adBuyPanel.open();
+}
+
+function hideNewspaperScreen(): void {
+  const np = $('#newspaper-screen');
+  np.classList.remove('visible', 'fade');
+  np.setAttribute('aria-hidden', 'true');
+}
+
+function setNewspaperPreloadProgress(done: number, total: number): void {
+  $('#np-preload-fill').style.width = total > 0 ? `${Math.round((done / total) * 100)}%` : '0%';
+  $('#np-preload-status').textContent = t('newspaper.preloadProgress', { done, total });
+}
+
+interface NewspaperData { featured: AdContent | null; classifieds: AdContent[] }
+
+async function fetchNewspaper(): Promise<NewspaperData | null> {
+  try {
+    return await api.adNewspaper();
+  } catch {
+    return null; // tolerant: a lore-only paper still renders
+  }
+}
+
+// Real-world partner call-to-action (e.g. "Get the app", "20% off — code WOC20")
+// linking out to the advertiser's site. Both fields are advertiser-controlled →
+// escaped. Only rendered when there's a destination URL.
+function ctaLinkHtml(a: AdContent): string {
+  if (!a.cta || !a.clickUrl) return '';
+  return `<a class="gz-cta" href="${escapeHtml(a.clickUrl)}" target="_blank" rel="noopener nofollow sponsored">${escapeHtml(a.cta)}</a>`;
+}
+
+// Render the Gazette. Lore + masthead are client-owned (localized); featured ad +
+// classifieds are advertiser content from the server (incl. real-world partner
+// ads). ALL advertiser-supplied text goes through escapeHtml — it is attacker-
+// controlled.
+function renderNewspaper(data: NewspaperData | null): void {
+  $('#gz-date').textContent = formatDateTime(Date.now(), { dateStyle: 'long' });
+
+  const lore = [t('newspaper.lore1'), t('newspaper.lore2'), t('newspaper.lore3'), t('newspaper.lore4')];
+  $('#gz-lore').innerHTML = lore.map((p) => `<p>${escapeHtml(p)}</p>`).join('');
+
+  const base = api.base || '';
+  const featured = data?.featured ?? null;
+  const fe = $('#gz-featured');
+  if (featured && featured.kind === 'image' && featured.creativeId !== null) {
+    const img = `<img src="${escapeHtml(base)}/ads/creative/${featured.creativeId}.png" alt="${escapeHtml(featured.advertiser || 'advertisement')}" />`;
+    const linked = featured.clickUrl
+      ? `<a href="${escapeHtml(featured.clickUrl)}" target="_blank" rel="noopener nofollow sponsored">${img}</a>`
+      : img;
+    fe.innerHTML = `<div>${linked}${ctaLinkHtml(featured)}</div>`;
+  } else if (featured && featured.kind === 'text' && featured.text) {
+    fe.innerHTML = `<div class="gz-house"><b>${escapeHtml(featured.advertiser || '')}</b>${escapeHtml(featured.text)}${ctaLinkHtml(featured)}</div>`;
+  } else {
+    fe.innerHTML = `<div class="gz-house"><b>${escapeHtml(t('newspaper.houseAdTitle'))}</b>${escapeHtml(t('newspaper.houseAdBody'))}</div>`;
+  }
+
+  const cl = $('#gz-classifieds');
+  const ads = data?.classifieds ?? [];
+  if (ads.length === 0) {
+    cl.innerHTML = `<li>${escapeHtml(t('newspaper.classifiedsEmpty'))}</li>`;
+  } else {
+    cl.innerHTML = ads
+      .map((a) => {
+        const by = a.advertiser ? `<span class="gz-cl-by">${escapeHtml(t('newspaper.sponsoredBy', { advertiser: a.advertiser }))}</span>` : '';
+        const txt = escapeHtml(a.text);
+        const inner = a.clickUrl && !a.cta ? `<a href="${escapeHtml(a.clickUrl)}" target="_blank" rel="noopener nofollow sponsored">${txt}</a>` : txt;
+        return `<li>${inner}${by}${ctaLinkHtml(a)}</li>`;
+      })
+      .join('');
+  }
+}
+
+// Resolve once the player presses Continue AND assets have finished preloading.
+// The button is enabled only after `preload` settles, so a player cannot enter a
+// half-loaded world.
+function gateOnContinue(preload: Promise<void>): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const btn = $<HTMLButtonElement>('#np-continue');
+    let ready = false;
+    let clicked = false;
+    const tryFinish = (): void => {
+      if (ready && clicked) resolve();
+    };
+    btn.addEventListener('click', () => {
+      if (ready) {
+        clicked = true;
+        tryFinish();
+      }
+    });
+    preload.then(
+      () => {
+        ready = true;
+        btn.disabled = false;
+        $('#np-preload-fill').style.width = '100%';
+        $('#np-preload-status').textContent = t('newspaper.ready');
+        btn.focus();
+        tryFinish();
+      },
+      (err) => reject(err), // asset preload failed — surfaced by the caller
+    );
+  });
+}
+
 async function prepareWorldEntry(): Promise<boolean> {
   if (hasBegunWorldEntry) return false;
   if (isPhoneTouchDevice()) {
@@ -537,34 +669,36 @@ async function startGame(world: IWorld, offlineSim: Sim | null, online: ClientWo
   // Model/texture/HDRI fetches were kicked off at module import; the renderer
   // builds its scene synchronously, so everything must be resolved first.
   // The loading screen covers the gap - not a silent black screen.
-  enterLoadingState(t('loading.world'));
+  enterNewspaperState();
   document.body.classList.add('game-active');
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur();
   }
-  // Paint the loading screen before anything can block — assetsReady may resolve
-  // immediately when assets are already cached, and the scene build is synchronous.
+  // Paint the Gazette before anything can block.
   await nextPaint();
-  // Lazy locale flip: fetch the active locale's chunk and make it resident before the HUD
-  // renders (mountGameUi -> translatePage fans out hundreds of t() calls). It sits behind the
-  // loading screen (already painted above), so a stored non-en visitor never sees an English
-  // flash. This is now a REAL per-locale network request, so guard it: startGame is
-  // void-invoked (see the call sites) with no .catch, and English is always resident, so a
-  // failed fetch must fall back to English and keep booting rather than reject unhandled.
+  // Preload assets in the BACKGROUND while the player reads the paper — Continue
+  // is gated on this finishing, not on the newspaper fetch.
+  const preload = assetsReady((done, total) => setNewspaperPreloadProgress(done, total));
+  // Lazy locale flip: make the active locale resident before translating the
+  // Gazette shell + (later) the HUD. A failed fetch falls back to resident English.
   try {
     await ensureLocaleLoaded(getLanguage());
   } catch {
-    // Soft fallback: English is statically resident; boot in English (the picker can retry).
+    // Soft fallback: English is statically resident; boot in English.
   }
+  translatePage(); // localize the static Gazette labels now the locale is resident
+  // Fetch + render the live paper concurrently; it must never block Continue, so a
+  // slow/failed fetch just yields the lore-only fallback.
+  void fetchNewspaper().then((d) => renderNewspaper(d));
   try {
-    await assetsReady((done, total) => setLoadingProgress(done, total));
+    await gateOnContinue(preload);
   } catch (err) {
     fatalOverlay(t('loading.assetsFailed', { error: technicalErrorMessage(err) }));
     return;
   }
-  setLoadingStatus(t('loading.enteringWorld'));
-  // Let the final status + full progress bar paint before the synchronous
-  // Renderer/Hud build freezes the main thread for a beat.
+  // A brief loading screen covers the synchronous Renderer/Hud build that follows.
+  hideNewspaperScreen();
+  enterLoadingState(t('loading.enteringWorld'));
   await nextPaint();
   mountGameUi();
 
@@ -4047,3 +4181,9 @@ function fadeOutHomepageMusic(durationMs = 1600): void {
 
 wireStartScreens();
 initHomepageMusic();
+
+// Shareable partner entry point: /?advertise=1 opens the "place an ad" panel over
+// the start screen, so real-world advertisers can buy a slot without playing.
+if (new URLSearchParams(location.search).get('advertise') === '1') {
+  window.setTimeout(() => openAdBuyPanel(), 0);
+}

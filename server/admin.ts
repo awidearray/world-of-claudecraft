@@ -14,6 +14,12 @@ import {
   addFilterWord, chatModeratedAccounts, chatModerationForAccount, getFilterConfig, liftChatMute,
   listFilterWords, removeFilterWord, resetChatStrikes, updateFilterConfig, type WordTier,
 } from './chat_filter_db';
+import {
+  listReviewQueue, bookingsForCreative, adminListBookings, adRevenue,
+  setCreativeReview, getCreativePng, listPlacements, getActiveRateCard, setRateCard,
+} from './ads_db';
+import { refundAdBooking, burnApprovedAdWoc } from './ad_refund';
+import { adToBase } from './woc_config';
 import type { GameServer } from './game';
 
 // Admin API: everything under /admin/api/*. Auth is a bearer token whose
@@ -202,6 +208,70 @@ export async function handleAdminApi(
       return ok(res, config);
     }
 
+    // ── Ad marketplace CRM ──
+    if (path === '/admin/api/ads/review-queue') {
+      return ok(res, { rows: await listReviewQueue() });
+    }
+    const adReviewMatch = /^\/admin\/api\/ads\/creatives\/(\d+)\/(approve|reject)$/.exec(path);
+    if (req.method === 'POST' && adReviewMatch) {
+      const creativeId = Number(adReviewMatch[1]);
+      const action = adReviewMatch[2];
+      const body = await readBody(req);
+      const note = typeof body.note === 'string' ? body.note.slice(0, 280) : '';
+      await setCreativeReview(creativeId, action === 'approve' ? 'approved' : 'rejected', note, accountId);
+      // Fan out the money effect to every booking backed by this creative:
+      // approve → deferred $WOC burn (no-op for USDC/SOL); reject → refund.
+      const bookings = await bookingsForCreative(creativeId);
+      const results = [];
+      for (const b of bookings) {
+        if (action === 'approve') results.push({ bookingId: b.id, burn: (await burnApprovedAdWoc(b.id)).status });
+        else results.push({ bookingId: b.id, refund: (await refundAdBooking(b.id)).status });
+      }
+      return ok(res, { creativeId, action, results });
+    }
+    const adPreviewMatch = /^\/admin\/api\/ads\/creatives\/(\d+)\/png$/.exec(path);
+    if (req.method === 'GET' && adPreviewMatch) {
+      const png = await getCreativePng(Number(adPreviewMatch[1]), false); // admin previews pending art
+      if (!png) return fail(res, 404, 'no image');
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': png.length, 'Cache-Control': 'no-store' });
+      res.end(png);
+      return;
+    }
+    if (path === '/admin/api/ads/bookings') {
+      const status = url.searchParams.get('status') || undefined;
+      return ok(res, { rows: await adminListBookings({ status, limit: 200 }) });
+    }
+    const adBookingRejectMatch = /^\/admin\/api\/ads\/bookings\/(\d+)\/reject$/.exec(path);
+    if (req.method === 'POST' && adBookingRejectMatch) {
+      return ok(res, await refundAdBooking(Number(adBookingRejectMatch[1])));
+    }
+    if (path === '/admin/api/ads/revenue') {
+      return ok(res, { rows: await adRevenue() });
+    }
+    if (req.method === 'GET' && path === '/admin/api/ads/rate-card') {
+      const placements = await listPlacements();
+      const cards = await Promise.all(
+        placements.map(async (p) => ({ placement: p.id, displayName: p.display_name, creativeType: p.creative_type, card: await getActiveRateCard(p.id) })),
+      );
+      return ok(res, { cards });
+    }
+    if (req.method === 'POST' && path === '/admin/api/ads/rate-card') {
+      const body = await readBody(req);
+      const placement = String(body.placement ?? '');
+      if (!placement) return fail(res, 400, 'placement is required');
+      const minM = Math.max(1, Math.trunc(Number(body.minMinutes) || 1));
+      const maxM = Math.max(minM, Math.trunc(Number(body.maxMinutes) || 1440));
+      const id = await setRateCard({
+        placementId: placement,
+        usdcBase: adToBase('USDC', Number(body.usdcPerMin) || 0),
+        solBase: adToBase('SOL', Number(body.solPerMin) || 0),
+        wocBase: adToBase('WOC', Number(body.wocPerMin) || 0),
+        minMinutes: minM,
+        maxMinutes: maxM,
+      });
+      return ok(res, { rateCardId: id });
+    }
+
     if (req.method !== 'GET') return fail(res, 405, 'method not allowed');
 
     if (path === '/admin/api/chat-filter') {
@@ -261,6 +331,7 @@ export async function handleAdminApi(
       const dir = url.searchParams.get('dir') === 'asc' ? 'asc' : 'desc';
       return ok(res, await listCharacters(sort, dir, page, limit));
     }
+
 
     fail(res, 404, 'unknown admin endpoint');
   } catch (err) {

@@ -14,10 +14,13 @@ import {
 import { normalizeMoveFacing, sanitizeMoveInput } from '../sim/move_input';
 import {
   isOverheadEmoteId,
-  type AccountCosmetics, type ArenaInfo, type CharacterSearchResult, type DuelInfo, type FriendInfo,
+  type AccountCosmetics, type AdActiveMap, type AdContent, type ArenaInfo, type CharacterSearchResult, type DuelInfo, type FriendInfo,
   type IWorld, type LeaderboardEntry, type MarketInfo, type MountTrialLeaderEntry, type OverheadEmoteId, type PartyInfo,
   type PresenceStatus, type RaceInfo, type SocialInfo, type TradeInfo,
 } from '../world_api';
+
+// Re-export so existing consumers (src/main.ts) can keep importing from net/online.
+export type { AdContent, AdActiveMap } from '../world_api';
 
 // ---------------------------------------------------------------------------
 // REST
@@ -132,6 +135,21 @@ export class Api {
     } catch {
       return { online: false, players: 0 };
     }
+  }
+
+  // ── The Claudemoon Gazette (public ad reads) ──
+  // The newspaper interstitial fetches this; tolerant callers fall back to a
+  // lore-only paper when the realm has no ad data.
+  async adNewspaper(): Promise<{ featured: AdContent | null; classifieds: AdContent[] }> {
+    const res = await fetch(`${this.base}/api/ads/newspaper`, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error(`newspaper request failed (${res.status})`);
+    return res.json();
+  }
+
+  async adActive(): Promise<AdActiveMap> {
+    const res = await fetch(`${this.base}/api/ads/active`, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error(`active-ads request failed (${res.status})`);
+    return (await res.json()).active ?? {};
   }
 
   private async post(path: string, body: unknown): Promise<any> {
@@ -466,6 +484,8 @@ export class ClientWorld implements IWorld {
   // chat locally when the player's filter is on. Hard words never arrive here.
   profanityWords: string[] = [];
   private profanityDirty = false;
+  private activeAdsMap: AdActiveMap = {};
+  private adsDirty = false;
   private pendingQuestCommands = new Map<string, 'accept' | 'turnin'>();
   private mouselookFacing: number | null = null;
   private sendTimer: number | undefined;
@@ -636,6 +656,13 @@ export class ClientWorld implements IWorld {
       this.socialDirty = true;
       return;
     }
+    if (msg.t === 'ad') {
+      // The current live ad(s) per placement (billboards / ticker). Sent on join
+      // and whenever the active set changes. Presentation reads it via activeAds().
+      this.activeAdsMap = msg.active && typeof msg.active === 'object' ? (msg.active as AdActiveMap) : {};
+      this.adsDirty = true;
+      return;
+    }
     if (msg.t === 'socialpos') {
       // live position refresh for friends/guildmates (drives the world map);
       // merge into the existing roster in place — snapshots own online/offline.
@@ -667,6 +694,18 @@ export class ClientWorld implements IWorld {
   consumeProfanityChanged(): boolean {
     const v = this.profanityDirty;
     this.profanityDirty = false;
+    return v;
+  }
+
+  activeAds(): AdActiveMap {
+    return this.activeAdsMap;
+  }
+
+  // True once since the last call if the active-ad set changed — lets the
+  // renderer/HUD refresh billboards + the ticker only when needed.
+  consumeAdsChanged(): boolean {
+    const v = this.adsDirty;
+    this.adsDirty = false;
     return v;
   }
 

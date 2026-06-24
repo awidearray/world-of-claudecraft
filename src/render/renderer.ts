@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Entity, SimEvent } from '../sim/types';
 import type { CourseDef } from '../sim/types';
 import { COURSES } from '../sim/content/courses';
-import { OVERHEAD_EMOTES, type IWorld } from '../world_api';
+import { OVERHEAD_EMOTES, type IWorld, type AdActiveMap } from '../world_api';
 import { groundHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
 import {
   MOBS, ABILITIES, DUNGEON_X_THRESHOLD, DUNGEON_LIST, QUESTS,
@@ -17,6 +17,7 @@ import { isVisuallyDead } from './anim_state';
 import { LocoTrack, newLocoTrack, updateLocomotion } from './locomotion';
 import type { SpatialAudioSink, Surface } from './audio_sink';
 import { buildProps } from './props';
+import { BillboardsView } from './billboards';
 import { plankTexture, sparkleTexture } from './textures';
 import { DungeonInteriors, ensureDungeonAssets } from './dungeon';
 import { buildGroundQuestObject } from './quest_objects';
@@ -290,6 +291,8 @@ export class Renderer {
   private motes: MotesView;
   private birds: BirdsView;
   private impactSite: ImpactSiteView;
+  private billboards: BillboardsView;
+  private lastActiveAds: AdActiveMap | null = null;
   private fogScratch = new THREE.Color();
   private flames: THREE.Mesh[];
   private fireLights: THREE.PointLight[];
@@ -524,6 +527,11 @@ export class Renderer {
     this.scene.add(props.group);
     this.flames = props.flames;
     this.fireLights = props.fireLights;
+    // In-world advertising billboards (framed planes at fixed town locations).
+    this.billboards = new BillboardsView(this.sim.cfg.seed);
+    this.scene.add(this.billboards.group);
+    this.billboards.update(this.sim.activeAds());
+    this.lastActiveAds = this.sim.activeAds();
     this.propsView = props;
 
     // selection ring — a classic target reticle: a base ring plus four
@@ -1707,6 +1715,14 @@ export class Renderer {
     // Fully-fogged terrain chunks / tree buckets are dropped before the
     // frustum; camera-ghost props hide against the current eye-to-camera ray.
     const fogFar = (this.scene.fog as THREE.Fog).far;
+    // Refresh billboard creatives only when the active-ad set changed. activeAds()
+    // returns a stable reference per world that is reassigned only on a change, so
+    // this identity check is allocation-free and safe for multiple consumers.
+    const ads = this.sim.activeAds();
+    if (ads !== this.lastActiveAds) {
+      this.lastActiveAds = ads;
+      this.billboards.update(ads);
+    }
     this.terrainView.update(this.camera.position.x, this.camera.position.z, fogFar);
     this.propsView.update(
       this.camera.position.x, this.camera.position.y, this.camera.position.z,

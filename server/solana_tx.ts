@@ -30,6 +30,20 @@ export interface FinalizedTx {
   preTokenBalances: TokenBalance[];
   postTokenBalances: TokenBalance[];
   instructions: ParsedIx[];
+  // Native-SOL accounting. accountKeys is index-aligned with preBalances /
+  // postBalances (lamports). In jsonParsed encoding `message.accountKeys`
+  // already includes lookup-table-loaded addresses, so these three stay aligned.
+  accountKeys: string[];
+  preBalances: bigint[];
+  postBalances: bigint[];
+  feeLamports: bigint;
+}
+
+// Parse a JSON number/string lamport value to bigint, tolerating either shape.
+function toLamports(v: unknown): bigint {
+  if (typeof v === 'number' && Number.isFinite(v)) return BigInt(Math.round(v));
+  if (typeof v === 'string' && /^[0-9]+$/.test(v)) return BigInt(v);
+  return 0n;
 }
 
 /**
@@ -61,12 +75,23 @@ export async function getFinalizedTx(signature: string): Promise<FinalizedTx | n
     const inner: ParsedIx[] = Array.isArray(r.meta?.innerInstructions)
       ? r.meta.innerInstructions.flatMap((g: any) => (Array.isArray(g?.instructions) ? g.instructions : []))
       : [];
+    // jsonParsed accountKeys is an array of { pubkey, signer, writable, source };
+    // it includes lookup-table-loaded addresses and is index-aligned with the
+    // pre/post balance arrays. Defensively fall back to a raw string array.
+    const rawKeys: any[] = Array.isArray(message?.accountKeys) ? message.accountKeys : [];
+    const accountKeys: string[] = rawKeys.map((k) => (typeof k === 'string' ? k : String(k?.pubkey ?? '')));
+    const preBalances: bigint[] = Array.isArray(r.meta?.preBalances) ? r.meta.preBalances.map(toLamports) : [];
+    const postBalances: bigint[] = Array.isArray(r.meta?.postBalances) ? r.meta.postBalances.map(toLamports) : [];
     return {
       signature,
       err: r.meta?.err ?? null,
       preTokenBalances: Array.isArray(r.meta?.preTokenBalances) ? r.meta.preTokenBalances : [],
       postTokenBalances: Array.isArray(r.meta?.postTokenBalances) ? r.meta.postTokenBalances : [],
       instructions: [...top, ...inner],
+      accountKeys,
+      preBalances,
+      postBalances,
+      feeLamports: toLamports(r.meta?.fee),
     };
   } catch {
     return null;
@@ -141,4 +166,32 @@ export function hasMemo(tx: FinalizedTx, memo: string): boolean {
     if (typeof ix.parsed === 'string' && ix.parsed === memo) return true;
   }
   return false;
+}
+
+/**
+ * Net change in `owner`'s **native SOL** balance (lamports) across this tx,
+ * summed over every account index whose key is `owner`. Negative = the owner
+ * paid out. This is the lamport analogue of ownerTokenDeltaBase: a self-transfer
+ * nets ~zero (minus fees), so only real SOL moving in/out moves the needle — a
+ * crafted tx cannot fake a treasury credit it never funded.
+ */
+export function lamportsDeltaFor(tx: FinalizedTx, owner: string): bigint {
+  let delta = 0n;
+  const n = Math.min(tx.accountKeys.length, tx.preBalances.length, tx.postBalances.length);
+  for (let i = 0; i < n; i++) {
+    if (tx.accountKeys[i] === owner) delta += tx.postBalances[i] - tx.preBalances[i];
+  }
+  return delta;
+}
+
+/** Lamports `owner` was credited (net positive delta); 0 if they didn't gain. */
+export function lamportsCreditedTo(tx: FinalizedTx, owner: string): bigint {
+  const d = lamportsDeltaFor(tx, owner);
+  return d > 0n ? d : 0n;
+}
+
+/** Lamports `owner` spent (net negative delta, positive); 0 if they didn't spend. */
+export function lamportsSpentBy(tx: FinalizedTx, owner: string): bigint {
+  const d = lamportsDeltaFor(tx, owner);
+  return d < 0n ? -d : 0n;
 }

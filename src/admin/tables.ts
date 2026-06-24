@@ -3,7 +3,93 @@ import { classLabel, zoneLabel, t } from './i18n';
 import type {
   AccountDetail, AccountRow, CharacterRow, ChatFilterData, ChatModeratedAccount,
   ChatModerationDetail, FilterWord, LivePlayer, ModerationAccountDetail, ModerationQueueRow,
+  AdReviewRow, AdBookingRow, AdRevenueRow, AdRateCardRow,
 } from './types';
+
+// ── Ad marketplace CRM renderers ──
+const AD_DECIMALS: Record<string, number> = { USDC: 6, SOL: 9, WOC: 6 };
+function fmtAsset(base: string, asset: string): string {
+  const dec = AD_DECIMALS[asset] ?? 6;
+  const n = Number(BigInt(base || '0')) / 10 ** dec;
+  return `${n.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${asset}`;
+}
+function shortPubkey(k: string): string {
+  return k.length > 12 ? `${k.slice(0, 4)}…${k.slice(-4)}` : k;
+}
+
+export function renderAdRevenue(rows: AdRevenueRow[]): string {
+  if (rows.length === 0) return `<div class="panel stat"><div class="v">0</div><div class="k">${t('ads.noRevenue')}</div></div>`;
+  return rows
+    .map(
+      (r) =>
+        `<div class="panel stat"><div class="v">${escapeHtml(fmtAsset(r.collected_base, r.asset))}</div>` +
+        `<div class="k">${t('ads.collected')} · ${r.bookings} ${t('ads.bookingsWord')} · ${t('ads.refunded')} ${escapeHtml(fmtAsset(r.refunded_base, r.asset))}</div></div>`,
+    )
+    .join('');
+}
+
+export function renderAdReviewQueue(rows: AdReviewRow[]): string {
+  if (rows.length === 0) return `<div class="empty">${t('ads.reviewEmpty')}</div>`;
+  return rows
+    .map((r) => {
+      const who = r.advertiser_name ? escapeHtml(r.advertiser_name) : escapeHtml(shortPubkey(r.advertiser_pubkey));
+      const body =
+        r.kind === 'image'
+          ? `<img class="ad-preview" id="adimg-${r.id}" alt="creative ${r.id}" /><div class="ad-meta">${r.width ?? '?'}×${r.height ?? '?'}</div>`
+          : `<div class="ad-text">${escapeHtml(r.creative_text)}</div>`;
+      const cta = r.cta ? `<div class="ad-meta">${t('ads.cta')}: ${escapeHtml(r.cta)}</div>` : '';
+      const url = r.click_url ? `<div class="ad-meta">${escapeHtml(r.click_url)}</div>` : '';
+      return `<div class="ad-card">
+        <div class="ad-card-head"><span>${who}</span><span class="hint">${escapeHtml(t('ads.bookingsOnIt', { n: String(r.booking_count) }))}</span></div>
+        ${body}${cta}${url}
+        <div class="ad-actions">
+          <button class="btn-approve" data-ad-approve="${r.id}">${t('ads.approve')}</button>
+          <button class="btn-reject" data-ad-reject="${r.id}">${t('ads.reject')}</button>
+        </div>
+      </div>`;
+    })
+    .join('');
+}
+
+export function renderAdBookings(rows: AdBookingRow[]): string {
+  if (rows.length === 0) return `<div class="empty">${t('ads.bookingsEmpty')}</div>`;
+  const body = rows
+    .map((b) => {
+      const when = fmtDate(new Date(b.start_sec * 1000).toISOString());
+      const terminal = ['refunded', 'rejected', 'cancelled', 'expired'].includes(b.status);
+      const action = terminal ? '' : `<button class="btn-reject" data-ad-booking-reject="${b.id}">${t('ads.refund')}</button>`;
+      return `<tr>
+        <td>${escapeHtml(when)}</td><td>${escapeHtml(b.placement_id)}</td>
+        <td>${escapeHtml(b.advertiser_name || shortPubkey(b.advertiser_pubkey))}</td>
+        <td>${escapeHtml(fmtAsset(b.locked_price_base, b.asset))}</td>
+        <td><span class="badge">${escapeHtml(b.status)}</span></td><td>${action}</td>
+      </tr>`;
+    })
+    .join('');
+  return `<table class="data"><thead><tr>
+    <th>${t('ads.colWhen')}</th><th>${t('ads.colPlacement')}</th><th>${t('ads.colAdvertiser')}</th>
+    <th>${t('ads.colPrice')}</th><th>${t('ads.colStatus')}</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+}
+
+export function renderAdRateCard(rows: AdRateCardRow[]): string {
+  return rows
+    .map((r) => {
+      const c = r.card;
+      const usdc = c ? Number(BigInt(c.price_per_min_usdc)) / 1e6 : 0;
+      const sol = c ? Number(BigInt(c.price_per_min_sol)) / 1e9 : 0;
+      const woc = c ? Number(BigInt(c.price_per_min_woc)) / 1e6 : 0;
+      return `<div class="ad-rate" data-rate-placement="${escapeHtml(r.placement)}">
+        <div class="ad-rate-name">${escapeHtml(r.displayName)} <span class="hint">${escapeHtml(r.creativeType)}</span></div>
+        <label>USDC/min <input type="number" step="0.000001" min="0" data-rate="usdc" value="${usdc}"></label>
+        <label>SOL/min <input type="number" step="0.000001" min="0" data-rate="sol" value="${sol}"></label>
+        <label>$WOC/min <input type="number" step="0.000001" min="0" data-rate="woc" value="${woc}"></label>
+        <label>${t('ads.minMin')} <input type="number" min="1" data-rate="min" value="${c?.min_minutes ?? 1}"></label>
+        <label>${t('ads.maxMin')} <input type="number" min="1" data-rate="max" value="${c?.max_minutes ?? 1440}"></label>
+        <button class="btn-approve" data-ad-rate-save="${escapeHtml(r.placement)}">${t('ads.save')}</button>
+      </div>`;
+    })
+    .join('');
+}
 
 // Pure HTML-string renderers for the dashboard tables. All dynamic values go
 // through escapeHtml — usernames and character names are player-controlled.

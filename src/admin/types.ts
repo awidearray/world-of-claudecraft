@@ -195,3 +195,48 @@ export interface ChatFilterData {
   config: EscalationConfig;
   accounts: ChatModeratedAccount[];
 }
+
+// ── Ad marketplace CRM ──
+export interface AdReviewRow {
+  id: number;
+  advertiser_pubkey: string;
+  advertiser_name: string;
+  kind: 'image' | 'text';
+  creative_text: string;
+  cta: string;
+  click_url: string;
+  width: number | null;
+  height: number | null;
+  created_at: string;
+  booking_count: number;
+}
+export interface AdBookingRow {
+  id: number;
+  placement_id: string;
+  advertiser_pubkey: string;
+  advertiser_name: string;
+  asset: 'USDC' | 'SOL' | 'WOC';
+  status: string;
+  review_status: string | null;
+  locked_price_base: string;
+  start_sec: number;
+  end_sec: number;
+}
+export interface AdRevenueRow {
+  asset: 'USDC' | 'SOL' | 'WOC';
+  collected_base: string;
+  bookings: number;
+  refunded_base: string;
+}
+export interface AdRateCardRow {
+  placement: string;
+  displayName: string;
+  creativeType: 'image' | 'text';
+  card: {
+    price_per_min_usdc: string;
+    price_per_min_sol: string;
+    price_per_min_woc: string;
+    min_minutes: number;
+    max_minutes: number;
+  } | null;
+}

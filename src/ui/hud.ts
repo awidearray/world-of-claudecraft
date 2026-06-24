@@ -1,5 +1,5 @@
 import type { ResolvedAbility } from '../sim/sim';
-import { OVERHEAD_EMOTES, isOverheadEmoteId, type ArenaFormat, type FriendInfo, type IWorld, type LeaderboardEntry, type MarketInfo, type OverheadEmoteId } from '../world_api';
+import { OVERHEAD_EMOTES, isOverheadEmoteId, type AdActiveMap, type ArenaFormat, type FriendInfo, type IWorld, type LeaderboardEntry, type MarketInfo, type OverheadEmoteId } from '../world_api';
 import { Renderer } from '../render/renderer';
 import { CharacterPreview } from '../render/characters';
 import { portraitChipHtml, hydratePortraits } from './portrait_chip';
@@ -474,6 +474,7 @@ export class Hud {
   private lastHudFastAt = 0;
   private lastHudMediumAt = 0;
   private lastHudSlowAt = 0;
+  private lastTickerAds: AdActiveMap | null = null;
   private charPreview: CharacterPreview | null = null;
   private charPreviewCanvas: HTMLCanvasElement | null = null;
   // Cosmetic skin-select event overlay (opened by the skinEvent cue). The shared
@@ -2176,6 +2177,21 @@ export class Hud {
     el.classList.add('active');
   }
 
+  // Show/hide the town-crier ticker with the placement's current sponsor. Uses
+  // textContent (XSS-safe) for the advertiser-controlled copy.
+  private refreshAdTicker(): void {
+    const el = document.getElementById('ad-ticker');
+    const txt = document.getElementById('ad-ticker-text');
+    if (!el || !txt) return;
+    const ad = (this.sim.activeAds().ticker ?? [])[0] ?? null;
+    if (!ad || !ad.text) {
+      el.hidden = true;
+      return;
+    }
+    txt.textContent = ad.advertiser ? `${ad.text}  ·  ${ad.advertiser}` : ad.text;
+    el.hidden = false;
+  }
+
   update(): void {
     const sim = this.sim;
     const p = sim.player;
@@ -2186,6 +2202,14 @@ export class Hud {
     if (mediumHud) this.lastHudMediumAt = now;
     const slowHud = now - this.lastHudSlowAt >= 500;
     if (slowHud) this.lastHudSlowAt = now;
+
+    // Town-crier ad ticker: refresh only when the active-ad set changes (identity
+    // guard — activeAds() returns a stable reference until the set changes).
+    const ads = sim.activeAds();
+    if (ads !== this.lastTickerAds) {
+      this.lastTickerAds = ads;
+      this.refreshAdTicker();
+    }
 
     this.meters.update();
     this.syncActiveHotbarForm();
