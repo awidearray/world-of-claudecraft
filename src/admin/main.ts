@@ -5,10 +5,12 @@ import { classLabel, t, localizeAdminError, ensureAdminLocaleLoaded, adminLangua
 import {
   renderAccountDetail, renderAccountsTable, renderCharactersTable, renderChatFilter,
   renderModerationDetail, renderModerationQueue, renderOnlineTable, renderPager,
+  renderAdReviewQueue, renderAdBookings, renderAdRevenue, renderAdRateCard,
 } from './tables';
 import type {
   AccountDetail, AccountRow, Activity, CharacterRow, ChatFilterData, LivePlayer,
   ModerationAccountDetail, ModerationQueueRow, Overview, Paginated,
+  AdReviewRow, AdBookingRow, AdRevenueRow, AdRateCardRow,
 } from './types';
 
 const LIVE_REFRESH_MS = 5_000;
@@ -32,7 +34,7 @@ const accountsState: TableState = { page: 1, search: '', sort: 'id', dir: 'desc'
 const charactersState: TableState = { page: 1, search: '', sort: 'level', dir: 'desc' };
 let liveTimer: number | null = null;
 let activityTimer: number | null = null;
-type AdminPage = 'overview' | 'moderation' | 'chat-filter';
+type AdminPage = 'overview' | 'moderation' | 'chat-filter' | 'ads';
 let activePage: AdminPage = 'overview';
 let pendingModerationAction: { endpoint: string; body: unknown; accountId: number; source: 'account' | 'moderation' } | null = null;
 
@@ -86,6 +88,80 @@ function showPage(page: AdminPage): void {
   });
   if (page === 'moderation') void refreshModeration();
   if (page === 'chat-filter') void refreshChatFilter();
+  if (page === 'ads') void refreshAds();
+}
+
+async function refreshAds(): Promise<void> {
+  try {
+    const [rev, review, bookings, rate] = await Promise.all([
+      apiGet<{ rows: AdRevenueRow[] }>('/admin/api/ads/revenue'),
+      apiGet<{ rows: AdReviewRow[] }>('/admin/api/ads/review-queue'),
+      apiGet<{ rows: AdBookingRow[] }>('/admin/api/ads/bookings'),
+      apiGet<{ cards: AdRateCardRow[] }>('/admin/api/ads/rate-card'),
+    ]);
+    $('ad-revenue').innerHTML = renderAdRevenue(rev.rows);
+    $('ad-review').innerHTML = renderAdReviewQueue(review.rows);
+    $('ad-bookings').innerHTML = renderAdBookings(bookings.rows);
+    $('ad-rate-card').innerHTML = renderAdRateCard(rate.cards);
+    // Image creatives need the admin (auth'd) preview route — load each via fetch→blob.
+    for (const r of review.rows) {
+      if (r.kind !== 'image') continue;
+      void loadAdPreview(r.id);
+    }
+  } catch (err) {
+    if (!handleAuthFailure(err)) $('ad-review').innerHTML = `<div class="empty">${t('ads.loadFailed')}</div>`;
+  }
+}
+
+// Fetch a pending image creative with the bearer token and show it as a blob URL.
+async function loadAdPreview(id: number): Promise<void> {
+  const img = document.getElementById(`adimg-${id}`) as HTMLImageElement | null;
+  if (!img) return;
+  try {
+    const res = await fetch(`/admin/api/ads/creatives/${id}/png`, { headers: { Authorization: `Bearer ${getToken() ?? ''}` } });
+    if (!res.ok) return;
+    img.src = URL.createObjectURL(await res.blob());
+  } catch {
+    /* leave the broken-image state */
+  }
+}
+
+function wireAdEvents(): void {
+  const page = document.getElementById('page-ads');
+  if (!page) return;
+  page.addEventListener('click', (e) => {
+    const el = e.target as HTMLElement;
+    const approve = el.closest<HTMLElement>('[data-ad-approve]');
+    if (approve) return void adReview(Number(approve.dataset.adApprove), 'approve');
+    const reject = el.closest<HTMLElement>('[data-ad-reject]');
+    if (reject) return void adReview(Number(reject.dataset.adReject), 'reject');
+    const bookingReject = el.closest<HTMLElement>('[data-ad-booking-reject]');
+    if (bookingReject) return void adAction(`/admin/api/ads/bookings/${Number(bookingReject.dataset.adBookingReject)}/reject`, {});
+    const rateSave = el.closest<HTMLElement>('[data-ad-rate-save]');
+    if (rateSave) return void adRateSave(rateSave.dataset.adRateSave ?? '');
+  });
+}
+
+async function adAction(path: string, body: unknown): Promise<void> {
+  try {
+    await apiPost(path, body);
+    await refreshAds();
+  } catch (err) {
+    if (!handleAuthFailure(err)) console.error('ad admin action failed:', err);
+  }
+}
+function adReview(creativeId: number, action: 'approve' | 'reject'): Promise<void> {
+  return adAction(`/admin/api/ads/creatives/${creativeId}/${action}`, {});
+}
+function adRateSave(placement: string): Promise<void> {
+  const row = document.querySelector<HTMLElement>(`[data-rate-placement="${CSS.escape(placement)}"]`);
+  if (!row) return Promise.resolve();
+  const val = (k: string) => Number((row.querySelector(`[data-rate="${k}"]`) as HTMLInputElement | null)?.value) || 0;
+  return adAction('/admin/api/ads/rate-card', {
+    placement,
+    usdcPerMin: val('usdc'), solPerMin: val('sol'), wocPerMin: val('woc'),
+    minMinutes: val('min'), maxMinutes: val('max'),
+  });
 }
 
 async function refreshChatFilter(): Promise<void> {
@@ -489,10 +565,11 @@ function wireEvents(): void {
   $('admin-tabs').addEventListener('click', (e) => {
     const tab = (e.target as HTMLElement).closest<HTMLButtonElement>('.admin-tab');
     const page = tab?.dataset.adminPage;
-    if (page === 'overview' || page === 'moderation' || page === 'chat-filter') showPage(page);
+    if (page === 'overview' || page === 'moderation' || page === 'chat-filter' || page === 'ads') showPage(page);
   });
 
   wireChatFilterEvents();
+  wireAdEvents();
 
   let searchTimer: number | null = null;
   $('account-search').addEventListener('input', (e) => {

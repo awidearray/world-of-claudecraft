@@ -9,7 +9,7 @@ import './wallet-polyfill';
 import { createAppKit } from '@reown/appkit';
 import { solana, solanaDevnet } from '@reown/appkit/networks';
 import { SolanaAdapter } from '@reown/appkit-adapter-solana';
-import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, TransactionInstruction, SystemProgram } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
   createBurnCheckedInstruction,
@@ -200,6 +200,69 @@ export async function payWocBurn(quote: WocBurnQuote): Promise<string> {
   }
   // Wait for confirmation so the follow-up /confirm doesn't immediately 409 on
   // an unfinalized tx (the server still independently re-verifies finality).
+  await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
+  return signature;
+}
+
+// ── Ad marketplace payments (USDC / SOL / $WOC) ──────────────────────────────
+// What /api/ads/quote hands back. The whole amount goes to the asset treasury
+// (no client-side burn — the $WOC burn is deferred server-side until admin
+// approval, so a rejected booking refunds in full). `mint` is null for native
+// SOL; `treasury` is a wallet owner for USDC/$WOC and a system account for SOL.
+export interface AdPayQuote {
+  asset: 'USDC' | 'SOL' | 'WOC';
+  mint: string | null;
+  decimals: number;
+  amountBase: string;
+  treasury: string;
+  memo: string;
+}
+
+/**
+ * Build, sign, and submit the on-chain payment for an ad quote: a single transfer
+ * of `amountBase` into the asset treasury plus the quote memo. Returns the
+ * confirmed signature for /api/ads/confirm. The wallet only signs; we submit to
+ * our RPC so it lands regardless of the wallet's selected network.
+ */
+export async function payAdQuote(quote: AdPayQuote): Promise<string> {
+  const provider = initWallet().getProvider<SolanaSignProvider>('solana');
+  const address = currentWallet().address;
+  if (!provider || !address) throw new Error('connect a wallet first');
+
+  const owner = new PublicKey(address);
+  const treasury = new PublicKey(quote.treasury);
+  const amountBase = BigInt(quote.amountBase);
+  if (amountBase <= 0n) throw new Error('invalid amount');
+
+  const ixs: TransactionInstruction[] = [];
+  if (quote.asset === 'SOL') {
+    ixs.push(SystemProgram.transfer({ fromPubkey: owner, toPubkey: treasury, lamports: amountBase }));
+  } else {
+    if (!quote.mint) throw new Error('missing mint for token payment');
+    const mint = new PublicKey(quote.mint);
+    const ownerAta = getAssociatedTokenAddressSync(mint, owner);
+    const treasuryAta = getAssociatedTokenAddressSync(mint, treasury);
+    // Create the treasury's token account if needed (no-op otherwise); payer funds rent.
+    ixs.push(createAssociatedTokenAccountIdempotentInstruction(owner, treasuryAta, treasury, mint));
+    ixs.push(createTransferCheckedInstruction(ownerAta, mint, treasuryAta, owner, amountBase, quote.decimals));
+  }
+  // Memo last: binds this payment to the server-issued quote.
+  ixs.push(new TransactionInstruction({ programId: MEMO_PROGRAM_ID, keys: [], data: Buffer.from(quote.memo, 'utf8') }));
+
+  const connection = getConnection();
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+  const tx = new Transaction({ feePayer: owner, blockhash, lastValidBlockHeight });
+  tx.add(...ixs);
+
+  let signature: string;
+  if (provider.signTransaction) {
+    const signed = await provider.signTransaction(tx);
+    signature = await connection.sendRawTransaction(signed.serialize());
+  } else if (provider.signAndSendTransaction) {
+    ({ signature } = await provider.signAndSendTransaction(tx));
+  } else {
+    throw new Error('this wallet cannot sign transactions');
+  }
   await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
   return signature;
 }

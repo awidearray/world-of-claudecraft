@@ -210,6 +210,23 @@
       font-size: 16px !important;
     }
   }
+  /* Ad marketplace CRM */
+  #ad-revenue { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .ad-card { border: 1px solid var(--border, #3a3320); border-radius: 6px; padding: 12px; margin: 10px 0; background: #00000026; }
+  .ad-card-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; font-weight: 600; }
+  .ad-preview { max-width: 320px; max-height: 160px; border: 1px solid var(--border, #3a3320); display: block; }
+  .ad-text { font-size: 15px; padding: 8px; background: #0006; border-radius: 4px; }
+  .ad-meta { font-size: 12px; color: var(--text-dim); margin-top: 4px; word-break: break-all; }
+  .ad-actions { display: flex; gap: 10px; margin-top: 10px; }
+  .btn-approve, .btn-reject { min-height: 38px; padding: 0 16px; border-radius: 5px; cursor: pointer; font-size: 14px; border: 1px solid; background: #0006; }
+  .btn-approve { color: #7fe08a; border-color: #2f7a3a; }
+  .btn-reject { color: #ff7a5e; border-color: #b34a3a; }
+  .ad-rate { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border, #3a3320); }
+  .ad-rate-name { flex: 1 1 160px; font-weight: 600; }
+  .ad-rate label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--text-dim); }
+  .ad-rate input { width: 110px; font-size: 16px; padding: 6px 8px; }
+  table.data { width: 100%; border-collapse: collapse; }
+  table.data th, table.data td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border, #3a3320); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -235,6 +252,7 @@
       <button class="admin-tab active" data-admin-page="overview" data-i18n="nav.overview">Overview</button>
       <button class="admin-tab" data-admin-page="moderation" data-i18n="nav.moderation">Moderation</button>
       <button class="admin-tab" data-admin-page="chat-filter" data-i18n="nav.chatFilter">Chat Filter</button>
+      <button class="admin-tab" data-admin-page="ads" data-i18n="nav.ads">Ads</button>
     </nav>
 
     <main id="page-overview" class="admin-page active">
@@ -274,6 +292,22 @@
     <main id="page-chat-filter" class="admin-page">
       <section>
         <div id="chat-filter"></div>
+      </section>
+    </main>
+
+    <main id="page-ads" class="admin-page">
+      <section id="ad-revenue"></section>
+      <section class="panel">
+        <div class="panel-title"><span data-i18n="ads.reviewTitle">Creative review queue</span> <span class="hint" data-i18n="ads.reviewHint">approve to allow live; reject to refund</span></div>
+        <div id="ad-review"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-title"><span data-i18n="ads.rateTitle">Rate card</span></div>
+        <div id="ad-rate-card"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-title"><span data-i18n="ads.bookingsTitle">Bookings</span></div>
+        <div id="ad-bookings"></div>
       </section>
     </main>
   </div>

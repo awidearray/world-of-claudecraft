@@ -24,6 +24,7 @@ import { REALM } from './realm';
 import { isOverheadEmoteId } from '../src/world_api';
 import * as antibot from './antibot';
 import type { BotTracker } from './antibot';
+import { adService, type ActiveAdMap } from './ad_service';
 
 const WORLD_SEED = 20061;
 const ALDRIC_METEOR_QUEST_ID = 'q_aldrics_fallen_star';
@@ -788,6 +789,9 @@ export class GameServer {
     // Only the entering player sees their own world-entry notice; we don't
     // broadcast it to everyone (and likewise don't broadcast departures below).
     this.send(session, { t: 'events', list: [{ type: 'log', text: `${name} has entered World of ClaudeCraft.`, color: '#ffd100' }] });
+    // Bootstrap the current live ads so billboards/ticker render immediately
+    // (subsequent changes arrive via the broadcast in tickAds).
+    this.send(session, { t: 'ad', active: adService.getActive() });
     void this.initSocial(session);
     // Stamp the $WOC holder-tier flair (best-effort: a balance read must never
     // affect joining the world).
@@ -919,6 +923,27 @@ export class GameServer {
       await saveMarketState(this.sim.serializeMarket());
     } catch (err) {
       console.error('failed to save world market:', err);
+    }
+  }
+
+  // ── In-game advertising: live-ad scheduler + broadcast ─────────────────────
+  // Prime the active-ad map once at boot so the first joiners see live ads.
+  async loadAds(): Promise<void> {
+    await adService.recompute();
+  }
+
+  // Run on a fixed interval (main.ts): advance booking statuses (reserve sweep,
+  // go-live, expire) and, when the active-ad set changes, push it to every
+  // connected client. Each realm process runs this against the shared DB and
+  // broadcasts to its own clients, so all realms converge within one tick.
+  async tickAds(): Promise<void> {
+    const { changed, active } = await adService.recompute();
+    if (changed) this.broadcastAds(active);
+  }
+
+  private broadcastAds(active: ActiveAdMap): void {
+    for (const session of this.clients.values()) {
+      this.send(session, { t: 'ad', active });
     }
   }
 

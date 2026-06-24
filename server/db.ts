@@ -5,6 +5,7 @@ import type { ArenaFormat, PlayerClass } from '../src/sim/types';
 import type { ChatLogRow } from './chat_log';
 import { SOCIAL_SCHEMA } from './social_db';
 import { seedChatFilterDefaults } from './chat_filter_db';
+import { seedAdPlacements } from './ads_db';
 import { REALM } from './realm';
 
 try {
@@ -309,6 +310,186 @@ CREATE TABLE IF NOT EXISTS woc_burn_batches (
   burn_sig TEXT NOT NULL UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- ── In-game advertising marketplace — "The Claudemoon Gazette" ────────────────
+-- (PRD: docs/prd/woc/ad-marketplace.md). Advertisers buy ad time BY THE MINUTE on
+-- specific days, paid in USDC / SOL / $WOC, shown on the newspaper landing page,
+-- in-world billboards, and the HUD ticker. This is a GLOBAL, cross-realm product:
+-- a minute sold is the same minute on every realm process, so these tables are
+-- intentionally NOT realm-scoped. All slot times are UTC tstzrange. The whole
+-- surface stays dormant until AD_MARKET_ENABLED + funded treasuries.
+-- btree_gist lets the ad_bookings EXCLUDE constraint mix '=' (placement/lane) with
+-- range overlap '&&' (slot) — the atomic, race-free anti-double-booking guard.
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+-- Surfaces/locations ad time is sold against (seeded idempotently on first boot).
+-- capacity = how many ads may run simultaneously (newspaper-featured/billboard/
+-- ticker = 1; classifieds = many). world_* anchor billboards in the 3D scene.
+CREATE TABLE IF NOT EXISTS ad_placements (
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  capacity INT NOT NULL DEFAULT 1 CHECK (capacity >= 1),
+  creative_type TEXT NOT NULL DEFAULT 'image' CHECK (creative_type IN ('image','text')),
+  creative_w INT,
+  creative_h INT,
+  world_x REAL,
+  world_z REAL,
+  world_yaw REAL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  sort INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Wallet-based advertiser identity (no game account required). One row per
+-- lowercased Solana pubkey; ownership proven by the sign-a-nonce challenge below.
+CREATE TABLE IF NOT EXISTS advertisers (
+  id SERIAL PRIMARY KEY,
+  pubkey TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL DEFAULT '',
+  contact TEXT NOT NULL DEFAULT '',
+  blocked BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Single-use, short-lived advertiser sign-in challenges (replay-protected by
+-- delete-on-consume), mirroring wallet_link_challenges.
+CREATE TABLE IF NOT EXISTS advertiser_challenges (
+  nonce TEXT PRIMARY KEY,
+  pubkey TEXT NOT NULL,
+  message TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Advertiser bearer tokens (separate from player auth_tokens). Wallet-scoped.
+CREATE TABLE IF NOT EXISTS advertiser_tokens (
+  token TEXT PRIMARY KEY,
+  advertiser_id INT NOT NULL REFERENCES advertisers(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS advertiser_tokens_advertiser ON advertiser_tokens(advertiser_id);
+-- Uploaded creative: image PNG (BYTEA, served like player_cards) or text. Review
+-- status is separate from booking status so one approved creative backs many
+-- bookings, and players never see a creative until it is 'approved'.
+CREATE TABLE IF NOT EXISTS ad_creatives (
+  id SERIAL PRIMARY KEY,
+  advertiser_id INT NOT NULL REFERENCES advertisers(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('image','text')),
+  png BYTEA,
+  creative_text TEXT NOT NULL DEFAULT '',
+  click_url TEXT NOT NULL DEFAULT '',
+  -- Call-to-action for REAL-WORLD partner ads (apps, online discounts, brand
+  -- offers): e.g. "Get the app", "20% off — code WOC20". Rendered as a button/
+  -- link that opens click_url externally. Empty for plain in-game notices.
+  cta TEXT NOT NULL DEFAULT '',
+  width INT,
+  height INT,
+  review_status TEXT NOT NULL DEFAULT 'pending' CHECK (review_status IN ('pending','approved','rejected')),
+  review_note TEXT NOT NULL DEFAULT '',
+  reviewed_by INT REFERENCES accounts(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ad_creatives_advertiser ON ad_creatives(advertiser_id);
+CREATE INDEX IF NOT EXISTS ad_creatives_review ON ad_creatives(review_status, created_at DESC);
+-- Admin-set per-minute rate card, in base units of each asset. One active row per
+-- placement; superseded rows are kept (active=FALSE) for audit. Bookings freeze
+-- their own price, so editing the card never re-prices an existing booking.
+CREATE TABLE IF NOT EXISTS ad_rate_card (
+  id SERIAL PRIMARY KEY,
+  placement_id TEXT NOT NULL REFERENCES ad_placements(id) ON DELETE CASCADE,
+  price_per_min_usdc BIGINT NOT NULL CHECK (price_per_min_usdc >= 0),
+  price_per_min_sol BIGINT NOT NULL CHECK (price_per_min_sol >= 0),
+  price_per_min_woc BIGINT NOT NULL CHECK (price_per_min_woc >= 0),
+  min_minutes INT NOT NULL DEFAULT 1 CHECK (min_minutes >= 1),
+  max_minutes INT NOT NULL DEFAULT 1440,
+  effective_from TIMESTAMPTZ NOT NULL DEFAULT now(),
+  active BOOLEAN NOT NULL DEFAULT TRUE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS ad_rate_card_one_active ON ad_rate_card(placement_id) WHERE active;
+-- The booking ledger. ad_bookings_no_overlap is the linchpin: two bookings on the
+-- same placement+lane may not have overlapping minute ranges while either is in a
+-- live-ish status. Terminal statuses fall outside the WHERE predicate so freed
+-- minutes are instantly rebookable. The minute-aligned CHECK enforces by-the-minute
+-- granularity. ad_payment_id is a soft ref (no FK) to avoid a circular dependency.
+CREATE TABLE IF NOT EXISTS ad_bookings (
+  id SERIAL PRIMARY KEY,
+  placement_id TEXT NOT NULL REFERENCES ad_placements(id),
+  advertiser_id INT NOT NULL REFERENCES advertisers(id) ON DELETE CASCADE,
+  creative_id INT REFERENCES ad_creatives(id) ON DELETE SET NULL,
+  slot TSTZRANGE NOT NULL,
+  lane INT NOT NULL DEFAULT 0 CHECK (lane >= 0),
+  asset TEXT NOT NULL CHECK (asset IN ('USDC','SOL','WOC')),
+  status TEXT NOT NULL DEFAULT 'reserved'
+    CHECK (status IN ('reserved','paid','pending_review','live','expired','rejected','refund_pending','refunded','refund_failed','cancelled')),
+  locked_price_base BIGINT NOT NULL,
+  rate_card_id INT REFERENCES ad_rate_card(id),
+  ad_payment_id BIGINT,
+  payment_ref TEXT,
+  refund_sig TEXT,
+  burn_sig TEXT,
+  reserve_expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT ad_bookings_minute_aligned CHECK (
+    lower(slot) IS NOT NULL AND upper(slot) IS NOT NULL
+    AND lower(slot) < upper(slot)
+    AND extract(epoch FROM lower(slot))::bigint % 60 = 0
+    AND extract(epoch FROM upper(slot))::bigint % 60 = 0
+  ),
+  CONSTRAINT ad_bookings_no_overlap EXCLUDE USING gist (
+    placement_id WITH =,
+    lane WITH =,
+    slot WITH &&
+  ) WHERE (status IN ('reserved','paid','pending_review','live'))
+);
+CREATE INDEX IF NOT EXISTS ad_bookings_placement_slot ON ad_bookings USING gist (placement_id, slot);
+CREATE INDEX IF NOT EXISTS ad_bookings_status ON ad_bookings(status, lower(slot));
+CREATE INDEX IF NOT EXISTS ad_bookings_advertiser ON ad_bookings(advertiser_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ad_bookings_live_window ON ad_bookings(placement_id, lower(slot), upper(slot)) WHERE status = 'live';
+-- Price-locked payment quotes: quote_id is the on-chain tx memo, binding tx ⇄ quote
+-- ⇄ booking. price_base is frozen here so a later rate-card change cannot move an
+-- in-flight purchase. Consuming a settled quote deletes the row.
+CREATE TABLE IF NOT EXISTS ad_quotes (
+  quote_id TEXT PRIMARY KEY,
+  advertiser_id INT NOT NULL REFERENCES advertisers(id) ON DELETE CASCADE,
+  booking_id BIGINT REFERENCES ad_bookings(id) ON DELETE CASCADE,
+  asset TEXT NOT NULL,
+  price_base BIGINT NOT NULL,
+  payer_pubkey TEXT NOT NULL,
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ad_quotes_advertiser ON ad_quotes(advertiser_id);
+-- Consumed on-chain ad payments. tx_sig UNIQUE is the replay / double-spend guard.
+-- treasury_base is the refundable amount (what actually landed in the treasury);
+-- burned_base stays 0 until a post-approval deferred burn records it.
+CREATE TABLE IF NOT EXISTS ad_payments (
+  id BIGSERIAL PRIMARY KEY,
+  advertiser_id INT NOT NULL REFERENCES advertisers(id) ON DELETE CASCADE,
+  booking_id BIGINT REFERENCES ad_bookings(id) ON DELETE SET NULL,
+  asset TEXT NOT NULL,
+  tx_sig TEXT NOT NULL UNIQUE,
+  mint TEXT,
+  amount_base BIGINT NOT NULL,
+  treasury_base BIGINT NOT NULL,
+  burned_base BIGINT NOT NULL DEFAULT 0,
+  payer_pubkey TEXT NOT NULL,
+  reference TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ad_payments_advertiser ON ad_payments(advertiser_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ad_payments_booking ON ad_payments(booking_id);
+-- Refund ledger. One refund per booking (booking_id UNIQUE) and refund_sig UNIQUE
+-- give on-chain idempotency for the reject→refund path.
+CREATE TABLE IF NOT EXISTS ad_refunds (
+  id BIGSERIAL PRIMARY KEY,
+  booking_id BIGINT NOT NULL UNIQUE,
+  ad_payment_id BIGINT NOT NULL REFERENCES ad_payments(id) ON DELETE CASCADE,
+  asset TEXT NOT NULL,
+  amount_base BIGINT NOT NULL,
+  refund_sig TEXT NOT NULL UNIQUE,
+  payer_pubkey TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;
 
 export async function ensureSchema(): Promise<void> {
@@ -326,6 +507,8 @@ export async function ensureSchema(): Promise<void> {
     // Seed the chat-filter word lists + config on first boot only (idempotent).
     // Runs under the same advisory lock so concurrent realm boots don't race.
     await seedChatFilterDefaults(client);
+    // Seed the ad placements + a default rate card (idempotent, same lock).
+    await seedAdPlacements(client);
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
@@ -527,6 +710,27 @@ export async function walletForAccount(accountId: number): Promise<WalletLinkRow
 export async function accountForWallet(pubkey: string): Promise<number | null> {
   const res = await pool.query('SELECT account_id FROM wallet_links WHERE pubkey = $1', [pubkey]);
   return res.rows[0]?.account_id ?? null;
+}
+
+// Resolve an in-game player (by exact, realm-scoped character name) to the
+// verified Solana wallet linked to that character's account — for sending
+// $WOC / SOL / USDC directly to them. Returns null when no character by that
+// name exists on this realm, or its account has not linked a wallet. The JOIN
+// is what enforces "verified wallet only": a name with no wallet_links row
+// yields no result. Case-insensitive, like the other name lookups here.
+export async function walletForCharacterName(name: string): Promise<{ name: string; pubkey: string } | null> {
+  const term = name.trim();
+  if (!term) return null;
+  const res = await pool.query(
+    `SELECT c.name AS name, w.pubkey AS pubkey
+       FROM characters c
+       JOIN wallet_links w ON w.account_id = c.account_id
+      WHERE c.realm = $1 AND lower(c.name) = lower($2)
+      LIMIT 1`,
+    [REALM, term],
+  );
+  const row = res.rows[0];
+  return row ? { name: row.name, pubkey: row.pubkey } : null;
 }
 
 // One wallet per account (account_id PK) and one account per wallet (pubkey

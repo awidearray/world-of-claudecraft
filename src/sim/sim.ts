@@ -8611,6 +8611,12 @@ export class Sim {
   // the IWorld surface with inert stubs.
   realm = '';
   socialInfo: null = null;
+  // Advertising is an online/server product; offline returns an empty map and the
+  // renderer/HUD fall back to a localized house ad. A single cached object is
+  // returned every call so consumers can identity-compare it without per-frame
+  // allocation.
+  private readonly _emptyAds: import('../world_api').AdActiveMap = {};
+  activeAds(): import('../world_api').AdActiveMap { return this._emptyAds; }
   friendAdd(_name: string): void {}
   friendRemove(_name: string): void {}
   blockAdd(_name: string): void {}

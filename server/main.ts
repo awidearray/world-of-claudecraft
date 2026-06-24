@@ -33,6 +33,8 @@ import { getCharacterAnyAccount, buybackTotals } from './db';
 import { runBuybackBurn, buybackReady } from './buyback';
 import { validateGuildName } from './social';
 import { handleCardUpload, handleCardRoutes, captureReferral } from './player_card';
+import { handleAdsApi, handleAdCreativeImage } from './ads';
+import { adService } from './ad_service';
 import { handleAdminApi } from './admin';
 import { handleInternalApi } from './internal';
 import { GameServer } from './game';
@@ -719,9 +721,19 @@ async function main(): Promise<void> {
   if (pruned > 0) console.log(`pruned ${pruned} chat log row(s) older than ${CHAT_LOG_RETENTION_DAYS} days`);
   await game.loadMarket();
   await game.loadChatFilter();
+  await game.loadAds();
   setInterval(() => {
     void pruneChatLogs(CHAT_LOG_RETENTION_DAYS).catch((err) => console.error('chat log prune failed:', err));
   }, 24 * 3600 * 1000).unref();
+  // Advertising scheduler: advance booking statuses and broadcast the active-ad
+  // set on change, every 10s. Cheap no-op while AD_MARKET_ENABLED is off.
+  setInterval(() => {
+    void game.tickAds().catch((err) => console.error('[ads] tick failed:', err));
+  }, 10_000).unref();
+  // Slower housekeeping (prune expired quotes + sign-in challenges).
+  setInterval(() => {
+    void adService.housekeep().catch((err) => console.error('[ads] housekeep failed:', err));
+  }, 5 * 60_000).unref();
   // Buyback-and-burn keeper cadence (off unless BUYBACK_ENABLED + keeper set).
   // Fixed interval, no discretionary timing — every cycle is on-chain + logged.
   if (buybackReady()) {
@@ -749,7 +761,9 @@ async function main(): Promise<void> {
     if (req.method === 'OPTIONS' && isApi) { res.writeHead(204); res.end(); return; }
     if (url.startsWith('/internal/')) void handleInternalApi(req, res, game);
     else if (url.startsWith('/admin/api/')) void handleAdminApi(req, res, game);
+    else if (url.startsWith('/api/ads/')) void handleAdsApi(req, res);
     else if (url.startsWith('/api/')) void handleApi(req, res);
+    else if (req.method === 'GET' && url.startsWith('/ads/creative/')) void handleAdCreativeImage(req, res);
     else if (req.method === 'GET' && url.startsWith('/p/')) void handleCardRoutes(req, res);
     else serveStatic(req, res);
   });

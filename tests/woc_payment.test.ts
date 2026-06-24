@@ -47,6 +47,11 @@ function fixture(o: Opts = {}): FinalizedTx {
     preTokenBalances: [{ owner: PAYER, mint: MINT, programId, uiTokenAmount: { amount: o.preBase ?? '1000', decimals: 6 } }],
     postTokenBalances: [{ owner: PAYER, mint: MINT, programId, uiTokenAmount: { amount: o.postBase ?? '500', decimals: 6 } }],
     instructions,
+    // Native-SOL accounting fields (unused by the $WOC burn path).
+    accountKeys: [],
+    preBalances: [],
+    postBalances: [],
+    feeLamports: 0n,
   };
 }
 
