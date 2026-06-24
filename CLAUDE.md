@@ -126,6 +126,13 @@ See `README.md` for the full host/develop/play guide and the classic-fidelity ch
 - E2E/visual: `scripts/*.mjs` drive real browsers via `puppeteer-core` and need
   `npm run dev` (often `npm run server` too) running. Bot raids / E2E that teleport
   or level need `ALLOW_DEV_COMMANDS=1` (dev only).
+- **Devnet deploys/tests use `SOLANA_DEVNET_DEPLOYER`** — a funded base58 devnet
+  keypair secret in `.env.local` (gitignored, never commit). It is the canonical
+  payer/funder for any on-chain devnet work: fund test keypairs by transferring
+  from it, create test mints with it, and run on-chain shakeouts against
+  `https://api.devnet.solana.com`. Reference it from scripts via
+  `process.loadEnvFile('.env.local')`; never paste the key into a command or log.
+  The ad-marketplace on-chain proof runs via `scripts/ad_devnet_shakeout.mjs`.
 
 ## Working style by model
 This whole file is the baseline for **any** model — obey all of it. Your active
