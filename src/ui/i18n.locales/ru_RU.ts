@@ -2447,4 +2447,15 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   "skinEvent.unavailable": "Скоро",
   "skinEvent.unequip": "Снять",
   "skinEvent.unlocked": "Косметика разблокирована!",
+  // Mount Charters (v0.10 — tradeable mount deeds)
+  "entities.items.charter_ashmane.name": "Грамота: Ashmane Courser",
+  "entities.items.charter_emberhoof.name": "Грамота: Emberhoof Charger",
+  "entities.items.charter_bronzeflank.name": "Грамота: Bronzeflank Destrier",
+  "entities.items.charter_silvermane.name": "Грамота: Silvermane Stallion",
+  "entities.items.charter_stormhoof.name": "Грамота: Stormhoof Charger",
+  "entities.items.charter_goldcrest.name": "Грамота: Goldcrest Skystrider",
+  "entities.items.charter_verdant.name": "Грамота: Verdant Wildwing",
+  "entities.items.charter_voidstrider.name": "Грамота: Voidwing Strider",
+  "entities.items.charter_celestial.name": "Грамота: Celestial Seraph",
+  "entities.items.charter_worldbearer.name": "Грамота: Worldbearer's Roc",
 };

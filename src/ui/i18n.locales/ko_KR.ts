@@ -2447,4 +2447,15 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   "skinEvent.unavailable": "곧 출시",
   "skinEvent.unequip": "장착 해제",
   "skinEvent.unlocked": "장식이 잠금 해제되었습니다!",
+  // Mount Charters (v0.10 — tradeable mount deeds)
+  "entities.items.charter_ashmane.name": "증서: Ashmane Courser",
+  "entities.items.charter_emberhoof.name": "증서: Emberhoof Charger",
+  "entities.items.charter_bronzeflank.name": "증서: Bronzeflank Destrier",
+  "entities.items.charter_silvermane.name": "증서: Silvermane Stallion",
+  "entities.items.charter_stormhoof.name": "증서: Stormhoof Charger",
+  "entities.items.charter_goldcrest.name": "증서: Goldcrest Skystrider",
+  "entities.items.charter_verdant.name": "증서: Verdant Wildwing",
+  "entities.items.charter_voidstrider.name": "증서: Voidwing Strider",
+  "entities.items.charter_celestial.name": "증서: Celestial Seraph",
+  "entities.items.charter_worldbearer.name": "증서: Worldbearer's Roc",
 };

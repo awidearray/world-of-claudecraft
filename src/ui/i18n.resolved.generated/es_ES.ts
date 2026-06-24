@@ -797,7 +797,17 @@ export const es_ES: EnTranslations = {
       "dismountAria": "Dismount {name}",
       "lockedAria": "{name} — locked; unlocks at {amount} $WOC",
       "activeAria": "{name} — currently active",
-      "cardAria": "{name}: {flavor}"
+      "cardAria": "{name}: {flavor}",
+      "owned": "Owned",
+      "mint": "Mint Charter",
+      "mintHint": "Strike a tradeable Charter for this mount — sell it for gold so a non-holder can earn it.",
+      "mintAria": "Mint a tradeable Charter for {name}",
+      "mintedBanner": "You strike a Charter for {name}.",
+      "earnedBanner": "You have earned {name} — it is yours for good.",
+      "alreadyOwnErr": "You already own that mount.",
+      "charterVoidErr": "That Charter is void.",
+      "noCharterErr": "No Charter can be struck for that mount.",
+      "holdingsShortErr": "Your holdings do not cover that mount."
     },
     "course": {
       "skytrials": "Skytrials",
@@ -2725,6 +2735,36 @@ export const es_ES: EnTranslations = {
       },
       "monarch_heart": {
         "name": "El Corazón del Monarca"
+      },
+      "charter_ashmane": {
+        "name": "Título: Ashmane Courser"
+      },
+      "charter_emberhoof": {
+        "name": "Título: Emberhoof Charger"
+      },
+      "charter_bronzeflank": {
+        "name": "Título: Bronzeflank Destrier"
+      },
+      "charter_silvermane": {
+        "name": "Título: Silvermane Stallion"
+      },
+      "charter_stormhoof": {
+        "name": "Título: Stormhoof Charger"
+      },
+      "charter_goldcrest": {
+        "name": "Título: Goldcrest Skystrider"
+      },
+      "charter_verdant": {
+        "name": "Título: Verdant Wildwing"
+      },
+      "charter_voidstrider": {
+        "name": "Título: Voidwing Strider"
+      },
+      "charter_celestial": {
+        "name": "Título: Celestial Seraph"
+      },
+      "charter_worldbearer": {
+        "name": "Título: Worldbearer's Roc"
       },
       "bristleback_maul": {
         "name": "Maza Bristleback"

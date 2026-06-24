@@ -41,7 +41,7 @@ import {
   EVENT_SKIN_TOKEN_ID, MECH_CHROMAS, classHasSkin, mechChromaItemId, mechChromaSkinIndex,
   rankAllowsMechChroma, rankAllowsSkin, rollSkinRank,
 } from './content/skins';
-import { MOUNTS, mountUnlockedAtTier, isFlyingMount, mountForTier } from './content/mounts';
+import { MOUNTS, mountUnlockedAtTier, isFlyingMount, mountForTier, canSummonMount, isCharterEligible } from './content/mounts';
 import { COURSES, courseTotalGates } from './content/courses';
 
 const LEASH_DISTANCE = 45;
@@ -516,6 +516,10 @@ export interface PlayerMeta {
   // records (empty offline); the source of truth is the mount_trial_records
   // table. Drives "new best" feedback + the per-course best in the launcher.
   mountTrialBests: Record<string, number>;
+  // Permanently earned mounts (Charter redemptions). The second ownership track:
+  // summonable regardless of $WOC holdings, never downgraded. Persisted in
+  // CharacterState.earnedMounts.
+  earnedMounts: Set<string>;
 }
 
 // Away-from-keyboard / do-not-disturb presence. `afk` still delivers whispers
@@ -606,6 +610,10 @@ export interface CharacterState {
   pendingSkinRank?: SkinRank | null;
   pendingSkinCatalog?: SkinCatalog | null;
   pendingSkinItemId?: string | null;
+  // Permanently EARNED mounts (the second ownership track): mount ids redeemed
+  // from a Mount Charter (won/bought by non-$WOC players). Unlike holdings-derived
+  // access these never lapse. JSONB; optional so pre-Charter saves load cleanly.
+  earnedMounts?: string[];
 }
 
 export interface PetState {
@@ -957,6 +965,7 @@ export class Sim {
       mountCast: null,
       courseRun: null,
       mountTrialBests: opts?.mountTrialBests ? { ...opts.mountTrialBests } : {},
+      earnedMounts: new Set(opts?.state?.earnedMounts ?? []),
     };
     this.players.set(player.id, meta);
     player.skinCatalog = meta.skinCatalog;
@@ -1099,6 +1108,7 @@ export class Sim {
       pendingSkinRank: meta.pendingSkinRank,
       pendingSkinCatalog: meta.pendingSkinCatalog,
       pendingSkinItemId: meta.pendingSkinItemId,
+      earnedMounts: [...meta.earnedMounts],
     };
   }
 
@@ -1142,7 +1152,7 @@ export class Sim {
     const { meta, e: p } = r;
     if (p.dead) return false;
     if (!MOUNTS[mountId]) return false;
-    if (!mountUnlockedAtTier(mountId, p.mountTier ?? 0)) return false;
+    if (!canSummonMount(mountId, p.mountTier ?? 0, meta.earnedMounts)) return false; // holder OR earned
     if (p.inCombat) return false;
     if (this.isSwimming(p)) return false;
     if (p.castingAbility) return false;
@@ -1184,14 +1194,64 @@ export class Sim {
    *  lower-but-still-eligible mount alone. */
   enforceMountEligibility(pid: number): void {
     const e = this.entities.get(pid);
-    if (!e || e.mountId === undefined) return;
-    if (mountUnlockedAtTier(e.mountId, e.mountTier ?? 0)) return; // still covers this rung
-    // Holdings fell below the active steed's rung: gracefully DOWNGRADE to the best
-    // mount the rider still qualifies for, rather than throwing them off entirely.
-    // Only a drop to no eligibility (tier 0) dismounts.
+    const meta = this.players.get(pid);
+    if (!e || !meta || e.mountId === undefined) return;
+    // Earned (Charter) mounts are permanent — holdings never touch them. Otherwise
+    // a holdings drop below this steed's rung gracefully DOWNGRADES to the best
+    // mount the rider still covers (holder rung or any earned one), dismounting
+    // only when nothing remains.
+    if (canSummonMount(e.mountId, e.mountTier ?? 0, meta.earnedMounts)) return;
     const lesser = mountForTier(e.mountTier ?? 0);
     if (lesser) e.mountId = lesser.id;
-    else this.dismount(e);
+    else {
+      // no holder rung left, but a flyer/ground mount may still be earned
+      const fallback = [...meta.earnedMounts][0];
+      if (fallback) e.mountId = fallback;
+      else this.dismount(e);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Mount Charters — the EARNED ownership track. Holders mint tradeable deeds for
+  // mounts their holdings cover; the deeds change hands for gold on the World
+  // Market; a non-$WOC buyer redeems one for a PERMANENT mount that holdings can
+  // never revoke. Only the tier-11 dragon has no Charter (isCharterEligible).
+  // -------------------------------------------------------------------------
+
+  /** Permanently grant `mountId` on the earned track (Charter redemption or an
+   *  operator grant). Idempotent; rejects unknown / holder-only (dragon) ids.
+   *  Returns true when it newly added the mount. */
+  grantEarnedMount(mountId: string, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r || !isCharterEligible(mountId) || r.meta.earnedMounts.has(mountId)) return false;
+    r.meta.earnedMounts.add(mountId);
+    this.emit({ type: 'mountEarned', mountId, pid: r.e.id });
+    return true;
+  }
+
+  /** Redeem a Mount Charter from the bags: grant the mount and consume the deed. */
+  private redeemMountCharter(meta: PlayerMeta, itemId: string, mountId: string): void {
+    if (meta.earnedMounts.has(mountId)) { this.error(meta.entityId, 'You already own that mount.'); return; }
+    if (!isCharterEligible(mountId)) { this.error(meta.entityId, 'That Charter is void.'); return; }
+    this.removeItem(itemId, 1, meta.entityId);
+    meta.earnedMounts.add(mountId);
+    this.emit({ type: 'mountEarned', mountId, pid: meta.entityId });
+  }
+
+  /** Mint a tradeable Charter for a mount the wallet currently covers (holder
+   *  track only — you can't re-mint a mount you merely bought). The struck deed
+   *  lands in the bags to redeem or sell. Returns true on success. */
+  mintCharter(mountId: string, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const { meta, e: p } = r;
+    if (!isCharterEligible(mountId)) { this.error(meta.entityId, 'No Charter can be struck for that mount.'); return false; }
+    if (!mountUnlockedAtTier(mountId, p.mountTier ?? 0)) { this.error(meta.entityId, 'Your holdings do not cover that mount.'); return false; }
+    const itemId = `charter_${mountId}`;
+    if (!ITEMS[itemId]) return false;
+    this.addItem(itemId, 1, meta.entityId);
+    this.emit({ type: 'mountCharterMinted', mountId, itemId, pid: meta.entityId });
+    return true;
   }
 
   /** Advance an in-progress mount summon: cancel it on movement/combat/damage/an
@@ -1209,7 +1269,7 @@ export class Sim {
     mc.remaining -= DT;
     if (mc.remaining <= 0) {
       meta.mountCast = null;
-      if (mountUnlockedAtTier(mc.id, p.mountTier ?? 0)) p.mountId = mc.id;
+      if (canSummonMount(mc.id, p.mountTier ?? 0, meta.earnedMounts)) p.mountId = mc.id;
     }
   }
 
@@ -1618,6 +1678,9 @@ export class Sim {
   }
   get raceInfo(): RaceInfo | null {
     return this.raceInfoFor(this.primaryId);
+  }
+  get earnedMounts(): string[] {
+    return [...this.primary.earnedMounts];
   }
   // Offline play has no leaderboard (single player, no server); the online
   // ClientWorld fetches it over REST.
@@ -6844,6 +6907,10 @@ export class Sim {
     }
     if (def.use?.type === 'skinSelect') {
       this.openSkinSelect(meta, def.use.catalog ?? 'class', itemId);
+      return;
+    }
+    if (def.use?.type === 'mountCharter') {
+      this.redeemMountCharter(meta, itemId, def.use.mountId);
       return;
     }
     if (p.castingAbility === FISHING_CAST_ID) { this.error(meta.entityId, 'You are busy.'); return; }

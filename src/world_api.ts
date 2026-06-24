@@ -346,6 +346,12 @@ export interface IWorld {
   // state for the HUD panel (null when not in a race).
   raceInfo: RaceInfo | null;
   startRace(courseId: string): void;
+  // Mount Charters — the earned (non-$WOC) ownership track. `earnedMounts` are
+  // mount ids permanently owned via a redeemed Charter (summonable regardless of
+  // holdings); `mintCharter` strikes a tradeable deed for a mount the wallet
+  // currently covers. Redeeming a Charter goes through the normal useItem path.
+  earnedMounts: string[];
+  mintCharter(mountId: string): void;
   releaseSpirit(): void;
   chat(text: string): void;
   playEmote(emoteId: OverheadEmoteId): void;

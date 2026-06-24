@@ -126,3 +126,17 @@ export function mountUnlockedAtTier(id: string, eligibleTier: number): boolean {
 export function isFlyingMount(id: string | null | undefined): boolean {
   return id !== null && id !== undefined && MOUNTS[id]?.flying === true;
 }
+
+/** Two-track summon gate: a mount is rideable if the wallet's holdings cover its
+ *  rung (holder track) OR it's been permanently earned via a Charter (earned
+ *  track). The single authority the Sim consults. */
+export function canSummonMount(id: string, holderTier: number, earned: ReadonlySet<string>): boolean {
+  return mountUnlockedAtTier(id, holderTier) || earned.has(id);
+}
+
+/** Whether a mount may be sold as a Mount Charter (and thus earned by non-$WOC
+ *  players). Everything but the tier-11 dragon — the ultimate holder-only flex. */
+export function isCharterEligible(id: string): boolean {
+  const def = MOUNTS[id];
+  return def !== undefined && def.tier < MOUNT_LIST.length;
+}

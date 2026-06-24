@@ -797,7 +797,17 @@ export const it_IT: EnTranslations = {
       "dismountAria": "Dismount {name}",
       "lockedAria": "{name} — locked; unlocks at {amount} $WOC",
       "activeAria": "{name} — currently active",
-      "cardAria": "{name}: {flavor}"
+      "cardAria": "{name}: {flavor}",
+      "owned": "Owned",
+      "mint": "Mint Charter",
+      "mintHint": "Strike a tradeable Charter for this mount — sell it for gold so a non-holder can earn it.",
+      "mintAria": "Mint a tradeable Charter for {name}",
+      "mintedBanner": "You strike a Charter for {name}.",
+      "earnedBanner": "You have earned {name} — it is yours for good.",
+      "alreadyOwnErr": "You already own that mount.",
+      "charterVoidErr": "That Charter is void.",
+      "noCharterErr": "No Charter can be struck for that mount.",
+      "holdingsShortErr": "Your holdings do not cover that mount."
     },
     "course": {
       "skytrials": "Skytrials",
@@ -2725,6 +2735,36 @@ export const it_IT: EnTranslations = {
       },
       "monarch_heart": {
         "name": "Il Cuore del Monarca"
+      },
+      "charter_ashmane": {
+        "name": "Brevetto: Ashmane Courser"
+      },
+      "charter_emberhoof": {
+        "name": "Brevetto: Emberhoof Charger"
+      },
+      "charter_bronzeflank": {
+        "name": "Brevetto: Bronzeflank Destrier"
+      },
+      "charter_silvermane": {
+        "name": "Brevetto: Silvermane Stallion"
+      },
+      "charter_stormhoof": {
+        "name": "Brevetto: Stormhoof Charger"
+      },
+      "charter_goldcrest": {
+        "name": "Brevetto: Goldcrest Skystrider"
+      },
+      "charter_verdant": {
+        "name": "Brevetto: Verdant Wildwing"
+      },
+      "charter_voidstrider": {
+        "name": "Brevetto: Voidwing Strider"
+      },
+      "charter_celestial": {
+        "name": "Brevetto: Celestial Seraph"
+      },
+      "charter_worldbearer": {
+        "name": "Brevetto: Worldbearer's Roc"
       },
       "bristleback_maul": {
         "name": "Maglio Bristleback"

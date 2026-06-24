@@ -1273,6 +1273,7 @@ export class GameServer {
       case 'start_course': if (typeof msg.course === 'string') sim.startCourse(msg.course, pid); break;
       case 'abort_course': sim.abortCourse(pid); break;
       case 'start_race': if (typeof msg.course === 'string') sim.startRace(msg.course, pid); break;
+      case 'mint_charter': if (typeof msg.mount === 'string') sim.mintCharter(msg.mount, pid); break;
       // hunter pets
       case 'pet_abandon': sim.abandonPet(pid); break;
       case 'pet_rename':
@@ -1603,6 +1604,9 @@ export class GameServer {
     maybe('tpb', meta.mountTrialBests);
     // Live race state for the HUD race panel (rides the wire only while racing).
     maybe('race', this.sim.raceInfoFor(session.pid));
+    // Permanently earned (Charter-redeemed) mount ids, for the mount window's
+    // "owned" badge + the client summon gate. Sent on change (join + redeem).
+    maybe('eam', [...meta.earnedMounts]);
     return extra === '' ? json : json.slice(0, -1) + extra + '}';
   }
 
@@ -1747,6 +1751,14 @@ export class GameServer {
       }
       this.devTierPids.add(pid);
       this.broadcastSystem(`[dev] ${session.name} $WOC mount tier → ${n}`);
+      return null;
+    }
+    // Dev-only: permanently grant an EARNED mount (as if a Charter were redeemed),
+    // so the non-$WOC earned track can be exercised without minting/trading.
+    if (process.env.ALLOW_DEV_COMMANDS === '1' && /^\/wocearn\b/.test(text)) {
+      const mountId = text.split(/\s+/)[1] ?? '';
+      const ok = this.sim.grantEarnedMount(mountId, pid);
+      this.broadcastSystem(`[dev] ${session.name} ${ok ? 'earned mount' : 'could not earn'} → ${mountId}`);
       return null;
     }
     if (!text.startsWith('/')) {

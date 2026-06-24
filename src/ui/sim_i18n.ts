@@ -2281,6 +2281,11 @@ const RULES: Rule[] = [
   { re: /^The Crypt Keystone turns cold as the seal breaks\.$/, build: () => tQuestExtra('ritualBreaks') },
   { re: /^The crypt entrance is sealed to you\.$/, build: () => tQuestExtra('cryptSealed') },
   { re: /^That item cannot be listed on the World Market\.$/, build: () => t('itemUi.tooltip.cannotMarket') },
+  // Mount Charter economy errors (sim-emitted via this.error).
+  { re: /^You already own that mount\.$/, build: () => t('hud.mounts.alreadyOwnErr') },
+  { re: /^That Charter is void\.$/, build: () => t('hud.mounts.charterVoidErr') },
+  { re: /^No Charter can be struck for that mount\.$/, build: () => t('hud.mounts.noCharterErr') },
+  { re: /^Your holdings do not cover that mount\.$/, build: () => t('hud.mounts.holdingsShortErr') },
   { re: /^(.+) awakens!$/, build: (m) => tQuestExtra('awakens', { name: locMob(m[1]) }) },
   { re: /^Fallen Captain Aldren yells, "None shall disturb the king's rest! For Thornpeak!"$/, build: () => tQuestExtra('aldrenYell', { name: locMob('Fallen Captain Aldren') }) },
   { re: /^Corrupted Priest Malric yells, "Death shall never claim my king! The ritual must endure!"$/, build: () => tQuestExtra('malricYell', { name: locMob('Corrupted Priest Malric') }) },

@@ -15,7 +15,7 @@ import {
 import type { ZoneDef } from '../sim/data';
 import type { AbilityDef, EquipSlot, InvSlot, PetMode, PlayerClass, ResourceType, SkinRank, Stats } from '../sim/types';
 import { EVENT_SKIN_TIERS, MECH_CHROMAS, SKIN_RANKS, skinRankOrder, type SkinTier } from '../sim/content/skins';
-import { MOUNT_LIST, MOUNTS, type MountDef } from '../sim/content/mounts';
+import { MOUNT_LIST, MOUNTS, isCharterEligible, type MountDef } from '../sim/content/mounts';
 import { COURSE_LIST, courseDef, courseTotalGates } from '../sim/content/courses';
 import {
   AbilityEffect, CONSUME_DURATION, Entity, FISHING_CAST_ID, GCD, ItemDef, SimEvent,
@@ -3570,6 +3570,18 @@ export class Hud {
         case 'raceResult':
           if (ev.place === 1) audio.levelUp(); // won — the panel shows the placement
           break;
+        case 'mountCharterMinted':
+          this.showBanner(t('hud.mounts.mintedBanner', { name: mountDisplayName(ev.mountId) }));
+          audio.coin();
+          if ($('#mount-window').style.display === 'block') this.renderMounts();
+          if ($('#bags').style.display !== 'none') this.renderBags();
+          break;
+        case 'mountEarned':
+          this.showBanner(t('hud.mounts.earnedBanner', { name: mountDisplayName(ev.mountId) }));
+          audio.levelUp();
+          if ($('#mount-window').style.display === 'block') this.renderMounts();
+          if ($('#bags').style.display !== 'none') this.renderBags();
+          break;
         case 'loot': {
           this.log(this.localizeLootText(ev.text), '#7fdc4f');
           if (ev.text.includes('loot') || ev.text.includes('Sold') || ev.text.includes('Bought back')) audio.coin();
@@ -6463,6 +6475,7 @@ export class Hud {
     const el = $('#mount-window');
     const p = this.sim.player;
     const eligible = p.mountTier ?? 0;
+    const earned = new Set(this.sim.earnedMounts);
     const activeId = p.mountId ?? null;
     const total = MOUNT_LIST.length;
     const unlocked = Math.max(0, Math.min(eligible, total));
@@ -6490,8 +6503,11 @@ export class Hud {
     el.appendChild(list);
 
     for (const m of MOUNT_LIST) {
-      const isUnlocked = eligible >= m.tier;
+      const heldByWallet = eligible >= m.tier;
+      const isEarned = earned.has(m.id);
+      const isUnlocked = heldByWallet || isEarned; // two-track: holdings OR a redeemed Charter
       const isActive = activeId === m.id;
+      const canMint = heldByWallet && isCharterEligible(m.id); // only holders strike deeds
       const row = document.createElement('div');
       row.className = 'mount-row' + (isUnlocked ? '' : ' locked') + (isActive ? ' active' : '');
       row.setAttribute('role', 'listitem');
@@ -6505,6 +6521,7 @@ export class Hud {
         `<div class="mount-text">` +
         `<div class="mount-name">${esc(m.name)}` +
         `${m.flying ? `<span class="mount-fly-tag">${esc(t('hud.mounts.flies'))}</span>` : ''}` +
+        `${isEarned ? `<span class="mount-owned-tag">${esc(t('hud.mounts.owned'))}</span>` : ''}` +
         `${isActive ? `<span class="mount-active-tag">${esc(t('hud.mounts.riding'))}</span>` : ''}</div>` +
         `<div class="mount-flavor">${esc(m.flavor)}</div>` +
         `<div class="mount-meta">${meta}</div>` +
@@ -6525,6 +6542,19 @@ export class Hud {
           : t('hud.mounts.cardAria', { name: m.name, flavor: m.flavor }));
       } else {
         row.setAttribute('aria-label', t('hud.mounts.lockedAria', { name: m.name, amount: fmt0(m.threshold) }));
+      }
+      // Holders can strike a tradeable Mount Charter for any mount their holdings
+      // cover (the dragon excepted) — sold for gold so non-$WOC players can earn it.
+      if (canMint) {
+        const mintBtn = document.createElement('button');
+        mintBtn.type = 'button';
+        mintBtn.className = 'mount-action is-mint';
+        mintBtn.textContent = t('hud.mounts.mint');
+        mintBtn.title = t('hud.mounts.mintHint');
+        mintBtn.setAttribute('aria-label', t('hud.mounts.mintAria', { name: m.name }));
+        mintBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        mintBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this.sim.mintCharter(m.id); audio.click(); });
+        row.appendChild(mintBtn);
       }
       list.appendChild(row);
     }

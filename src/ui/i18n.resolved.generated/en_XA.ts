@@ -797,7 +797,17 @@ export const en_XA: EnTranslations = {
       "dismountAria": "[Ðíšɱóúñţ {name}]",
       "lockedAria": "[{name} — ļóçķéð; úñļóçķš áţ {amount} $ŴÓÇ]",
       "activeAria": "[{name} — çúŕŕéñţļý áçţíʋé]",
-      "cardAria": "[{name}: {flavor}]"
+      "cardAria": "[{name}: {flavor}]",
+      "owned": "[Óŵñéð]",
+      "mint": "[Ɱíñţ Çĥáŕţéŕ]",
+      "mintHint": "[Šţŕíķé á ţŕáðéáƀļé Çĥáŕţéŕ ƒóŕ ţĥíš ɱóúñţ — šéļļ íţ ƒóŕ ĝóļð šó á ñóñ-ĥóļðéŕ çáñ éáŕñ íţ.]",
+      "mintAria": "[Ɱíñţ á ţŕáðéáƀļé Çĥáŕţéŕ ƒóŕ {name}]",
+      "mintedBanner": "[Ýóú šţŕíķé á Çĥáŕţéŕ ƒóŕ {name}.]",
+      "earnedBanner": "[Ýóú ĥáʋé éáŕñéð {name} — íţ íš ýóúŕš ƒóŕ ĝóóð.]",
+      "alreadyOwnErr": "[Ýóú áļŕéáðý óŵñ ţĥáţ ɱóúñţ.]",
+      "charterVoidErr": "[Ţĥáţ Çĥáŕţéŕ íš ʋóíð.]",
+      "noCharterErr": "[Ñó Çĥáŕţéŕ çáñ ƀé šţŕúçķ ƒóŕ ţĥáţ ɱóúñţ.]",
+      "holdingsShortErr": "[Ýóúŕ ĥóļðíñĝš ðó ñóţ çóʋéŕ ţĥáţ ɱóúñţ.]"
     },
     "course": {
       "skytrials": "[Šķýţŕíáļš]",
@@ -2725,6 +2735,36 @@ export const en_XA: EnTranslations = {
       },
       "monarch_heart": {
         "name": "[Ţĥé Ɱóñáŕçĥ'š Ĥéáŕţ]"
+      },
+      "charter_ashmane": {
+        "name": "[Çĥáŕţéŕ: Ášĥɱáñé Çóúŕšéŕ]"
+      },
+      "charter_emberhoof": {
+        "name": "[Çĥáŕţéŕ: Éɱƀéŕĥóóƒ Çĥáŕĝéŕ]"
+      },
+      "charter_bronzeflank": {
+        "name": "[Çĥáŕţéŕ: Ɓŕóñžéƒļáñķ Ðéšţŕíéŕ]"
+      },
+      "charter_silvermane": {
+        "name": "[Çĥáŕţéŕ: Šíļʋéŕɱáñé Šţáļļíóñ]"
+      },
+      "charter_stormhoof": {
+        "name": "[Çĥáŕţéŕ: Šţóŕɱĥóóƒ Çĥáŕĝéŕ]"
+      },
+      "charter_goldcrest": {
+        "name": "[Çĥáŕţéŕ: Ĝóļðçŕéšţ Šķýšţŕíðéŕ]"
+      },
+      "charter_verdant": {
+        "name": "[Çĥáŕţéŕ: Ʋéŕðáñţ Ŵíļðŵíñĝ]"
+      },
+      "charter_voidstrider": {
+        "name": "[Çĥáŕţéŕ: Ʋóíðŵíñĝ Šţŕíðéŕ]"
+      },
+      "charter_celestial": {
+        "name": "[Çĥáŕţéŕ: Çéļéšţíáļ Šéŕáþĥ]"
+      },
+      "charter_worldbearer": {
+        "name": "[Çĥáŕţéŕ: Ŵóŕļðƀéáŕéŕ'š Ŕóç]"
       },
       "bristleback_maul": {
         "name": "[Ɓŕíšţļéƀáçķ Ɱáúļ]"

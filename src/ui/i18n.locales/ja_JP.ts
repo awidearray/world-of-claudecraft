@@ -2447,4 +2447,15 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   "skinEvent.unavailable": "近日公開",
   "skinEvent.unequip": "外す",
   "skinEvent.unlocked": "装いを解除しました！",
+  // Mount Charters (v0.10 — tradeable mount deeds)
+  "entities.items.charter_ashmane.name": "証書：Ashmane Courser",
+  "entities.items.charter_emberhoof.name": "証書：Emberhoof Charger",
+  "entities.items.charter_bronzeflank.name": "証書：Bronzeflank Destrier",
+  "entities.items.charter_silvermane.name": "証書：Silvermane Stallion",
+  "entities.items.charter_stormhoof.name": "証書：Stormhoof Charger",
+  "entities.items.charter_goldcrest.name": "証書：Goldcrest Skystrider",
+  "entities.items.charter_verdant.name": "証書：Verdant Wildwing",
+  "entities.items.charter_voidstrider.name": "証書：Voidwing Strider",
+  "entities.items.charter_celestial.name": "証書：Celestial Seraph",
+  "entities.items.charter_worldbearer.name": "証書：Worldbearer's Roc",
 };

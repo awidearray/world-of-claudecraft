@@ -999,6 +999,8 @@
     color: #1c140a; background: #d9b24a; border-radius: 999px; padding: 1px 7px; }
   .mount-fly-tag { font-family: inherit; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
     color: #07212e; background: linear-gradient(#9fe6ff, #5fc3f0); border-radius: 999px; padding: 1px 7px; }
+  .mount-owned-tag { font-family: inherit; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: #16240f; background: linear-gradient(#b9e89a, #8fd06a); border-radius: 999px; padding: 1px 7px; }
   .mount-flavor { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; overflow-wrap: anywhere; }
   .mount-meta { font-size: 11px; color: var(--color-text-muted); margin-top: 3px;
     display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -1013,6 +1015,8 @@
   .mount-action:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
   .mount-action.is-dismount { color: #f4e6c8; background: #2a2118; border-color: #6a5524; }
   .mount-action.is-dismount:hover { background: #352a1d; }
+  .mount-action.is-mint { min-width: 96px; color: #102219; background: linear-gradient(#9fe0b6, #5fb585); border-color: #2f6b48; }
+  .mount-action.is-mint:hover { background: linear-gradient(#b2ecc6, #6cc492); }
 
   /* Skytrials list inside the mount window */
   .mount-section-title { margin: 12px 2px 6px; font-family: var(--title-font); font-size: 13px; color: #cbb472;
@@ -1276,8 +1280,53 @@
   #bags .money { flex: none; display: flex; align-items: center; gap: 10px; }
   /* coins stay right-aligned whether or not the $WOC chip is present */
   #bags .money .money-inline { margin-left: auto; }
-  .woc-balance { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-dim); font-weight: 600; white-space: nowrap; }
+  .woc-balance { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-dim); font-weight: 600; white-space: nowrap;
+    background: #1a140a66; border: 1px solid #4b3d1d; border-radius: 5px; padding: 4px 9px; min-height: 28px;
+    font-family: inherit; font-size: inherit; cursor: var(--cursor-point); transition: border-color var(--transition-speed), color var(--transition-speed), background var(--transition-speed); }
+  .woc-balance:hover { color: var(--gold); border-color: var(--gold); background: #2c241066; }
+  .woc-balance:focus-visible { outline: 3px solid var(--color-border-focus); outline-offset: 2px; }
   .woc-coin { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c9a3ff, #6b3fa0); box-shadow: 0 0 4px rgba(150, 90, 230, 0.5); }
+  body.mobile-touch .woc-balance { min-height: 40px; }
+
+  /* ---------- wallet / send-tokens panel (clicked from the bag balance) ---------- */
+  #wallet-panel { width: 340px; max-width: calc(100vw - 24px); z-index: 70; }
+  #wallet-panel .wp-status { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--color-text-muted);
+    background: #1a140a66; border: 1px solid #3c3118; border-radius: 5px; padding: 7px 9px; margin: 4px 0 12px; }
+  #wallet-panel .wp-status .wp-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b6253; flex: none; }
+  #wallet-panel.is-connected .wp-status .wp-dot { background: #4ade80; box-shadow: 0 0 5px #4ade8088; }
+  #wallet-panel .wp-status code { color: #cdbf94; font-size: 11px; }
+  #wallet-panel .wp-status .wp-connect { margin: 0 0 0 auto; padding: 3px 10px; font-size: 11px; }
+  #wallet-panel .wp-section-label { font-family: var(--title-font); color: var(--gold); font-size: 12px; letter-spacing: 0.3px; margin: 0 0 7px; }
+  #wallet-panel .wp-row { margin-bottom: 11px; }
+  #wallet-panel .wp-row > label { display: block; font-size: 11px; color: var(--color-text-muted); margin-bottom: 4px; }
+  #wallet-panel .wp-cur { display: flex; gap: 6px; }
+  #wallet-panel .wp-cur button { flex: 1; padding: 7px 0; min-height: 36px; font-family: var(--title-font); font-size: 12px;
+    color: #cdbf94; background: #14100a; border: 1px solid #4b3d1d; border-radius: 5px; cursor: var(--cursor-point);
+    transition: border-color var(--transition-speed), color var(--transition-speed), background var(--transition-speed); }
+  #wallet-panel .wp-cur button:hover { border-color: #8f7025; color: #ffe6a8; }
+  #wallet-panel .wp-cur button.sel { color: #ffe6a8; border-color: var(--gold); background: #2c2410; box-shadow: inset 0 0 0 1px #ffd10022; }
+  #wallet-panel .wp-cur button:focus-visible { outline: 3px solid var(--color-border-focus); outline-offset: 2px; }
+  #wallet-panel .wp-amount { display: flex; gap: 6px; align-items: stretch; }
+  #wallet-panel .wp-amount .cd-input { flex: 1; }
+  #wallet-panel .wp-amount .wp-max { margin: 0; padding: 0 12px; white-space: nowrap; }
+  #wallet-panel .wp-bal { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }
+  #wallet-panel .wp-bal b { color: #cdbf94; font-weight: 600; }
+  #wallet-panel .wp-bal.over { color: var(--color-text-error); }
+  #wallet-panel .wp-bal.over b { color: var(--color-text-error); }
+  #wallet-panel .wp-resolve { min-height: 16px; font-size: 11px; margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+  #wallet-panel .wp-resolve.ok { color: #4ade80; }
+  #wallet-panel .wp-resolve.bad { color: var(--color-text-error); }
+  #wallet-panel .wp-resolve.pending { color: var(--color-text-muted); }
+  #wallet-panel .wp-resolve code { color: inherit; opacity: 0.85; }
+  #wallet-panel .wp-note { font-size: 10.5px; line-height: 1.5; color: var(--color-text-muted); margin: 2px 0 12px; }
+  #wallet-panel .wp-send { width: 100%; margin: 0; padding: 9px 0; min-height: 42px; background: linear-gradient(#8a6a26, #5a4413 55%, #473409); color: #ffe6a8; }
+  #wallet-panel .wp-feedback { min-height: 16px; font-size: 11.5px; margin-top: 9px; line-height: 1.5; overflow-wrap: anywhere; }
+  #wallet-panel .wp-feedback.ok { color: #4ade80; }
+  #wallet-panel .wp-feedback.bad { color: var(--color-text-error); }
+  #wallet-panel .wp-feedback a { color: var(--gold); }
+  #wallet-panel .panel-title { cursor: default; } /* not draggable, unlike HUD windows */
+  body.mobile-touch #wallet-panel .wp-cur button,
+  body.mobile-touch #wallet-panel .wp-connect { min-height: 40px; }
   .bag-grid { display: flex; flex-direction: column; gap: 2px; }
   .bag-item { display: flex; gap: 8px; align-items: center; width: 100%; font-size: 12px; padding: 3px 4px; border: 0; border-radius: 3px; cursor: var(--cursor-point); background: transparent; color: inherit; font-family: var(--ui-font); text-align: left; }
   .bag-item:hover { background: #ffffff12; }

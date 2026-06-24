@@ -417,6 +417,8 @@ export class ClientWorld implements IWorld {
   // Live multi-racer race state, mirrored from self (`race`); drives the HUD race
   // panel. Null when not racing.
   raceInfo: RaceInfo | null = null;
+  // Permanently earned (Charter-redeemed) mount ids, mirrored from self (`eam`).
+  earnedMounts: string[] = [];
   copper = 0;
   xp = 0;
   // Post-cap progression (Max-Level XP Overflow), mirrored from snapshot self.
@@ -859,6 +861,7 @@ export class ClientWorld implements IWorld {
       if (s.crun !== undefined) this.courseRun = s.crun ?? null;
       if (s.tpb !== undefined) this.mountTrialBests = s.tpb ?? {};
       if (s.race !== undefined) this.raceInfo = s.race ?? null;
+      if (s.eam !== undefined) this.earnedMounts = s.eam ?? [];
       this.xp = s.xp ?? 0;
       this.lifetimeXp = s.lxp ?? 0;
       this.restedXp = s.rxp ?? 0;
@@ -1040,6 +1043,9 @@ export class ClientWorld implements IWorld {
   abortCourse(): void {
     this.courseRun = null; // optimistic clear; the snapshot confirms
     this.cmd({ cmd: 'abort_course' });
+  }
+  mintCharter(mountId: string): void {
+    this.cmd({ cmd: 'mint_charter', mount: mountId });
   }
   startRace(courseId: string): void {
     this.cmd({ cmd: 'start_race', course: courseId });
