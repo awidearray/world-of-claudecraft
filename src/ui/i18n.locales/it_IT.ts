@@ -2447,4 +2447,15 @@ export const it_IT: Partial<Record<TranslationKey, string>> = {
   "skinEvent.unavailable": "In arrivo",
   "skinEvent.unequip": "Rimuovi",
   "skinEvent.unlocked": "Cosmetico sbloccato!",
+  // Mount Charters (v0.10 — tradeable mount deeds)
+  "entities.items.charter_ashmane.name": "Brevetto: Ashmane Courser",
+  "entities.items.charter_emberhoof.name": "Brevetto: Emberhoof Charger",
+  "entities.items.charter_bronzeflank.name": "Brevetto: Bronzeflank Destrier",
+  "entities.items.charter_silvermane.name": "Brevetto: Silvermane Stallion",
+  "entities.items.charter_stormhoof.name": "Brevetto: Stormhoof Charger",
+  "entities.items.charter_goldcrest.name": "Brevetto: Goldcrest Skystrider",
+  "entities.items.charter_verdant.name": "Brevetto: Verdant Wildwing",
+  "entities.items.charter_voidstrider.name": "Brevetto: Voidwing Strider",
+  "entities.items.charter_celestial.name": "Brevetto: Celestial Seraph",
+  "entities.items.charter_worldbearer.name": "Brevetto: Worldbearer's Roc",
 };

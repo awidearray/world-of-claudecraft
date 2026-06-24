@@ -536,6 +536,13 @@ export const ZONE1_NPCS: Record<string, NpcDef> = {
     questIds: ['q_brightwood_thinning', 'q_brightwood_monarch'],
     greeting: 'Quiet, $C — the glade is calm today, and I mean to keep it that way.',
   },
+  skytrial_master: {
+    id: 'skytrial_master', name: 'Skymaster Vael', title: 'Warden of the Skytrials',
+    // stands on the rise beside the Vale Skytrial rings (course centred at 38,138)
+    pos: { x: 44, z: 138 }, facing: Math.PI, color: 0xb8860b,
+    questIds: ['q_skyward_first_flight', 'q_skyward_time_trial', 'q_skyward_ascendant'],
+    greeting: 'The sky is a road few dare to walk, $C. Earn it, and it carries you.',
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -867,6 +874,36 @@ export const ZONE1_QUESTS: Record<string, QuestDef> = {
     minLevel: 6,
     suggestedPlayers: 2,
   },
+  // The Skyward Trials — a flight questline at the Vale Skytrial rings. Earns a
+  // Goldcrest Charter at its end, a non-holder path to a permanent flying mount.
+  q_skyward_first_flight: {
+    id: 'q_skyward_first_flight', name: 'First Flight',
+    giverNpcId: 'skytrial_master', turnInNpcId: 'skytrial_master',
+    text: 'You sit a winged steed well enough on the ground, $N — now take it up. Fly the Vale Skytrial: eight rings in one looping pass. Do not chase the clock yet. Just stay aloft and thread every ring.',
+    completionText: 'You did not fall. That is more than most manage on a first loop. The sky remembers who keeps coming back.',
+    objectives: [{ type: 'finish_course', courseId: 'skytrial_vale', count: 1, label: 'Vale Skytrial completed' }],
+    xpReward: 700, copperReward: 800, itemRewards: {},
+    minLevel: 6,
+  },
+  q_skyward_time_trial: {
+    id: 'q_skyward_time_trial', name: 'Beat the Clock',
+    giverNpcId: 'skytrial_master', turnInNpcId: 'skytrial_master',
+    text: 'Now do it with intent. Fly the Vale Skytrial again, $N, but finish before the sand runs out. A clean line through every ring, no wasted air. Precision, not panic.',
+    completionText: 'A clean line, ring to ring. You are not riding the sky any longer — you are flying it.',
+    objectives: [{ type: 'finish_course', courseId: 'skytrial_vale', count: 1, parTicks: 720, label: 'Vale Skytrial flown under par' }],
+    xpReward: 1100, copperReward: 2500, itemRewards: {},
+    requiresQuest: 'q_skyward_first_flight', minLevel: 7,
+  },
+  q_skyward_ascendant: {
+    id: 'q_skyward_ascendant', name: 'Ascendant',
+    giverNpcId: 'skytrial_master', turnInNpcId: 'skytrial_master',
+    text: 'One trial remains, $N: the Vale Circuit. Three laps of the long ring, flown under par — no luck, only craft. Master it and the open sky is yours to claim, from rim to rim.',
+    completionText: 'Skyward and unbroken. The sky is yours now, $N. Take this charter — a steed of the air, earned and not bought, to carry you wherever you mean to go.',
+    objectives: [{ type: 'finish_course', courseId: 'vale_circuit', count: 1, parTicks: 1800, label: 'Vale Circuit flown under par' }],
+    xpReward: 1800, copperReward: 50000,
+    itemRewards: { warrior: 'charter_goldcrest', mage: 'charter_goldcrest', rogue: 'charter_goldcrest' },
+    requiresQuest: 'q_skyward_time_trial', minLevel: 8,
+  },
 };
 
 export const ZONE1_QUEST_ORDER = [
@@ -880,6 +917,8 @@ export const ZONE1_QUEST_ORDER = [
   'q_ledger_first_duty', 'q_ledger_teeth', 'q_ledger_reedwater', 'q_ledger_silk',
   'q_ledger_brood', 'q_ledger_deepvermin', 'q_ledger_toll', 'q_ledger_vigil',
   'q_ledger_great_boar', 'q_ledger_outlaw_captain',
+  // The Skyward Trials flight chain
+  'q_skyward_first_flight', 'q_skyward_time_trial', 'q_skyward_ascendant',
 ];
 
 // ---------------------------------------------------------------------------

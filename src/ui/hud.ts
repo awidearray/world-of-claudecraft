@@ -15,7 +15,7 @@ import {
 import type { ZoneDef } from '../sim/data';
 import type { AbilityDef, EquipSlot, InvSlot, PetMode, PlayerClass, ResourceType, SkinRank, Stats } from '../sim/types';
 import { EVENT_SKIN_TIERS, MECH_CHROMAS, SKIN_RANKS, skinRankOrder, type SkinTier } from '../sim/content/skins';
-import { MOUNT_LIST, MOUNTS, type MountDef } from '../sim/content/mounts';
+import { MOUNT_LIST, MOUNTS, isCharterEligible, type MountDef } from '../sim/content/mounts';
 import { COURSE_LIST, courseDef, courseTotalGates } from '../sim/content/courses';
 import {
   AbilityEffect, CONSUME_DURATION, Entity, FISHING_CAST_ID, GCD, ItemDef, SimEvent,
@@ -380,6 +380,8 @@ export class Hud {
   private raceHudEl = $('#race-hud');
   private lastRaceState: string | null = null;
   private raceDoneHideAt = 0;
+  private wagerHudEl = $('#wager-hud');
+  private lastWagerSig = '';
   private actionbarEl = $('#actionbar');
   private xpFillEl = $('#xpbar .fill');
   private xpLabelEl = $('#xpbar .label');
@@ -2336,6 +2338,7 @@ export class Hud {
     }
     this.updateCourseHud();
     this.updateRaceHud();
+    this.updateWagerHud();
 
     // swing timer — fills between melee/ranged auto-attack swings. swingTimer
     // counts DOWN to 0 (ready); we recover the full interval from the reset
@@ -3594,6 +3597,18 @@ export class Hud {
         case 'raceResult':
           if (ev.place === 1) audio.levelUp(); // won — the panel shows the placement
           break;
+        case 'mountCharterMinted':
+          this.showBanner(t('hud.mounts.mintedBanner', { name: mountDisplayName(ev.mountId) }));
+          audio.coin();
+          if ($('#mount-window').style.display === 'block') this.renderMounts();
+          if ($('#bags').style.display !== 'none') this.renderBags();
+          break;
+        case 'mountEarned':
+          this.showBanner(t('hud.mounts.earnedBanner', { name: mountDisplayName(ev.mountId) }));
+          audio.levelUp();
+          if ($('#mount-window').style.display === 'block') this.renderMounts();
+          if ($('#bags').style.display !== 'none') this.renderBags();
+          break;
         case 'loot': {
           this.log(this.localizeLootText(ev.text), '#7fdc4f');
           if (ev.text.includes('loot') || ev.text.includes('Sold') || ev.text.includes('Bought back')) audio.coin();
@@ -3692,6 +3707,23 @@ export class Hud {
           this.showPrompt(t('hud.prompts.duelRequest', { name: `<b>${esc(ev.fromName)}</b>` }), t('hud.prompts.acceptDuel'),
             () => this.sim.duelAccept(), () => this.sim.duelDecline());
           break;
+        case 'wagerInvite': {
+          audio.duelChallenge();
+          const key = ev.anteCharterId ? 'hud.wager.inviteCharter' : 'hud.wager.inviteGold';
+          this.showPrompt(t(key, { name: `<b>${esc(ev.fromName)}</b>`, money: formatLocalizedMoney(ev.anteCopper) }),
+            t('hud.wager.accept'), () => this.sim.wagerJoin(), () => this.sim.wagerDecline());
+          break;
+        }
+        case 'wagerSettled':
+          if (ev.cancelled) this.showBanner(t('hud.wager.refunded'));
+          else if (ev.won) {
+            this.showBanner(ev.charters > 0
+              ? t('hud.wager.wonCharter', { money: formatLocalizedMoney(ev.copper), count: formatNumber(ev.charters) })
+              : t('hud.wager.won', { money: formatLocalizedMoney(ev.copper) }));
+            audio.levelUp();
+          } else this.showBanner(t('hud.wager.lost'));
+          break;
+        case 'wagerExpired': break; // the invite prompt auto-dismisses on its own timer
         case 'duelCountdown':
           this.showBanner(t('hud.system.duelCountdown', { seconds: ev.seconds }));
           audio.duelCountdownTick();
@@ -6487,6 +6519,7 @@ export class Hud {
     const el = $('#mount-window');
     const p = this.sim.player;
     const eligible = p.mountTier ?? 0;
+    const earned = new Set(this.sim.earnedMounts);
     const activeId = p.mountId ?? null;
     const total = MOUNT_LIST.length;
     const unlocked = Math.max(0, Math.min(eligible, total));
@@ -6514,8 +6547,11 @@ export class Hud {
     el.appendChild(list);
 
     for (const m of MOUNT_LIST) {
-      const isUnlocked = eligible >= m.tier;
+      const heldByWallet = eligible >= m.tier;
+      const isEarned = earned.has(m.id);
+      const isUnlocked = heldByWallet || isEarned; // two-track: holdings OR a redeemed Charter
       const isActive = activeId === m.id;
+      const canMint = heldByWallet && isCharterEligible(m.id); // only holders strike deeds
       const row = document.createElement('div');
       row.className = 'mount-row' + (isUnlocked ? '' : ' locked') + (isActive ? ' active' : '');
       row.setAttribute('role', 'listitem');
@@ -6529,6 +6565,7 @@ export class Hud {
         `<div class="mount-text">` +
         `<div class="mount-name">${esc(m.name)}` +
         `${m.flying ? `<span class="mount-fly-tag">${esc(t('hud.mounts.flies'))}</span>` : ''}` +
+        `${isEarned ? `<span class="mount-owned-tag">${esc(t('hud.mounts.owned'))}</span>` : ''}` +
         `${isActive ? `<span class="mount-active-tag">${esc(t('hud.mounts.riding'))}</span>` : ''}</div>` +
         `<div class="mount-flavor">${esc(m.flavor)}</div>` +
         `<div class="mount-meta">${meta}</div>` +
@@ -6549,6 +6586,19 @@ export class Hud {
           : t('hud.mounts.cardAria', { name: m.name, flavor: m.flavor }));
       } else {
         row.setAttribute('aria-label', t('hud.mounts.lockedAria', { name: m.name, amount: fmt0(m.threshold) }));
+      }
+      // Holders can strike a tradeable Mount Charter for any mount their holdings
+      // cover (the dragon excepted) — sold for gold so non-$WOC players can earn it.
+      if (canMint) {
+        const mintBtn = document.createElement('button');
+        mintBtn.type = 'button';
+        mintBtn.className = 'mount-action is-mint';
+        mintBtn.textContent = t('hud.mounts.mint');
+        mintBtn.title = t('hud.mounts.mintHint');
+        mintBtn.setAttribute('aria-label', t('hud.mounts.mintAria', { name: m.name }));
+        mintBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        mintBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this.sim.mintCharter(m.id); audio.click(); });
+        row.appendChild(mintBtn);
       }
       list.appendChild(row);
     }
@@ -6608,6 +6658,18 @@ export class Hud {
           el.style.display = 'none';
           this.hideTooltip();
         });
+        const wagerBtn = document.createElement('button');
+        wagerBtn.type = 'button';
+        wagerBtn.className = 'mount-action is-mint';
+        wagerBtn.textContent = t('hud.wager.start');
+        wagerBtn.setAttribute('aria-label', `${t('hud.wager.start')} — ${c.name}`);
+        wagerBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        wagerBtn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          el.style.display = 'none';
+          this.hideTooltip();
+          this.openWagerSetup(c.id);
+        });
         const cbtn = document.createElement('button');
         cbtn.type = 'button';
         cbtn.className = 'mount-action';
@@ -6623,6 +6685,7 @@ export class Hud {
         });
         crow.appendChild(boardBtn);
         crow.appendChild(raceBtn);
+        crow.appendChild(wagerBtn);
         crow.appendChild(cbtn);
         item.appendChild(crow);
         item.appendChild(board);
@@ -6648,6 +6711,40 @@ export class Hud {
     if ((p.mountTier ?? 0) < m.tier) { this.showError(t('hud.mounts.notEligible')); return; }
     this.sim.summonMount(m.id);
     audio.click();
+  }
+
+  // Host-side Wager Race setup: pick the gold ante (+ optionally stake a Mount
+  // Charter you own), then open the lobby. The sim re-validates everything.
+  private openWagerSetup(courseId: string): void {
+    const el = $('#wager-setup');
+    const ownedCharter = this.sim.inventory.find((s) => s.itemId.startsWith('charter_') && s.count > 0)?.itemId ?? null;
+    this.setText(el.querySelector('.ws-title') as HTMLElement, t('hud.wager.title'));
+    this.setText(el.querySelector('.ws-label') as HTMLElement, t('hud.wager.antePrompt'));
+    const charterRow = el.querySelector('.ws-charter') as HTMLElement;
+    const charterCb = el.querySelector('#ws-charter-cb') as HTMLInputElement;
+    charterCb.checked = false;
+    charterRow.hidden = ownedCharter === null;
+    if (ownedCharter) this.setText(charterRow.querySelector('span') as HTMLElement, t('hud.wager.stakeCharter'));
+    // Re-wire the static buttons fresh each open (avoids stacking stale closures).
+    const openBtn = (el.querySelector('#ws-open') as HTMLButtonElement);
+    const cancelBtn = (el.querySelector('#ws-cancel') as HTMLButtonElement);
+    const freshOpen = openBtn.cloneNode(true) as HTMLButtonElement;
+    const freshCancel = cancelBtn.cloneNode(true) as HTMLButtonElement;
+    freshOpen.textContent = t('hud.wager.open');
+    freshCancel.textContent = t('hud.wager.cancel');
+    openBtn.replaceWith(freshOpen);
+    cancelBtn.replaceWith(freshCancel);
+    const close = (): void => { el.hidden = true; };
+    freshOpen.addEventListener('click', () => {
+      const ante = Math.floor(Number((el.querySelector('#ws-ante') as HTMLInputElement).value));
+      if (!Number.isFinite(ante) || ante < 1) return;
+      this.sim.proposeWagerRace(courseId, ante, charterCb.checked && ownedCharter ? ownedCharter : null);
+      audio.click();
+      close();
+    });
+    freshCancel.addEventListener('click', close);
+    el.hidden = false;
+    (el.querySelector('#ws-ante') as HTMLInputElement).focus();
   }
 
   // Presentation-side swimming probe mirroring the renderer's derivation (the
@@ -6770,6 +6867,49 @@ export class Hud {
         + `<span class="rh-bar"><span class="rh-fill" style="width:${(frac * 100).toFixed(0)}%"></span></span>`
         + `<span class="rh-status">${esc(status)}</span></div>`;
     }).join('');
+  }
+
+  // The Wager Race lobby panel — members + live pot + host/joiner actions. Shown
+  // while in a lobby that hasn't launched; once launched, the race panel takes
+  // over. Rebuilt only on change (a signature) so the buttons keep their handlers.
+  private updateWagerHud(): void {
+    const el = this.wagerHudEl;
+    const info = this.sim.wagerInfo;
+    if (!info || info.launched) {
+      if (!el.hidden) { el.hidden = true; this.lastWagerSig = ''; }
+      return;
+    }
+    const sig = `${info.lobbyId}|${info.potCopper}|${info.potCharters}|${info.isHost}|${info.members.length}|${info.members.map((m) => m.pid).join(',')}`;
+    if (sig === this.lastWagerSig) return;
+    this.lastWagerSig = sig;
+    el.hidden = false;
+    this.setText(el.querySelector('.wh-title') as HTMLElement, t('hud.wager.title'));
+    this.setText(el.querySelector('.wh-pot') as HTMLElement, info.potCharters > 0
+      ? t('hud.wager.potCharter', { money: formatLocalizedMoney(info.potCopper), count: formatNumber(info.potCharters) })
+      : t('hud.wager.pot', { money: formatLocalizedMoney(info.potCopper) }));
+    const myId = this.sim.player?.id;
+    (el.querySelector('.wh-list') as HTMLElement).innerHTML = info.members.map((m) =>
+      `<div class="wh-row${m.pid === info.hostPid ? ' host' : ''}${m.pid === myId ? ' me' : ''}">`
+      + `<span class="wh-dot"></span><span class="wh-name">${esc(m.name)}</span></div>`).join('');
+    const actions = el.querySelector('.wh-actions') as HTMLElement;
+    actions.innerHTML = '';
+    if (info.isHost) {
+      const launch = document.createElement('button');
+      launch.textContent = info.members.length < 2 ? t('hud.wager.waiting') : t('hud.wager.launch');
+      launch.disabled = info.members.length < 2;
+      launch.addEventListener('click', () => { this.sim.launchWagerRace(); audio.click(); });
+      const cancel = document.createElement('button');
+      cancel.className = 'is-sub';
+      cancel.textContent = t('hud.wager.cancel');
+      cancel.addEventListener('click', () => { this.sim.wagerLeave(); audio.click(); });
+      actions.append(launch, cancel);
+    } else {
+      const leave = document.createElement('button');
+      leave.className = 'is-sub';
+      leave.textContent = t('hud.wager.leave');
+      leave.addEventListener('click', () => { this.sim.wagerLeave(); audio.click(); });
+      actions.append(leave);
+    }
   }
 
   // Fetch + render a course's realm time-trial leaderboard inline (the player's

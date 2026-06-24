@@ -2447,4 +2447,15 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   "skinEvent.unavailable": "即将推出",
   "skinEvent.unequip": "卸下",
   "skinEvent.unlocked": "外观已解锁！",
+  // Mount Charters (v0.10 — tradeable mount deeds)
+  "entities.items.charter_ashmane.name": "证书：Ashmane Courser",
+  "entities.items.charter_emberhoof.name": "证书：Emberhoof Charger",
+  "entities.items.charter_bronzeflank.name": "证书：Bronzeflank Destrier",
+  "entities.items.charter_silvermane.name": "证书：Silvermane Stallion",
+  "entities.items.charter_stormhoof.name": "证书：Stormhoof Charger",
+  "entities.items.charter_goldcrest.name": "证书：Goldcrest Skystrider",
+  "entities.items.charter_verdant.name": "证书：Verdant Wildwing",
+  "entities.items.charter_voidstrider.name": "证书：Voidwing Strider",
+  "entities.items.charter_celestial.name": "证书：Celestial Seraph",
+  "entities.items.charter_worldbearer.name": "证书：Worldbearer's Roc",
 };

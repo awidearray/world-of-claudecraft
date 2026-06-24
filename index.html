@@ -999,6 +999,8 @@
     color: #1c140a; background: #d9b24a; border-radius: 999px; padding: 1px 7px; }
   .mount-fly-tag { font-family: inherit; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
     color: #07212e; background: linear-gradient(#9fe6ff, #5fc3f0); border-radius: 999px; padding: 1px 7px; }
+  .mount-owned-tag { font-family: inherit; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+    color: #16240f; background: linear-gradient(#b9e89a, #8fd06a); border-radius: 999px; padding: 1px 7px; }
   .mount-flavor { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; overflow-wrap: anywhere; }
   .mount-meta { font-size: 11px; color: var(--color-text-muted); margin-top: 3px;
     display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -1013,6 +1015,8 @@
   .mount-action:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
   .mount-action.is-dismount { color: #f4e6c8; background: #2a2118; border-color: #6a5524; }
   .mount-action.is-dismount:hover { background: #352a1d; }
+  .mount-action.is-mint { min-width: 96px; color: #102219; background: linear-gradient(#9fe0b6, #5fb585); border-color: #2f6b48; }
+  .mount-action.is-mint:hover { background: linear-gradient(#b2ecc6, #6cc492); }
 
   /* Skytrials list inside the mount window */
   .mount-section-title { margin: 12px 2px 6px; font-family: var(--title-font); font-size: 13px; color: #cbb472;
@@ -1076,6 +1080,47 @@
   .rh-row.done .rh-fill { background: #8fd6a8; }
   .rh-row .rh-status { width: 34px; text-align: right; font-variant-numeric: tabular-nums; color: #cdbf98; }
   .rh-row.me .rh-status { color: #ffd24a; }
+
+  /* Soft-currency Wager Race lobby panel (members + pot + host/joiner actions) */
+  #wager-hud { position: fixed; top: 84px; right: 16px; z-index: 61; width: 236px;
+    font-family: var(--title-font); color: #f6ecd2;
+    background: rgba(16,13,10,0.74); border: 1px solid rgba(214,167,62,0.55); border-radius: 12px;
+    padding: 10px 12px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.5); }
+  #wager-hud[hidden] { display: none; }
+  #wager-hud .wh-title { text-align: center; font-size: 16px; color: #ffd24a; margin-bottom: 3px; }
+  #wager-hud .wh-pot { text-align: center; font-size: 13px; color: #f3d57c; margin-bottom: 8px; }
+  #wager-hud .wh-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 9px; }
+  .wh-row { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+  .wh-row .wh-dot { width: 6px; height: 6px; border-radius: 50%; background: #8fd6a8; flex: none; }
+  .wh-row.host .wh-dot { background: #ffd24a; }
+  .wh-row .wh-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wh-row.me .wh-name { color: #ffd24a; }
+  #wager-hud .wh-actions { display: flex; gap: 6px; }
+  #wager-hud .wh-actions button { flex: 1; min-height: 34px; border-radius: 5px; cursor: pointer;
+    font-family: var(--title-font); font-size: 12px; color: #1c140a;
+    background: linear-gradient(#e8c768, #c79a35); border: 1px solid #8a6a1e; }
+  #wager-hud .wh-actions button:hover { background: linear-gradient(#f3d57c, #d3a73e); }
+  #wager-hud .wh-actions button:disabled { opacity: 0.45; cursor: default; }
+  #wager-hud .wh-actions button.is-sub { color: #f4e6c8; background: #2a2118; border-color: #6a5524; }
+  #wager-hud .wh-actions button.is-sub:hover { background: #352a1d; }
+
+  /* Wager Race setup modal (host picks the ante before opening the lobby) */
+  #wager-setup { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55); }
+  #wager-setup[hidden] { display: none; }
+  #wager-setup .ws-card { width: 320px; max-width: 92vw; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  #wager-setup .ws-title { font-family: var(--title-font); font-size: 17px; color: #ffd24a; text-align: center; }
+  #wager-setup .ws-label { font-size: 13px; color: var(--color-text-muted); }
+  #wager-setup #ws-ante { width: 100%; font-size: 16px; padding: 8px 10px; border-radius: 5px;
+    border: 1px solid #6a5524; background: #1a1510; color: #f6ecd2; }
+  #wager-setup .ws-charter { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d6c79b; cursor: pointer; }
+  #wager-setup .ws-charter input { width: 18px; height: 18px; }
+  #wager-setup .ws-actions { display: flex; gap: 8px; margin-top: 4px; }
+  #wager-setup .ws-actions button { flex: 1; min-height: 40px; border-radius: 5px; cursor: pointer;
+    font-family: var(--title-font); font-size: 13px; color: #1c140a;
+    background: linear-gradient(#e8c768, #c79a35); border: 1px solid #8a6a1e; }
+  #wager-setup .ws-actions button:hover { background: linear-gradient(#f3d57c, #d3a73e); }
+  #wager-setup .ws-actions button.is-sub { color: #f4e6c8; background: #2a2118; border-color: #6a5524; }
 
   /* quest log */
   #quest-log-window { width: 520px; }
@@ -1276,8 +1321,53 @@
   #bags .money { flex: none; display: flex; align-items: center; gap: 10px; }
   /* coins stay right-aligned whether or not the $WOC chip is present */
   #bags .money .money-inline { margin-left: auto; }
-  .woc-balance { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-dim); font-weight: 600; white-space: nowrap; }
+  .woc-balance { display: inline-flex; align-items: center; gap: 5px; color: var(--gold-dim); font-weight: 600; white-space: nowrap;
+    background: #1a140a66; border: 1px solid #4b3d1d; border-radius: 5px; padding: 4px 9px; min-height: 28px;
+    font-family: inherit; font-size: inherit; cursor: var(--cursor-point); transition: border-color var(--transition-speed), color var(--transition-speed), background var(--transition-speed); }
+  .woc-balance:hover { color: var(--gold); border-color: var(--gold); background: #2c241066; }
+  .woc-balance:focus-visible { outline: 3px solid var(--color-border-focus); outline-offset: 2px; }
   .woc-coin { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #c9a3ff, #6b3fa0); box-shadow: 0 0 4px rgba(150, 90, 230, 0.5); }
+  body.mobile-touch .woc-balance { min-height: 40px; }
+
+  /* ---------- wallet / send-tokens panel (clicked from the bag balance) ---------- */
+  #wallet-panel { width: 340px; max-width: calc(100vw - 24px); z-index: 70; }
+  #wallet-panel .wp-status { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--color-text-muted);
+    background: #1a140a66; border: 1px solid #3c3118; border-radius: 5px; padding: 7px 9px; margin: 4px 0 12px; }
+  #wallet-panel .wp-status .wp-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b6253; flex: none; }
+  #wallet-panel.is-connected .wp-status .wp-dot { background: #4ade80; box-shadow: 0 0 5px #4ade8088; }
+  #wallet-panel .wp-status code { color: #cdbf94; font-size: 11px; }
+  #wallet-panel .wp-status .wp-connect { margin: 0 0 0 auto; padding: 3px 10px; font-size: 11px; }
+  #wallet-panel .wp-section-label { font-family: var(--title-font); color: var(--gold); font-size: 12px; letter-spacing: 0.3px; margin: 0 0 7px; }
+  #wallet-panel .wp-row { margin-bottom: 11px; }
+  #wallet-panel .wp-row > label { display: block; font-size: 11px; color: var(--color-text-muted); margin-bottom: 4px; }
+  #wallet-panel .wp-cur { display: flex; gap: 6px; }
+  #wallet-panel .wp-cur button { flex: 1; padding: 7px 0; min-height: 36px; font-family: var(--title-font); font-size: 12px;
+    color: #cdbf94; background: #14100a; border: 1px solid #4b3d1d; border-radius: 5px; cursor: var(--cursor-point);
+    transition: border-color var(--transition-speed), color var(--transition-speed), background var(--transition-speed); }
+  #wallet-panel .wp-cur button:hover { border-color: #8f7025; color: #ffe6a8; }
+  #wallet-panel .wp-cur button.sel { color: #ffe6a8; border-color: var(--gold); background: #2c2410; box-shadow: inset 0 0 0 1px #ffd10022; }
+  #wallet-panel .wp-cur button:focus-visible { outline: 3px solid var(--color-border-focus); outline-offset: 2px; }
+  #wallet-panel .wp-amount { display: flex; gap: 6px; align-items: stretch; }
+  #wallet-panel .wp-amount .cd-input { flex: 1; }
+  #wallet-panel .wp-amount .wp-max { margin: 0; padding: 0 12px; white-space: nowrap; }
+  #wallet-panel .wp-bal { font-size: 11px; color: var(--color-text-muted); margin-top: 4px; }
+  #wallet-panel .wp-bal b { color: #cdbf94; font-weight: 600; }
+  #wallet-panel .wp-bal.over { color: var(--color-text-error); }
+  #wallet-panel .wp-bal.over b { color: var(--color-text-error); }
+  #wallet-panel .wp-resolve { min-height: 16px; font-size: 11px; margin-top: 5px; display: flex; align-items: center; gap: 6px; }
+  #wallet-panel .wp-resolve.ok { color: #4ade80; }
+  #wallet-panel .wp-resolve.bad { color: var(--color-text-error); }
+  #wallet-panel .wp-resolve.pending { color: var(--color-text-muted); }
+  #wallet-panel .wp-resolve code { color: inherit; opacity: 0.85; }
+  #wallet-panel .wp-note { font-size: 10.5px; line-height: 1.5; color: var(--color-text-muted); margin: 2px 0 12px; }
+  #wallet-panel .wp-send { width: 100%; margin: 0; padding: 9px 0; min-height: 42px; background: linear-gradient(#8a6a26, #5a4413 55%, #473409); color: #ffe6a8; }
+  #wallet-panel .wp-feedback { min-height: 16px; font-size: 11.5px; margin-top: 9px; line-height: 1.5; overflow-wrap: anywhere; }
+  #wallet-panel .wp-feedback.ok { color: #4ade80; }
+  #wallet-panel .wp-feedback.bad { color: var(--color-text-error); }
+  #wallet-panel .wp-feedback a { color: var(--gold); }
+  #wallet-panel .panel-title { cursor: default; } /* not draggable, unlike HUD windows */
+  body.mobile-touch #wallet-panel .wp-cur button,
+  body.mobile-touch #wallet-panel .wp-connect { min-height: 40px; }
   .bag-grid { display: flex; flex-direction: column; gap: 2px; }
   .bag-item { display: flex; gap: 8px; align-items: center; width: 100%; font-size: 12px; padding: 3px 4px; border: 0; border-radius: 3px; cursor: var(--cursor-point); background: transparent; color: inherit; font-family: var(--ui-font); text-align: left; }
   .bag-item:hover { background: #ffffff12; }
@@ -7199,6 +7289,13 @@
       <div class="rh-list"></div>
     </div>
 
+    <div id="wager-hud" hidden>
+      <div class="wh-title"></div>
+      <div class="wh-pot"></div>
+      <div class="wh-list"></div>
+      <div class="wh-actions"></div>
+    </div>
+
     <div id="minimap-wrap">
       <div id="zone-label" data-i18n="entities.zones.eastbrook_vale.name">Eastbrook Vale</div>
       <canvas id="minimap" width="162" height="162"></canvas>
@@ -7298,6 +7395,18 @@
     <div id="spellbook" class="window panel"></div>
     <div id="talents-window" class="window panel"></div>
     <div id="mount-window" class="window panel"></div>
+    <div id="wager-setup" hidden>
+      <div class="ws-card panel">
+        <div class="ws-title"></div>
+        <label class="ws-label" for="ws-ante"></label>
+        <input id="ws-ante" type="number" min="1" step="1" value="10000" />
+        <label class="ws-charter" hidden><input id="ws-charter-cb" type="checkbox" /> <span></span></label>
+        <div class="ws-actions">
+          <button id="ws-open" type="button"></button>
+          <button id="ws-cancel" class="is-sub" type="button"></button>
+        </div>
+      </div>
+    </div>
     <div id="quest-log-window" class="window panel"></div>
     <div id="vendor-window" class="window panel"></div>
     <div id="map-window" class="window panel">

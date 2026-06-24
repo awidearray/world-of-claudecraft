@@ -2447,4 +2447,15 @@ export const de_DE: Partial<Record<TranslationKey, string>> = {
   "skinEvent.unavailable": "Demnächst verfügbar",
   "skinEvent.unequip": "Ablegen",
   "skinEvent.unlocked": "Kosmetik freigeschaltet!",
+  // Mount Charters (v0.10 — tradeable mount deeds)
+  "entities.items.charter_ashmane.name": "Urkunde: Ashmane Courser",
+  "entities.items.charter_emberhoof.name": "Urkunde: Emberhoof Charger",
+  "entities.items.charter_bronzeflank.name": "Urkunde: Bronzeflank Destrier",
+  "entities.items.charter_silvermane.name": "Urkunde: Silvermane Stallion",
+  "entities.items.charter_stormhoof.name": "Urkunde: Stormhoof Charger",
+  "entities.items.charter_goldcrest.name": "Urkunde: Goldcrest Skystrider",
+  "entities.items.charter_verdant.name": "Urkunde: Verdant Wildwing",
+  "entities.items.charter_voidstrider.name": "Urkunde: Voidwing Strider",
+  "entities.items.charter_celestial.name": "Urkunde: Celestial Seraph",
+  "entities.items.charter_worldbearer.name": "Urkunde: Worldbearer's Roc",
 };

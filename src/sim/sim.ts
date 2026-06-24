@@ -25,7 +25,7 @@ import {
   TAUNT_FORCE_SECONDS, addThreat, clearThreat, stealthDetectionRadius, threatEntries, threatModifier, topThreatValue,
 } from './threat';
 import { groundHeight, WATER_LEVEL } from './world';
-import type { AccountCosmetics, LeaderboardEntry, MountTrialLeaderEntry, RaceInfo, RaceParticipant } from '../world_api';
+import type { AccountCosmetics, LeaderboardEntry, MountTrialLeaderEntry, RaceInfo, RaceParticipant, WagerInfo } from '../world_api';
 import {
   AbilityDef, AbilityEffect, Aura, AuraKind, CAST_PUSHBACK_SEC, CHANNEL_PUSHBACK_FRACTION, CONSUME_DURATION,
   DEFAULT_PARTY_LOOT_STRATEGIES,
@@ -35,13 +35,13 @@ import {
   angleTo, armorReduction, dist2d, emptyMoveInput, isConsuming, meleeMissChance, mobXpValue, normAngle,
   rageFromDealing, rageFromTaking, spellHitChance, xpForLevel,
   MILESTONES, virtualLevel, xpToReachLevel, canPrestige,
-  ArenaFormat, ArenaStanding, ArenaCombatant, SkinCatalog, SkinRank, CourseRunState,
+  ArenaFormat, ArenaStanding, ArenaCombatant, SkinCatalog, SkinRank, CourseRunState, CourseDef,
 } from './types';
 import {
   EVENT_SKIN_TOKEN_ID, MECH_CHROMAS, classHasSkin, mechChromaItemId, mechChromaSkinIndex,
   rankAllowsMechChroma, rankAllowsSkin, rollSkinRank,
 } from './content/skins';
-import { MOUNTS, mountUnlockedAtTier, isFlyingMount, mountForTier } from './content/mounts';
+import { MOUNTS, mountUnlockedAtTier, isFlyingMount, mountForTier, canSummonMount, isCharterEligible } from './content/mounts';
 import { COURSES, courseTotalGates } from './content/courses';
 
 const LEASH_DISTANCE = 45;
@@ -71,6 +71,13 @@ const COURSE_FLIGHT_MULT = 2.3;
 // start), and how long a finished race lingers for its result panel.
 const RACE_COUNTDOWN_TICKS = 3 * TICK_RATE;
 const RACE_CLEANUP_TICKS = 8 * TICK_RATE;
+// Soft-currency Wager Races: a host opens a staked race, others opt in (and only
+// then are charged), the winner takes the whole pot. TTLs mirror the social-invite
+// windows; the ante is uniform so the pot is trivially conserved.
+const WAGER_INVITE_TTL = 30; // seconds an open invite stands before it lapses
+const WAGER_LOBBY_TTL = 120; // seconds the host has to fill + launch before auto-refund
+const WAGER_INVITE_RANGE = 30; // yards — nearby flyers the host may invite (duel range)
+const WAGER_MIN_ANTE = 1; // copper — no zero-stake wagers (mirrors MARKET_MIN_PRICE)
 const EVADE_SPEED_MULT = 1.6;
 // An evading mob walks a straight line home (no pathfinding) and stalls if deep
 // water or a collider sits between it and its spawn. Since evading mobs are
@@ -516,6 +523,10 @@ export interface PlayerMeta {
   // records (empty offline); the source of truth is the mount_trial_records
   // table. Drives "new best" feedback + the per-course best in the launcher.
   mountTrialBests: Record<string, number>;
+  // Permanently earned mounts (Charter redemptions). The second ownership track:
+  // summonable regardless of $WOC holdings, never downgraded. Persisted in
+  // CharacterState.earnedMounts.
+  earnedMounts: Set<string>;
 }
 
 // Away-from-keyboard / do-not-disturb presence. `afk` still delivers whispers
@@ -606,6 +617,10 @@ export interface CharacterState {
   pendingSkinRank?: SkinRank | null;
   pendingSkinCatalog?: SkinCatalog | null;
   pendingSkinItemId?: string | null;
+  // Permanently EARNED mounts (the second ownership track): mount ids redeemed
+  // from a Mount Charter (won/bought by non-$WOC players). Unlike holdings-derived
+  // access these never lapse. JSONB; optional so pre-Charter saves load cleanly.
+  earnedMounts?: string[];
 }
 
 export interface PetState {
@@ -718,6 +733,25 @@ interface Race {
   finishOrder: number[]; // pids in finish order = placement
   dnf: Set<number>; // pids that dropped out (lost flight / left)
   doneTick: number; // tickCount the race ended, for the lingering result panel
+  wagerLobbyId?: number; // set on a wager race; payout reads that lobby's stake ledger
+}
+
+// A pre-race staking pen for a Wager Race. The host opens it (staking immediately,
+// since proposing IS consent); invitees opt in via wagerJoin (the ONLY place a
+// non-host is charged). The ante is uniform, so `stakes` is just the set of pids
+// who paid in — pot = stakes.size × anteCopper (+ one Charter each if anteCharterId).
+// On settle the pot drains exactly once (guarded by `settled`) to the winner, or
+// refunds every staker if the race produced no finisher / was cancelled.
+interface WagerLobby {
+  id: number;
+  hostPid: number;
+  courseId: string;
+  anteCopper: number;
+  anteCharterId: string | null; // a charter_<mountId> item, or null for a gold-only wager
+  stakes: Set<number>; // pids who escrowed the ante (host + accepted joiners) — the consent ledger
+  expires: number; // this.time + WAGER_LOBBY_TTL, until launched
+  raceId: number | null; // set on launch; ties the lobby to its Race
+  settled: boolean; // pot drained exactly once (payout OR refund)
 }
 
 export class Sim {
@@ -736,6 +770,10 @@ export class Sim {
   nextId = 1;
   private races: Race[] = [];
   private nextRaceId = 1;
+  private wagerLobbies = new Map<number, WagerLobby>(); // lobbyId -> lobby
+  private wagerByPid = new Map<number, number>(); // pid -> lobbyId (host + every staker; one lobby per player)
+  private wagerInvites = new Map<number, { fromPid: number; lobbyId: number; expires: number }>(); // invitee pid -> offer
+  private nextWagerId = 1;
   events: SimEvent[] = [];
   private delayedEvents: { at: number; event: SimEvent }[] = [];
   // social systems
@@ -957,6 +995,7 @@ export class Sim {
       mountCast: null,
       courseRun: null,
       mountTrialBests: opts?.mountTrialBests ? { ...opts.mountTrialBests } : {},
+      earnedMounts: new Set(opts?.state?.earnedMounts ?? []),
     };
     this.players.set(player.id, meta);
     player.skinCatalog = meta.skinCatalog;
@@ -1028,6 +1067,19 @@ export class Sim {
     this.partyInvites.delete(pid);
     this.tradeInvites.delete(pid);
     this.duelInvites.delete(pid);
+    // Wager cleanup: drop any pending offer; refund an un-launched stake (cancel the
+    // whole lobby if they hosted it). A LAUNCHED stake stays in the pot — the race
+    // DNFs the gone player and settleWagerRace still pays the field, so the leaver
+    // simply forfeits (no copper created or stranded).
+    this.wagerInvites.delete(pid);
+    const wagerLobbyId = this.wagerByPid.get(pid);
+    if (wagerLobbyId !== undefined) {
+      const lobby = this.wagerLobbies.get(wagerLobbyId);
+      if (lobby && lobby.raceId === null && !lobby.settled) {
+        if (lobby.hostPid === pid) { this.refundWagerLobby(lobby); this.wagerLobbies.delete(lobby.id); }
+        else this.returnStake(lobby, pid);
+      }
+    }
     // mobs forget the leaving player; persistent hunter pets are serialized
     // with the character and removed from the live world instead of released
     const pet = this.petOf(pid, true);
@@ -1099,6 +1151,7 @@ export class Sim {
       pendingSkinRank: meta.pendingSkinRank,
       pendingSkinCatalog: meta.pendingSkinCatalog,
       pendingSkinItemId: meta.pendingSkinItemId,
+      earnedMounts: [...meta.earnedMounts],
     };
   }
 
@@ -1142,7 +1195,7 @@ export class Sim {
     const { meta, e: p } = r;
     if (p.dead) return false;
     if (!MOUNTS[mountId]) return false;
-    if (!mountUnlockedAtTier(mountId, p.mountTier ?? 0)) return false;
+    if (!canSummonMount(mountId, p.mountTier ?? 0, meta.earnedMounts)) return false; // holder OR earned
     if (p.inCombat) return false;
     if (this.isSwimming(p)) return false;
     if (p.castingAbility) return false;
@@ -1184,14 +1237,64 @@ export class Sim {
    *  lower-but-still-eligible mount alone. */
   enforceMountEligibility(pid: number): void {
     const e = this.entities.get(pid);
-    if (!e || e.mountId === undefined) return;
-    if (mountUnlockedAtTier(e.mountId, e.mountTier ?? 0)) return; // still covers this rung
-    // Holdings fell below the active steed's rung: gracefully DOWNGRADE to the best
-    // mount the rider still qualifies for, rather than throwing them off entirely.
-    // Only a drop to no eligibility (tier 0) dismounts.
+    const meta = this.players.get(pid);
+    if (!e || !meta || e.mountId === undefined) return;
+    // Earned (Charter) mounts are permanent — holdings never touch them. Otherwise
+    // a holdings drop below this steed's rung gracefully DOWNGRADES to the best
+    // mount the rider still covers (holder rung or any earned one), dismounting
+    // only when nothing remains.
+    if (canSummonMount(e.mountId, e.mountTier ?? 0, meta.earnedMounts)) return;
     const lesser = mountForTier(e.mountTier ?? 0);
     if (lesser) e.mountId = lesser.id;
-    else this.dismount(e);
+    else {
+      // no holder rung left, but a flyer/ground mount may still be earned
+      const fallback = [...meta.earnedMounts][0];
+      if (fallback) e.mountId = fallback;
+      else this.dismount(e);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Mount Charters — the EARNED ownership track. Holders mint tradeable deeds for
+  // mounts their holdings cover; the deeds change hands for gold on the World
+  // Market; a non-$WOC buyer redeems one for a PERMANENT mount that holdings can
+  // never revoke. Only the tier-11 dragon has no Charter (isCharterEligible).
+  // -------------------------------------------------------------------------
+
+  /** Permanently grant `mountId` on the earned track (Charter redemption or an
+   *  operator grant). Idempotent; rejects unknown / holder-only (dragon) ids.
+   *  Returns true when it newly added the mount. */
+  grantEarnedMount(mountId: string, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r || !isCharterEligible(mountId) || r.meta.earnedMounts.has(mountId)) return false;
+    r.meta.earnedMounts.add(mountId);
+    this.emit({ type: 'mountEarned', mountId, pid: r.e.id });
+    return true;
+  }
+
+  /** Redeem a Mount Charter from the bags: grant the mount and consume the deed. */
+  private redeemMountCharter(meta: PlayerMeta, itemId: string, mountId: string): void {
+    if (meta.earnedMounts.has(mountId)) { this.error(meta.entityId, 'You already own that mount.'); return; }
+    if (!isCharterEligible(mountId)) { this.error(meta.entityId, 'That Charter is void.'); return; }
+    this.removeItem(itemId, 1, meta.entityId);
+    meta.earnedMounts.add(mountId);
+    this.emit({ type: 'mountEarned', mountId, pid: meta.entityId });
+  }
+
+  /** Mint a tradeable Charter for a mount the wallet currently covers (holder
+   *  track only — you can't re-mint a mount you merely bought). The struck deed
+   *  lands in the bags to redeem or sell. Returns true on success. */
+  mintCharter(mountId: string, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const { meta, e: p } = r;
+    if (!isCharterEligible(mountId)) { this.error(meta.entityId, 'No Charter can be struck for that mount.'); return false; }
+    if (!mountUnlockedAtTier(mountId, p.mountTier ?? 0)) { this.error(meta.entityId, 'Your holdings do not cover that mount.'); return false; }
+    const itemId = `charter_${mountId}`;
+    if (!ITEMS[itemId]) return false;
+    this.addItem(itemId, 1, meta.entityId);
+    this.emit({ type: 'mountCharterMinted', mountId, itemId, pid: meta.entityId });
+    return true;
   }
 
   /** Advance an in-progress mount summon: cancel it on movement/combat/damage/an
@@ -1209,7 +1312,7 @@ export class Sim {
     mc.remaining -= DT;
     if (mc.remaining <= 0) {
       meta.mountCast = null;
-      if (mountUnlockedAtTier(mc.id, p.mountTier ?? 0)) p.mountId = mc.id;
+      if (canSummonMount(mc.id, p.mountTier ?? 0, meta.earnedMounts)) p.mountId = mc.id;
     }
   }
 
@@ -1344,6 +1447,9 @@ export class Sim {
         const prev = meta.mountTrialBests[def.id];
         if (prev === undefined || run.elapsedTicks < prev) meta.mountTrialBests[def.id] = run.elapsedTicks;
         this.emit({ type: 'courseFinish', courseId: def.id, elapsedTicks: run.elapsedTicks, pid: p.id });
+        // Credit any active Skyward-Trials quest objective for this course (solo
+        // runs only — a race finish has a synchronized clock and doesn't count).
+        this.creditQuestCourse(def.id, run.elapsedTicks, meta);
       }
     } else {
       this.emit({
@@ -1387,25 +1493,31 @@ export class Sim {
       countdownRemaining: RACE_COUNTDOWN_TICKS, goTick: -1, finishOrder: [], dnf: new Set(), doneTick: 0,
     };
     this.races.push(race);
-    // Stage racers in side-by-side lanes just behind gate 0, facing it.
+    this.stageRace(race, def);
+    return true;
+  }
+
+  /** Stage a race's participants in side-by-side lanes just behind gate 0, arm each
+   *  rider's countdown courseRun, and fire raceCountdown. Shared by startRace and
+   *  launchWagerRace so wager and party races run one identical code path. */
+  private stageRace(race: Race, def: CourseDef): void {
     const c0 = def.checkpoints[0];
     const c1 = def.checkpoints[1 % def.checkpoints.length];
     const ax = c0.x - c1.x, az = c0.z - c1.z;
     const al = Math.hypot(ax, az) || 1;
     const ux = ax / al, uz = az / al; // unit vector behind gate 0
     const lx = -uz, lz = ux; // perpendicular (lane offset)
-    for (let i = 0; i < racers.length; i++) {
-      const e = this.entities.get(racers[i])!;
-      const meta = this.players.get(racers[i])!;
-      const lane = i - (racers.length - 1) / 2;
+    for (let i = 0; i < race.participants.length; i++) {
+      const e = this.entities.get(race.participants[i])!;
+      const meta = this.players.get(race.participants[i])!;
+      const lane = i - (race.participants.length - 1) / 2;
       e.pos = { x: c0.x + ux * 9 + lx * lane * 3.2, y: c0.y, z: c0.z + uz * 9 + lz * lane * 3.2 };
       e.prevPos = { ...e.pos };
       e.facing = Math.atan2(c0.x - e.pos.x, c0.z - e.pos.z);
       this.rebucket(e);
-      meta.courseRun = { courseId, startTick: -1, nextCheckpoint: 0, lap: 0, splits: [], state: 'countdown', elapsedTicks: 0, raceId: race.id };
-      this.emit({ type: 'raceCountdown', raceId: race.id, courseId, seconds: Math.ceil(RACE_COUNTDOWN_TICKS / TICK_RATE), pid: racers[i] });
+      meta.courseRun = { courseId: race.courseId, startTick: -1, nextCheckpoint: 0, lap: 0, splits: [], state: 'countdown', elapsedTicks: 0, raceId: race.id };
+      this.emit({ type: 'raceCountdown', raceId: race.id, courseId: race.courseId, seconds: Math.ceil(RACE_COUNTDOWN_TICKS / TICK_RATE), pid: race.participants[i] });
     }
-    return true;
   }
 
   /** Advance every race: run the countdown, release on GO (synchronized clocks),
@@ -1450,6 +1562,9 @@ export class Sim {
         if (race.finishOrder.length + race.dnf.size >= race.participants.length) {
           race.state = 'done';
           race.doneTick = this.tickCount;
+          // Pay out the pot (winner-takes-all, or refund on no finisher) BEFORE the
+          // result events, so the wagerSettled cue lands with the placement.
+          if (race.wagerLobbyId !== undefined) this.settleWagerRace(race);
           for (const id of race.participants) {
             const place = race.finishOrder.indexOf(id) + 1; // 0 = DNF
             this.emit({ type: 'raceResult', raceId: race.id, courseId: race.courseId, place, total: race.participants.length, pid: id });
@@ -1462,6 +1577,11 @@ export class Sim {
         for (const id of race.participants) {
           const meta = this.players.get(id);
           if (meta && meta.courseRun?.raceId === race.id) meta.courseRun = null;
+        }
+        // Tear down the settled wager lobby once its race is dropped.
+        if (race.wagerLobbyId !== undefined) {
+          const lb = this.wagerLobbies.get(race.wagerLobbyId);
+          if (lb) { for (const pid of lb.stakes) this.wagerByPid.delete(pid); this.wagerLobbies.delete(race.wagerLobbyId); }
         }
         this.races.splice(i, 1);
       }
@@ -1619,6 +1739,219 @@ export class Sim {
   get raceInfo(): RaceInfo | null {
     return this.raceInfoFor(this.primaryId);
   }
+  get earnedMounts(): string[] {
+    return [...this.primary.earnedMounts];
+  }
+  get wagerInfo(): WagerInfo | null {
+    return this.wagerInfoFor(this.primaryId);
+  }
+
+  // -------------------------------------------------------------------------
+  // Soft-currency Wager Races. A host stakes in-game gold (+ an optional Mount
+  // Charter) and opens a race; nearby/party flyers OPT IN (the only point they
+  // are charged); the winner takes the whole pot. No real money / $WOC — the pot
+  // is pure meta.copper + charter items, fully escrowed and conserved.
+  // -------------------------------------------------------------------------
+
+  private wagerPot(lobby: WagerLobby): { copper: number; charters: number } {
+    return { copper: lobby.stakes.size * lobby.anteCopper, charters: lobby.anteCharterId ? lobby.stakes.size : 0 };
+  }
+
+  /** Pull one uniform ante (gold + optional Charter) from `pid` into `lobby`'s
+   *  escrow ledger. Caller has already checked affordability. */
+  private escrowWager(lobby: WagerLobby, pid: number): void {
+    const meta = this.players.get(pid)!;
+    meta.copper -= lobby.anteCopper;
+    if (lobby.anteCharterId) this.removeItem(lobby.anteCharterId, 1, pid);
+    lobby.stakes.add(pid);
+    this.wagerByPid.set(pid, lobby.id);
+  }
+
+  /** Return one staker's ante (consent withdrawn / refund) and drop them from the
+   *  ledger. Safe to call only before the pot is paid out. */
+  private returnStake(lobby: WagerLobby, pid: number): void {
+    const meta = this.players.get(pid);
+    if (meta) {
+      meta.copper += lobby.anteCopper;
+      if (lobby.anteCharterId) this.addItem(lobby.anteCharterId, 1, pid);
+    }
+    lobby.stakes.delete(pid);
+    this.wagerByPid.delete(pid);
+  }
+
+  /** Refund every remaining staker and mark the lobby settled (drained once). */
+  private refundWagerLobby(lobby: WagerLobby): void {
+    if (lobby.settled) return;
+    for (const pid of [...lobby.stakes]) {
+      const meta = this.players.get(pid);
+      if (meta) {
+        meta.copper += lobby.anteCopper;
+        if (lobby.anteCharterId) this.addItem(lobby.anteCharterId, 1, pid);
+      }
+      this.wagerByPid.delete(pid);
+      this.emit({ type: 'wagerSettled', won: false, copper: 0, charters: 0, charterId: lobby.anteCharterId, cancelled: true, pid });
+    }
+    lobby.stakes.clear();
+    lobby.settled = true;
+  }
+
+  private wagerAnteOk(meta: PlayerMeta, anteCopper: number, anteCharterId: string | null): boolean {
+    return meta.copper >= anteCopper && (anteCharterId === null || this.countItem(anteCharterId, meta.entityId) >= 1);
+  }
+
+  /** Host opens a staked race: validate + escrow the host's own ante (proposing IS
+   *  consent), then invite party members and nearby flyers to opt in. */
+  proposeWagerRace(courseId: string, anteCopper: number, anteCharterId: string | null, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const { meta, e } = r;
+    const def = COURSES[courseId];
+    if (!def || !def.flyingOnly) { this.error(meta.entityId, 'That course cannot be wagered.'); return false; }
+    if (e.dead || !isFlyingMount(e.mountId)) { this.error(meta.entityId, 'You must be on a flying mount to wager.'); return false; }
+    if (this.wagerByPid.has(meta.entityId)) { this.error(meta.entityId, 'You are already in a wager.'); return false; }
+    if (!Number.isFinite(anteCopper) || anteCopper < WAGER_MIN_ANTE) { this.error(meta.entityId, 'Name a wager of at least 1 copper.'); return false; }
+    const ante = Math.floor(anteCopper);
+    if (anteCharterId !== null && !isCharterEligible(anteCharterId.replace(/^charter_/, ''))) { this.error(meta.entityId, 'That cannot be staked as a wager.'); return false; }
+    if (!this.wagerAnteOk(meta, ante, anteCharterId)) { this.error(meta.entityId, 'You cannot cover that wager.'); return false; }
+
+    const lobby: WagerLobby = {
+      id: this.nextWagerId++, hostPid: meta.entityId, courseId, anteCopper: ante, anteCharterId,
+      stakes: new Set(), expires: this.time + WAGER_LOBBY_TTL, raceId: null, settled: false,
+    };
+    this.wagerLobbies.set(lobby.id, lobby);
+    this.escrowWager(lobby, meta.entityId); // the host consents by proposing
+
+    // Invite party members + nearby flyers who are free and uninvited.
+    const party = this.partyOf(e.id);
+    const seen = new Set<number>([meta.entityId]);
+    const candidates: number[] = party ? party.members.filter((m) => m !== meta.entityId) : [];
+    for (const other of this.players.values()) {
+      const oe = this.entities.get(other.entityId);
+      if (!oe || seen.has(other.entityId)) continue;
+      if (dist2d(e.pos, oe.pos) <= WAGER_INVITE_RANGE) candidates.push(other.entityId);
+    }
+    for (const targetPid of candidates) {
+      if (seen.has(targetPid)) continue;
+      seen.add(targetPid);
+      const te = this.entities.get(targetPid);
+      const tm = this.players.get(targetPid);
+      if (!te || !tm || te.dead || !isFlyingMount(te.mountId)) continue;
+      if (this.wagerByPid.has(targetPid) || this.hasPendingSocialInvite(targetPid)) continue;
+      this.wagerInvites.set(targetPid, { fromPid: meta.entityId, lobbyId: lobby.id, expires: this.time + WAGER_INVITE_TTL });
+      this.emit({ type: 'wagerInvite', fromPid: meta.entityId, fromName: meta.name, courseId, anteCopper: ante, anteCharterId, pid: targetPid });
+    }
+    return true;
+  }
+
+  /** Opt in to a wager — the ONLY place a non-host is charged. Re-validates at
+   *  accept time (the offer may be stale). */
+  wagerJoin(pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const { meta, e } = r;
+    const invite = this.wagerInvites.get(meta.entityId);
+    if (!invite || invite.expires < this.time) { this.error(meta.entityId, 'That wager offer has expired.'); return false; }
+    this.wagerInvites.delete(meta.entityId);
+    const lobby = this.wagerLobbies.get(invite.lobbyId);
+    if (!lobby || lobby.raceId !== null || lobby.settled) { this.error(meta.entityId, 'That wager is no longer open.'); return false; }
+    if (this.wagerByPid.has(meta.entityId)) { this.error(meta.entityId, 'You are already in a wager.'); return false; }
+    if (e.dead || !isFlyingMount(e.mountId)) { this.error(meta.entityId, 'You must be on a flying mount to wager.'); return false; }
+    if (!this.wagerAnteOk(meta, lobby.anteCopper, lobby.anteCharterId)) { this.error(meta.entityId, 'You cannot cover that wager.'); return false; }
+    this.escrowWager(lobby, meta.entityId);
+    return true;
+  }
+
+  /** Decline a wager offer — nothing was charged, just drop the invite. */
+  wagerDecline(pid?: number): void {
+    const r = this.resolve(pid);
+    if (!r) return;
+    this.wagerInvites.delete(r.meta.entityId);
+  }
+
+  /** Leave a wager before launch (consent withdrawn ⇒ stake refunded). The host
+   *  leaving cancels the whole lobby and refunds everyone. No-op once racing. */
+  wagerLeave(pid?: number): void {
+    const r = this.resolve(pid);
+    if (!r) return;
+    const lobbyId = this.wagerByPid.get(r.meta.entityId);
+    const lobby = lobbyId !== undefined ? this.wagerLobbies.get(lobbyId) : undefined;
+    if (!lobby || lobby.settled || lobby.raceId !== null) return; // can't leave once the race is staged
+    if (lobby.hostPid === r.meta.entityId) { this.refundWagerLobby(lobby); return; }
+    this.returnStake(lobby, r.meta.entityId);
+    this.emit({ type: 'wagerSettled', won: false, copper: 0, charters: 0, charterId: lobby.anteCharterId, cancelled: true, pid: r.meta.entityId });
+  }
+
+  /** Host launches the race for the opted-in stakers; needs ≥2. */
+  launchWagerRace(pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const lobbyId = this.wagerByPid.get(r.meta.entityId);
+    const lobby = lobbyId !== undefined ? this.wagerLobbies.get(lobbyId) : undefined;
+    if (!lobby || lobby.settled || lobby.raceId !== null) return false;
+    if (lobby.hostPid !== r.meta.entityId) { this.error(r.meta.entityId, 'Only the host can launch the wager.'); return false; }
+    const def = COURSES[lobby.courseId];
+    if (!def) { this.refundWagerLobby(lobby); return false; }
+    // Only still-eligible stakers race; refund anyone who lapsed (keeps the pot conserved).
+    const racers: number[] = [];
+    for (const id of [...lobby.stakes]) {
+      const e = this.entities.get(id);
+      const m = this.players.get(id);
+      const busy = m?.courseRun && (m.courseRun.state === 'active' || m.courseRun.state === 'countdown');
+      if (!e || !m || e.dead || !isFlyingMount(e.mountId) || busy) { this.returnStake(lobby, id); continue; }
+      racers.push(id);
+    }
+    if (racers.length < 2) { this.refundWagerLobby(lobby); return false; }
+
+    const race: Race = {
+      id: this.nextRaceId++, courseId: lobby.courseId, participants: racers, state: 'countdown',
+      countdownRemaining: RACE_COUNTDOWN_TICKS, goTick: -1, finishOrder: [], dnf: new Set(), doneTick: 0,
+      wagerLobbyId: lobby.id,
+    };
+    this.races.push(race);
+    lobby.raceId = race.id;
+    lobby.expires = this.time + WAGER_LOBBY_TTL; // don't let the lobby TTL fire mid-race
+    this.stageRace(race, def);
+    return true;
+  }
+
+  /** Settle a finished wager race: the winner takes the whole pot; no finisher
+   *  refunds everyone. Guarded by `settled` so the result-panel linger can't
+   *  re-pay. Called from updateRaces on the 'done' transition. */
+  private settleWagerRace(race: Race): void {
+    const lobby = race.wagerLobbyId !== undefined ? this.wagerLobbies.get(race.wagerLobbyId) : undefined;
+    if (!lobby || lobby.settled) return;
+    const winnerPid = race.finishOrder[0];
+    if (winnerPid === undefined) { this.refundWagerLobby(lobby); return; } // everyone DNF
+    const { copper, charters } = this.wagerPot(lobby);
+    const winnerMeta = this.players.get(winnerPid);
+    if (winnerMeta) {
+      winnerMeta.copper += copper;
+      for (let i = 0; i < charters; i++) this.addItem(lobby.anteCharterId!, 1, winnerPid);
+    }
+    for (const pid of lobby.stakes) {
+      this.wagerByPid.delete(pid);
+      this.emit(pid === winnerPid
+        ? { type: 'wagerSettled', won: true, copper, charters, charterId: lobby.anteCharterId, cancelled: false, pid }
+        : { type: 'wagerSettled', won: false, copper: 0, charters: 0, charterId: lobby.anteCharterId, cancelled: false, pid });
+    }
+    lobby.settled = true;
+  }
+
+  /** Project the wager lobby `pid` is in into the client-facing WagerInfo. */
+  wagerInfoFor(pid: number): WagerInfo | null {
+    const lobbyId = this.wagerByPid.get(pid);
+    if (lobbyId === undefined) return null;
+    const lobby = this.wagerLobbies.get(lobbyId);
+    if (!lobby) return null;
+    const { copper, charters } = this.wagerPot(lobby);
+    return {
+      lobbyId: lobby.id, hostPid: lobby.hostPid, isHost: lobby.hostPid === pid,
+      courseId: lobby.courseId, anteCopper: lobby.anteCopper, anteCharterId: lobby.anteCharterId,
+      launched: lobby.raceId !== null, potCopper: copper, potCharters: charters,
+      members: [...lobby.stakes].map((id) => ({ pid: id, name: this.players.get(id)?.name ?? '' })),
+    };
+  }
+
   // Offline play has no leaderboard (single player, no server); the online
   // ClientWorld fetches it over REST.
   mountTrialLeaderboard(_trackId: string): Promise<MountTrialLeaderEntry[]> {
@@ -6846,6 +7179,10 @@ export class Sim {
       this.openSkinSelect(meta, def.use.catalog ?? 'class', itemId);
       return;
     }
+    if (def.use?.type === 'mountCharter') {
+      this.redeemMountCharter(meta, itemId, def.use.mountId);
+      return;
+    }
     if (p.castingAbility === FISHING_CAST_ID) { this.error(meta.entityId, 'You are busy.'); return; }
     if (p.dead) return;
     if (def.kind === 'food' || def.kind === 'drink') {
@@ -7415,6 +7752,27 @@ export class Sim {
       let changed = false;
       quest.objectives.forEach((obj, i) => {
         if (obj.type === 'kill' && obj.targetMobId === mob.templateId && qp.counts[i] < obj.count) {
+          qp.counts[i]++;
+          changed = true;
+          meta.counters.questProgress++;
+          this.emit({ type: 'questProgress', questId: qp.questId, text: `${obj.label}: ${qp.counts[i]}/${obj.count}`, pid: meta.entityId });
+        }
+      });
+      if (changed) this.checkQuestReady(qp, meta);
+    }
+  }
+
+  // Credit 'finish_course' objectives when a Skytrial/circuit is completed solo.
+  // A par-time gate (obj.parTicks) only credits a run that finished fast enough,
+  // so a "beat the clock" quest is a real skill gate, not a participation trophy.
+  private creditQuestCourse(courseId: string, elapsedTicks: number, meta: PlayerMeta): void {
+    for (const qp of meta.questLog.values()) {
+      if (qp.state !== 'active') continue;
+      const quest = QUESTS[qp.questId];
+      let changed = false;
+      quest.objectives.forEach((obj, i) => {
+        if (obj.type === 'finish_course' && obj.courseId === courseId && qp.counts[i] < obj.count
+            && (obj.parTicks === undefined || elapsedTicks <= obj.parTicks)) {
           qp.counts[i]++;
           changed = true;
           meta.counters.questProgress++;
@@ -8043,7 +8401,8 @@ export class Sim {
   private hasPendingSocialInvite(targetPid: number): boolean {
     return this.hasActiveInvite(this.partyInvites, targetPid)
       || this.hasActiveInvite(this.tradeInvites, targetPid)
-      || this.hasActiveInvite(this.duelInvites, targetPid);
+      || this.hasActiveInvite(this.duelInvites, targetPid)
+      || this.hasActiveInvite(this.wagerInvites, targetPid);
   }
 
   partyInvite(targetPid: number, pid?: number): void {
@@ -9774,6 +10133,17 @@ export class Sim {
     for (const map of [this.partyInvites, this.tradeInvites, this.duelInvites]) {
       for (const [pid, invite] of map) {
         if (invite.expires < this.time) map.delete(pid);
+      }
+    }
+    // wager invites expire too, but notify the invitee so the prompt closes.
+    for (const [pid, invite] of this.wagerInvites) {
+      if (invite.expires < this.time) { this.wagerInvites.delete(pid); this.emit({ type: 'wagerExpired', pid }); }
+    }
+    // a wager lobby that's never launched auto-cancels at its TTL, refunding all.
+    for (const lobby of [...this.wagerLobbies.values()]) {
+      if (lobby.raceId === null && !lobby.settled && lobby.expires < this.time) {
+        this.refundWagerLobby(lobby);
+        this.wagerLobbies.delete(lobby.id);
       }
     }
     // cancel trades when the parties drift apart

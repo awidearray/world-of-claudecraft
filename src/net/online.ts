@@ -16,7 +16,7 @@ import {
   isOverheadEmoteId,
   type AccountCosmetics, type AdActiveMap, type AdContent, type ArenaInfo, type CharacterSearchResult, type DuelInfo, type FriendInfo,
   type IWorld, type LeaderboardEntry, type MarketInfo, type MountTrialLeaderEntry, type OverheadEmoteId, type PartyInfo,
-  type PresenceStatus, type RaceInfo, type SocialInfo, type TradeInfo,
+  type PresenceStatus, type RaceInfo, type SocialInfo, type TradeInfo, type WagerInfo,
 } from '../world_api';
 
 // Re-export so existing consumers (src/main.ts) can keep importing from net/online.
@@ -435,6 +435,11 @@ export class ClientWorld implements IWorld {
   // Live multi-racer race state, mirrored from self (`race`); drives the HUD race
   // panel. Null when not racing.
   raceInfo: RaceInfo | null = null;
+  // Live soft-currency wager lobby/pot state, mirrored from self (`wag`); drives
+  // the HUD wager panel. Null when not in a wager.
+  wagerInfo: WagerInfo | null = null;
+  // Permanently earned (Charter-redeemed) mount ids, mirrored from self (`eam`).
+  earnedMounts: string[] = [];
   copper = 0;
   xp = 0;
   // Post-cap progression (Max-Level XP Overflow), mirrored from snapshot self.
@@ -898,6 +903,8 @@ export class ClientWorld implements IWorld {
       if (s.crun !== undefined) this.courseRun = s.crun ?? null;
       if (s.tpb !== undefined) this.mountTrialBests = s.tpb ?? {};
       if (s.race !== undefined) this.raceInfo = s.race ?? null;
+      if (s.wag !== undefined) this.wagerInfo = s.wag ?? null;
+      if (s.eam !== undefined) this.earnedMounts = s.eam ?? [];
       this.xp = s.xp ?? 0;
       this.lifetimeXp = s.lxp ?? 0;
       this.restedXp = s.rxp ?? 0;
@@ -1080,9 +1087,19 @@ export class ClientWorld implements IWorld {
     this.courseRun = null; // optimistic clear; the snapshot confirms
     this.cmd({ cmd: 'abort_course' });
   }
+  mintCharter(mountId: string): void {
+    this.cmd({ cmd: 'mint_charter', mount: mountId });
+  }
   startRace(courseId: string): void {
     this.cmd({ cmd: 'start_race', course: courseId });
   }
+  proposeWagerRace(courseId: string, anteCopper: number, anteCharterId: string | null): void {
+    this.cmd({ cmd: 'wager_propose', course: courseId, ante: anteCopper, charter: anteCharterId });
+  }
+  wagerJoin(): void { this.cmd({ cmd: 'wager_join' }); }
+  wagerDecline(): void { this.cmd({ cmd: 'wager_decline' }); }
+  wagerLeave(): void { this.cmd({ cmd: 'wager_leave' }); }
+  launchWagerRace(): void { this.cmd({ cmd: 'wager_launch' }); }
   unequipMechChroma(chromaId: string): void {
     const itemId = mechChromaItemId(chromaId);
     const skin = mechChromaSkinIndex(chromaId);

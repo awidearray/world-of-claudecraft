@@ -853,7 +853,17 @@ export const it_IT: EnTranslations = {
       "dismountAria": "Dismount {name}",
       "lockedAria": "{name} — locked; unlocks at {amount} $WOC",
       "activeAria": "{name} — currently active",
-      "cardAria": "{name}: {flavor}"
+      "cardAria": "{name}: {flavor}",
+      "owned": "Owned",
+      "mint": "Mint Charter",
+      "mintHint": "Strike a tradeable Charter for this mount — sell it for gold so a non-holder can earn it.",
+      "mintAria": "Mint a tradeable Charter for {name}",
+      "mintedBanner": "You strike a Charter for {name}.",
+      "earnedBanner": "You have earned {name} — it is yours for good.",
+      "alreadyOwnErr": "You already own that mount.",
+      "charterVoidErr": "That Charter is void.",
+      "noCharterErr": "No Charter can be struck for that mount.",
+      "holdingsShortErr": "Your holdings do not cover that mount."
     },
     "course": {
       "skytrials": "Skytrials",
@@ -887,6 +897,36 @@ export const it_IT: EnTranslations = {
       "dnf": "DNF",
       "placeOf": "#{place} of {total}",
       "racing": "Racing"
+    },
+    "wager": {
+      "start": "Wager Race",
+      "title": "Wager Race",
+      "inviteGold": "{name} opens a Wager Race — stake {money} to enter. Match it?",
+      "inviteCharter": "{name} opens a Wager Race — stake {money} + a Mount Charter. Match it?",
+      "accept": "Match Wager",
+      "pot": "Pot {money}",
+      "potCharter": "Pot {money} + {count}× Charter",
+      "racers": "Racers ({count})",
+      "launch": "Launch Race",
+      "cancel": "Cancel",
+      "leave": "Leave",
+      "waiting": "Waiting for a challenger to match the stake…",
+      "won": "You win the wager — {money}!",
+      "wonCharter": "You win the wager — {money} + {count}× Charter!",
+      "lost": "You lost the wager.",
+      "refunded": "Wager called off — your stake is returned.",
+      "antePrompt": "Stake how much gold on this race? (in copper)",
+      "open": "Open Wager",
+      "stakeCharter": "Also stake a Mount Charter (winner takes it)",
+      "errCourse": "That course cannot be wagered.",
+      "errFlyer": "You must be on a flying mount to wager.",
+      "errBusy": "You are already in a wager.",
+      "errAnte": "Name a wager of at least 1 copper.",
+      "errStake": "That cannot be staked as a wager.",
+      "errAfford": "You cannot cover that wager.",
+      "errExpired": "That wager offer has expired.",
+      "errGone": "That wager is no longer open.",
+      "errHost": "Only the host can launch the wager."
     },
     "options": {
       "gameMenu": "Menu di gioco",
@@ -2782,6 +2822,36 @@ export const it_IT: EnTranslations = {
       "monarch_heart": {
         "name": "Il Cuore del Monarca"
       },
+      "charter_ashmane": {
+        "name": "Brevetto: Ashmane Courser"
+      },
+      "charter_emberhoof": {
+        "name": "Brevetto: Emberhoof Charger"
+      },
+      "charter_bronzeflank": {
+        "name": "Brevetto: Bronzeflank Destrier"
+      },
+      "charter_silvermane": {
+        "name": "Brevetto: Silvermane Stallion"
+      },
+      "charter_stormhoof": {
+        "name": "Brevetto: Stormhoof Charger"
+      },
+      "charter_goldcrest": {
+        "name": "Brevetto: Goldcrest Skystrider"
+      },
+      "charter_verdant": {
+        "name": "Brevetto: Verdant Wildwing"
+      },
+      "charter_voidstrider": {
+        "name": "Brevetto: Voidwing Strider"
+      },
+      "charter_celestial": {
+        "name": "Brevetto: Celestial Seraph"
+      },
+      "charter_worldbearer": {
+        "name": "Brevetto: Worldbearer's Roc"
+      },
       "bristleback_maul": {
         "name": "Maglio Bristleback"
       },
@@ -3625,6 +3695,11 @@ export const it_IT: EnTranslations = {
         "name": "Ondrel Vane",
         "title": "Guardamarea",
         "greeting": "Lo stagno beve la luce della luna, {className}, e restituisce gli annegati. Sorveglio quel cancello da trenta notti — e stanotte è aperto."
+      },
+      "skytrial_master": {
+        "name": "Skymaster Vael",
+        "title": "Warden of the Skytrials",
+        "greeting": "The sky is a road few dare to walk, {className}. Earn it, and it carries you."
       }
     },
     "quests": {
@@ -4569,6 +4644,36 @@ export const it_IT: EnTranslations = {
         "objectives": {
           "0": {
             "label": "Guadatore di Glimmermere ucciso"
+          }
+        }
+      },
+      "q_skyward_first_flight": {
+        "title": "First Flight",
+        "text": "You sit a winged steed well enough on the ground, {playerName} — now take it up. Fly the Vale Skytrial: eight rings in one looping pass. Do not chase the clock yet. Just stay aloft and thread every ring.",
+        "completion": "You did not fall. That is more than most manage on a first loop. The sky remembers who keeps coming back.",
+        "objectives": {
+          "0": {
+            "label": "Vale Skytrial completed"
+          }
+        }
+      },
+      "q_skyward_time_trial": {
+        "title": "Beat the Clock",
+        "text": "Now do it with intent. Fly the Vale Skytrial again, {playerName}, but finish before the sand runs out. A clean line through every ring, no wasted air. Precision, not panic.",
+        "completion": "A clean line, ring to ring. You are not riding the sky any longer — you are flying it.",
+        "objectives": {
+          "0": {
+            "label": "Vale Skytrial flown under par"
+          }
+        }
+      },
+      "q_skyward_ascendant": {
+        "title": "Ascendant",
+        "text": "One trial remains, {playerName}: the Vale Circuit. Three laps of the long ring, flown under par — no luck, only craft. Master it and the open sky is yours to claim, from rim to rim.",
+        "completion": "Skyward and unbroken. The sky is yours now, {playerName}. Take this charter — a steed of the air, earned and not bought, to carry you wherever you mean to go.",
+        "objectives": {
+          "0": {
+            "label": "Vale Circuit flown under par"
           }
         }
       }

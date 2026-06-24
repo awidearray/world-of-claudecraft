@@ -119,7 +119,10 @@ export type ItemUse =
   | { type: 'mechChroma'; chromaId: string }
   // Opens the client-side event skin-select overlay. The server rolls a rank on
   // use (see Sim.openSkinSelect) and the player locks one in via claimEventSkin.
-  | { type: 'skinSelect'; catalog?: SkinCatalog };
+  | { type: 'skinSelect'; catalog?: SkinCatalog }
+  // A Mount Charter: redeeming it permanently grants `mountId` (the earned
+  // ownership track) and consumes the deed. See Sim.useItem / grantEarnedMount.
+  | { type: 'mountCharter'; mountId: string };
 
 // Rarity ranks for the cosmetic skin-select event, ordered low → high. A rolled
 // rank unlocks its own tier and every tier below it (epic unlocks rare+uncommon).
@@ -732,11 +735,15 @@ export function emptyZoneProps(): ZonePropsDef {
 }
 
 export interface QuestObjective {
-  type: 'kill' | 'collect' | 'interact';
+  type: 'kill' | 'collect' | 'interact' | 'finish_course';
   targetMobId?: string; // for kill
   itemId?: string; // for collect
   targetObjectItemId?: string; // for interactable ground objects
   targetNpcId?: string; // for interactable NPC objectives
+  courseId?: string; // for finish_course: the Skytrial/circuit that must be completed
+  // for finish_course: an optional time gate (ticks) — only a run finishing in
+  // <= parTicks credits the objective. Omitted ⇒ any completion credits.
+  parTicks?: number;
   count: number;
   label: string;
 }
@@ -995,6 +1002,16 @@ export type SimEvent = { pid?: number } & (
   | { type: 'raceGo'; raceId: number; courseId: string }
   | { type: 'raceFinish'; raceId: number; courseId: string; place: number; total: number; elapsedTicks: number }
   | { type: 'raceResult'; raceId: number; courseId: string; place: number; total: number }
+  // Mount Charter economy (personal). `minted`: a holder struck a tradeable deed;
+  // `earned`: a deed was redeemed into a permanent mount on the earned track.
+  | { type: 'mountCharterMinted'; mountId: string; itemId: string }
+  | { type: 'mountEarned'; mountId: string }
+  // Soft-currency PvP Wager Races (personal). The stake is in-game gold + an
+  // optional Mount Charter — no real money. `wagerInvite` opens the accept/decline
+  // prompt; `wagerSettled` reports the outcome (won the pot / forfeit / refunded).
+  | { type: 'wagerInvite'; fromPid: number; fromName: string; courseId: string; anteCopper: number; anteCharterId: string | null }
+  | { type: 'wagerSettled'; won: boolean; copper: number; charters: number; charterId: string | null; cancelled: boolean }
+  | { type: 'wagerExpired' }
   | { type: 'learnAbility'; abilityId: string; rank: number }
   | { type: 'loot'; text: string }
   | { type: 'error'; text: string }

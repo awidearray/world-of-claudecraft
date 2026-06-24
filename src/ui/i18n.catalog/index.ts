@@ -9,7 +9,7 @@ import { hudStrings } from './hud';
 import { abilityStrings, classAbilityNames } from './abilities';
 import { questStrings } from './quests';
 import { itemStrings, itemNames } from './items';
-import { mergeStrings, mergeEntities, mergeExtra } from './merge';
+import { mergeStrings, mergeEntities, mergeExtra, mergeSkywardEn } from './merge';
 import { gameStrings } from './game';
 
 // Re-export the catalog public surface (every name the old i18n.en.ts exported).
@@ -382,8 +382,8 @@ export const en = {
       vanguard_chrome_armor_plate: { name: "Vanguard Chrome" },
     },
     mobs: { ...worldNames.en.entities.mobs, ...mergeEntities.en.mobs, ...mergeExtra.en.mobs },
-    npcs: { ...worldNames.en.entities.npcs, ...mergeExtra.en.npcs },
-    quests: { ...worldNames.en.entities.quests, ...mergeEntities.en.quests, ...mergeExtra.en.quests },
+    npcs: { ...worldNames.en.entities.npcs, ...mergeExtra.en.npcs, ...mergeSkywardEn.npcs },
+    quests: { ...worldNames.en.entities.quests, ...mergeEntities.en.quests, ...mergeExtra.en.quests, ...mergeSkywardEn.quests },
     dungeons: { ...worldNames.en.entities.dungeons, ...mergeExtra.en.dungeons },
   },
 };

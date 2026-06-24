@@ -2447,4 +2447,15 @@ export const es: Partial<Record<TranslationKey, string>> = {
   "skinEvent.unavailable": "Muy pronto",
   "skinEvent.unequip": "Quitar",
   "skinEvent.unlocked": "¡Cosmético desbloqueado!",
+  // Mount Charters (v0.10 — tradeable mount deeds)
+  "entities.items.charter_ashmane.name": "Título: Ashmane Courser",
+  "entities.items.charter_emberhoof.name": "Título: Emberhoof Charger",
+  "entities.items.charter_bronzeflank.name": "Título: Bronzeflank Destrier",
+  "entities.items.charter_silvermane.name": "Título: Silvermane Stallion",
+  "entities.items.charter_stormhoof.name": "Título: Stormhoof Charger",
+  "entities.items.charter_goldcrest.name": "Título: Goldcrest Skystrider",
+  "entities.items.charter_verdant.name": "Título: Verdant Wildwing",
+  "entities.items.charter_voidstrider.name": "Título: Voidwing Strider",
+  "entities.items.charter_celestial.name": "Título: Celestial Seraph",
+  "entities.items.charter_worldbearer.name": "Título: Worldbearer's Roc",
 };
