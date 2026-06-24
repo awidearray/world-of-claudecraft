@@ -1006,6 +1006,12 @@ export type SimEvent = { pid?: number } & (
   // `earned`: a deed was redeemed into a permanent mount on the earned track.
   | { type: 'mountCharterMinted'; mountId: string; itemId: string }
   | { type: 'mountEarned'; mountId: string }
+  // Soft-currency PvP Wager Races (personal). The stake is in-game gold + an
+  // optional Mount Charter — no real money. `wagerInvite` opens the accept/decline
+  // prompt; `wagerSettled` reports the outcome (won the pot / forfeit / refunded).
+  | { type: 'wagerInvite'; fromPid: number; fromName: string; courseId: string; anteCopper: number; anteCharterId: string | null }
+  | { type: 'wagerSettled'; won: boolean; copper: number; charters: number; charterId: string | null; cancelled: boolean }
+  | { type: 'wagerExpired' }
   | { type: 'learnAbility'; abilityId: string; rank: number }
   | { type: 'loot'; text: string }
   | { type: 'error'; text: string }

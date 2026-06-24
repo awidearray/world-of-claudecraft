@@ -1081,6 +1081,47 @@
   .rh-row .rh-status { width: 34px; text-align: right; font-variant-numeric: tabular-nums; color: #cdbf98; }
   .rh-row.me .rh-status { color: #ffd24a; }
 
+  /* Soft-currency Wager Race lobby panel (members + pot + host/joiner actions) */
+  #wager-hud { position: fixed; top: 84px; right: 16px; z-index: 61; width: 236px;
+    font-family: var(--title-font); color: #f6ecd2;
+    background: rgba(16,13,10,0.74); border: 1px solid rgba(214,167,62,0.55); border-radius: 12px;
+    padding: 10px 12px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.5); }
+  #wager-hud[hidden] { display: none; }
+  #wager-hud .wh-title { text-align: center; font-size: 16px; color: #ffd24a; margin-bottom: 3px; }
+  #wager-hud .wh-pot { text-align: center; font-size: 13px; color: #f3d57c; margin-bottom: 8px; }
+  #wager-hud .wh-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 9px; }
+  .wh-row { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+  .wh-row .wh-dot { width: 6px; height: 6px; border-radius: 50%; background: #8fd6a8; flex: none; }
+  .wh-row.host .wh-dot { background: #ffd24a; }
+  .wh-row .wh-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wh-row.me .wh-name { color: #ffd24a; }
+  #wager-hud .wh-actions { display: flex; gap: 6px; }
+  #wager-hud .wh-actions button { flex: 1; min-height: 34px; border-radius: 5px; cursor: pointer;
+    font-family: var(--title-font); font-size: 12px; color: #1c140a;
+    background: linear-gradient(#e8c768, #c79a35); border: 1px solid #8a6a1e; }
+  #wager-hud .wh-actions button:hover { background: linear-gradient(#f3d57c, #d3a73e); }
+  #wager-hud .wh-actions button:disabled { opacity: 0.45; cursor: default; }
+  #wager-hud .wh-actions button.is-sub { color: #f4e6c8; background: #2a2118; border-color: #6a5524; }
+  #wager-hud .wh-actions button.is-sub:hover { background: #352a1d; }
+
+  /* Wager Race setup modal (host picks the ante before opening the lobby) */
+  #wager-setup { position: fixed; inset: 0; z-index: 120; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.55); }
+  #wager-setup[hidden] { display: none; }
+  #wager-setup .ws-card { width: 320px; max-width: 92vw; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+  #wager-setup .ws-title { font-family: var(--title-font); font-size: 17px; color: #ffd24a; text-align: center; }
+  #wager-setup .ws-label { font-size: 13px; color: var(--color-text-muted); }
+  #wager-setup #ws-ante { width: 100%; font-size: 16px; padding: 8px 10px; border-radius: 5px;
+    border: 1px solid #6a5524; background: #1a1510; color: #f6ecd2; }
+  #wager-setup .ws-charter { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d6c79b; cursor: pointer; }
+  #wager-setup .ws-charter input { width: 18px; height: 18px; }
+  #wager-setup .ws-actions { display: flex; gap: 8px; margin-top: 4px; }
+  #wager-setup .ws-actions button { flex: 1; min-height: 40px; border-radius: 5px; cursor: pointer;
+    font-family: var(--title-font); font-size: 13px; color: #1c140a;
+    background: linear-gradient(#e8c768, #c79a35); border: 1px solid #8a6a1e; }
+  #wager-setup .ws-actions button:hover { background: linear-gradient(#f3d57c, #d3a73e); }
+  #wager-setup .ws-actions button.is-sub { color: #f4e6c8; background: #2a2118; border-color: #6a5524; }
+
   /* quest log */
   #quest-log-window { width: 520px; }
   #quest-log-window .ql-cols { display: flex; gap: 12px; }
@@ -7084,6 +7125,13 @@
       <div class="rh-list"></div>
     </div>
 
+    <div id="wager-hud" hidden>
+      <div class="wh-title"></div>
+      <div class="wh-pot"></div>
+      <div class="wh-list"></div>
+      <div class="wh-actions"></div>
+    </div>
+
     <div id="minimap-wrap">
       <div id="zone-label" data-i18n="entities.zones.eastbrook_vale.name">Eastbrook Vale</div>
       <canvas id="minimap" width="162" height="162"></canvas>
@@ -7183,6 +7231,18 @@
     <div id="spellbook" class="window panel"></div>
     <div id="talents-window" class="window panel"></div>
     <div id="mount-window" class="window panel"></div>
+    <div id="wager-setup" hidden>
+      <div class="ws-card panel">
+        <div class="ws-title"></div>
+        <label class="ws-label" for="ws-ante"></label>
+        <input id="ws-ante" type="number" min="1" step="1" value="10000" />
+        <label class="ws-charter" hidden><input id="ws-charter-cb" type="checkbox" /> <span></span></label>
+        <div class="ws-actions">
+          <button id="ws-open" type="button"></button>
+          <button id="ws-cancel" class="is-sub" type="button"></button>
+        </div>
+      </div>
+    </div>
     <div id="quest-log-window" class="window panel"></div>
     <div id="vendor-window" class="window panel"></div>
     <div id="map-window" class="window panel">

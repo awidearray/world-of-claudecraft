@@ -149,6 +149,26 @@ export interface RaceInfo {
   participants: RaceParticipant[]; // sorted: leaders/finishers first
 }
 
+export interface WagerMember {
+  pid: number;
+  name: string;
+}
+// Live state of the soft-currency wager lobby the player is in. The pot is
+// uniform-ante × member count; `launched` flips when the race is staged (the HUD
+// then hands off to RaceInfo). `anteCharterId` is a charter_<mountId> item or null.
+export interface WagerInfo {
+  lobbyId: number;
+  hostPid: number;
+  isHost: boolean;
+  courseId: string;
+  anteCopper: number;
+  anteCharterId: string | null;
+  launched: boolean;
+  potCopper: number;
+  potCharters: number;
+  members: WagerMember[];
+}
+
 export type { ArenaFormat, ArenaCombatant, ArenaStanding };
 
 export interface ArenaLadderEntry {
@@ -352,6 +372,18 @@ export interface IWorld {
   // currently covers. Redeeming a Charter goes through the normal useItem path.
   earnedMounts: string[];
   mintCharter(mountId: string): void;
+  // Soft-currency Wager Races — stake in-game gold (+ an optional Mount Charter)
+  // on a PvP race; winner takes the pot. `wagerInfo` is the live lobby/pot state
+  // (null when not in a wager). `proposeWagerRace` opens a staked lobby (charges
+  // the host); others `wagerJoin`/`wagerDecline` an invite (join is the only point
+  // they pay); the host `launchWagerRace`s once ≥2 have staked; anyone can
+  // `wagerLeave` before launch (refunded). NO real money / $WOC.
+  wagerInfo: WagerInfo | null;
+  proposeWagerRace(courseId: string, anteCopper: number, anteCharterId: string | null): void;
+  wagerJoin(): void;
+  wagerDecline(): void;
+  wagerLeave(): void;
+  launchWagerRace(): void;
   releaseSpirit(): void;
   chat(text: string): void;
   playEmote(emoteId: OverheadEmoteId): void;

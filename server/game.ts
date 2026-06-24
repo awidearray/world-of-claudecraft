@@ -1274,6 +1274,16 @@ export class GameServer {
       case 'abort_course': sim.abortCourse(pid); break;
       case 'start_race': if (typeof msg.course === 'string') sim.startRace(msg.course, pid); break;
       case 'mint_charter': if (typeof msg.mount === 'string') sim.mintCharter(msg.mount, pid); break;
+      case 'wager_propose':
+        if (typeof msg.course === 'string' && typeof msg.ante === 'number' && Number.isFinite(msg.ante) && msg.ante > 0
+            && (msg.charter === null || typeof msg.charter === 'string')) {
+          sim.proposeWagerRace(msg.course, Math.floor(msg.ante), msg.charter ?? null, pid);
+        }
+        break;
+      case 'wager_join': sim.wagerJoin(pid); break;
+      case 'wager_decline': sim.wagerDecline(pid); break;
+      case 'wager_leave': sim.wagerLeave(pid); break;
+      case 'wager_launch': sim.launchWagerRace(pid); break;
       // hunter pets
       case 'pet_abandon': sim.abandonPet(pid); break;
       case 'pet_rename':
@@ -1604,6 +1614,8 @@ export class GameServer {
     maybe('tpb', meta.mountTrialBests);
     // Live race state for the HUD race panel (rides the wire only while racing).
     maybe('race', this.sim.raceInfoFor(session.pid));
+    // Live wager lobby/pot state (rides the wire only while in a wager).
+    maybe('wag', this.sim.wagerInfoFor(session.pid));
     // Permanently earned (Charter-redeemed) mount ids, for the mount window's
     // "owned" badge + the client summon gate. Sent on change (join + redeem).
     maybe('eam', [...meta.earnedMounts]);
