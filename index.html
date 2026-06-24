@@ -1058,6 +1058,25 @@
   #course-hud .ch-abort:hover { background: #352a1d; }
   #course-hud.finished .ch-abort { display: none; }
 
+  /* In-world multi-racer race panel (participants + live ring progress) */
+  #race-hud { position: fixed; top: 84px; right: 16px; z-index: 60; width: 232px;
+    font-family: var(--title-font); color: #f6ecd2; pointer-events: none;
+    background: rgba(12,14,20,0.62); border: 1px solid rgba(159,230,255,0.45); border-radius: 12px;
+    padding: 10px 12px 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.45); }
+  #race-hud[hidden] { display: none; }
+  #race-hud .rh-title { text-align: center; font-size: 16px; color: #9fe6ff; margin-bottom: 8px; }
+  #race-hud .rh-list { display: flex; flex-direction: column; gap: 5px; }
+  .rh-row { display: flex; align-items: center; gap: 7px; font-size: 12px; }
+  .rh-row.me .rh-name { color: #ffd24a; }
+  .rh-row.dnf { opacity: 0.55; }
+  .rh-row .rh-name { width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rh-row .rh-bar { flex: 1; height: 7px; border-radius: 4px; background: #ffffff14; overflow: hidden; }
+  .rh-row .rh-fill { display: block; height: 100%; background: linear-gradient(90deg,#5fc3f0,#9fe6ff); transition: width 0.15s linear; }
+  .rh-row.me .rh-fill { background: linear-gradient(90deg,#d3a73e,#ffd24a); }
+  .rh-row.done .rh-fill { background: #8fd6a8; }
+  .rh-row .rh-status { width: 34px; text-align: right; font-variant-numeric: tabular-nums; color: #cdbf98; }
+  .rh-row.me .rh-status { color: #ffd24a; }
+
   /* quest log */
   #quest-log-window { width: 520px; }
   #quest-log-window .ql-cols { display: flex; gap: 12px; }
@@ -7010,6 +7029,10 @@
       <div class="ch-time"></div>
       <div class="ch-sub"></div>
       <button class="ch-abort" type="button"></button>
+    </div>
+    <div id="race-hud" hidden>
+      <div class="rh-title"></div>
+      <div class="rh-list"></div>
     </div>
 
     <div id="minimap-wrap">

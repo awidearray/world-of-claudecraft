@@ -130,6 +130,25 @@ export interface MountTrialLeaderEntry {
   ticks: number; // best run, integer sim ticks (÷20 = seconds)
 }
 
+// Live multi-racer (party) race state for the local player, polled by the HUD.
+export interface RaceParticipant {
+  pid: number;
+  name: string;
+  gate: number; // gates cleared so far
+  total: number; // total gates in the run (checkpoints × laps)
+  place: number; // finishing place once done (0 = still racing)
+  done: boolean;
+  dnf: boolean; // dropped out (left their mount / quit)
+  me: boolean;
+}
+export interface RaceInfo {
+  raceId: number;
+  courseId: string;
+  state: 'countdown' | 'active' | 'done';
+  countdown: number; // whole seconds until GO (0 once racing)
+  participants: RaceParticipant[]; // sorted: leaders/finishers first
+}
+
 export type { ArenaFormat, ArenaCombatant, ArenaStanding };
 
 export interface ArenaLadderEntry {
@@ -322,6 +341,11 @@ export interface IWorld {
   // fetched on demand (server-computed from mount_trial_records).
   mountTrialBests: Record<string, number>;
   mountTrialLeaderboard(trackId: string): Promise<MountTrialLeaderEntry[]>;
+  // Multi-racer races: the leader starts one for their party (or solo); placement
+  // is by finish order on a synchronized countdown→GO. `raceInfo` is the live
+  // state for the HUD panel (null when not in a race).
+  raceInfo: RaceInfo | null;
+  startRace(courseId: string): void;
   releaseSpirit(): void;
   chat(text: string): void;
   playEmote(emoteId: OverheadEmoteId): void;

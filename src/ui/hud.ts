@@ -376,6 +376,10 @@ export class Hud {
   private courseTimerRunning = false;
   private courseFinishHoldUntil = 0;
   private lastCourseSig = '';
+  // Multi-racer race panel: track the last state to hold the result briefly.
+  private raceHudEl = $('#race-hud');
+  private lastRaceState: string | null = null;
+  private raceDoneHideAt = 0;
   private actionbarEl = $('#actionbar');
   private xpFillEl = $('#xpbar .fill');
   private xpLabelEl = $('#xpbar .label');
@@ -2307,6 +2311,7 @@ export class Hud {
       if ($('#mount-window').style.display === 'block') this.renderMounts();
     }
     this.updateCourseHud();
+    this.updateRaceHud();
 
     // swing timer — fills between melee/ranged auto-attack swings. swingTimer
     // counts DOWN to 0 (ready); we recover the full interval from the reset
@@ -3557,6 +3562,13 @@ export class Hud {
         case 'courseFinish': break; // handled (audio + overlay) in updateCourseHud
         case 'courseFail':
           this.showBanner(t(ev.reason === 'dismounted' ? 'hud.course.failed' : 'hud.course.aborted'));
+          break;
+        // Race cues; the panel itself is state-driven (updateRaceHud).
+        case 'raceCountdown': break;
+        case 'raceGo': audio.click(); break;
+        case 'raceFinish': break;
+        case 'raceResult':
+          if (ev.place === 1) audio.levelUp(); // won — the panel shows the placement
           break;
         case 'loot': {
           this.log(this.localizeLootText(ev.text), '#7fdc4f');
@@ -6558,6 +6570,20 @@ export class Hud {
           if (!board.hidden) { board.hidden = true; return; }
           void this.renderCourseBoard(c, board);
         });
+        const raceBtn = document.createElement('button');
+        raceBtn.type = 'button';
+        raceBtn.className = 'mount-action is-dismount';
+        raceBtn.textContent = t('hud.course.race');
+        raceBtn.title = t('hud.course.racePartyHint');
+        raceBtn.setAttribute('aria-label', `${t('hud.course.race')} — ${c.name}`);
+        raceBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        raceBtn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          this.sim.startRace(c.id); // races the player's party (or solo)
+          audio.click();
+          el.style.display = 'none';
+          this.hideTooltip();
+        });
         const cbtn = document.createElement('button');
         cbtn.type = 'button';
         cbtn.className = 'mount-action';
@@ -6572,6 +6598,7 @@ export class Hud {
           this.hideTooltip();
         });
         crow.appendChild(boardBtn);
+        crow.appendChild(raceBtn);
         crow.appendChild(cbtn);
         item.appendChild(crow);
         item.appendChild(board);
@@ -6678,6 +6705,47 @@ export class Hud {
     // failed (rarely seen — the server usually nulls the run on fail)
     el.hidden = true;
     this.courseTimerRunning = false;
+  }
+
+  // Multi-racer race panel — countdown, then live ring-progress bars per racer,
+  // then final placement. Driven entirely by the server-authoritative raceInfo.
+  private updateRaceHud(): void {
+    const el = this.raceHudEl;
+    const info = this.sim.raceInfo;
+    if (!info) {
+      if (!el.hidden) el.hidden = true;
+      this.lastRaceState = null;
+      return;
+    }
+    const now = performance.now();
+    if (info.state === 'done') {
+      if (this.lastRaceState !== 'done') { this.lastRaceState = 'done'; this.raceDoneHideAt = now + 6000; }
+      if (now > this.raceDoneHideAt) { el.hidden = true; return; }
+    } else {
+      this.lastRaceState = info.state;
+    }
+    el.hidden = false;
+    const def = courseDef(info.courseId);
+    let title: string;
+    if (info.state === 'countdown') {
+      title = info.countdown > 0 ? `${t('hud.course.getReady')} ${formatNumber(info.countdown)}` : t('hud.course.go');
+    } else if (info.state === 'active') {
+      title = `${def?.name ?? ''} — ${t('hud.course.racing')}`;
+    } else {
+      const me = info.participants.find((pp) => pp.me);
+      title = me && me.place > 0
+        ? t('hud.course.placeOf', { place: formatNumber(me.place), total: formatNumber(info.participants.length) })
+        : t('hud.course.dnf');
+    }
+    this.setText(el.querySelector('.rh-title') as HTMLElement, title);
+    (el.querySelector('.rh-list') as HTMLElement).innerHTML = info.participants.map((pp) => {
+      const status = pp.dnf ? t('hud.course.dnf') : pp.done ? `#${pp.place}` : `${pp.gate}/${pp.total}`;
+      const frac = pp.total > 0 ? Math.min(1, pp.gate / pp.total) : 0;
+      return `<div class="rh-row${pp.me ? ' me' : ''}${pp.done ? ' done' : ''}${pp.dnf ? ' dnf' : ''}">`
+        + `<span class="rh-name">${esc(pp.name)}</span>`
+        + `<span class="rh-bar"><span class="rh-fill" style="width:${(frac * 100).toFixed(0)}%"></span></span>`
+        + `<span class="rh-status">${esc(status)}</span></div>`;
+    }).join('');
   }
 
   // Fetch + render a course's realm time-trial leaderboard inline (the player's

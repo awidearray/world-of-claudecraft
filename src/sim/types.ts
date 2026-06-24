@@ -961,12 +961,15 @@ export interface CourseDef {
 /** Per-player in-progress run state (lives on PlayerMeta; never persisted). */
 export interface CourseRunState {
   courseId: string;
-  startTick: number; // sim.tickCount at the green light
+  startTick: number; // sim.tickCount when the clock starts (first gate, or the GO of a race)
   nextCheckpoint: number; // ordered-gate cursor into the current lap
   lap: number; // 0-based
   splits: number[]; // tickCount at each checkpoint pass (for live splits)
-  state: 'active' | 'done' | 'failed';
+  // 'countdown' is the pre-GO hold of a race (movement frozen, clock not running);
+  // solo runs skip it and go straight to 'active'.
+  state: 'countdown' | 'active' | 'done' | 'failed';
   elapsedTicks: number; // filled on 'done'
+  raceId?: number; // set when this run is part of a synchronized race
 }
 
 // `pid` (when present) marks a personal event that should only be delivered to
@@ -987,6 +990,11 @@ export type SimEvent = { pid?: number } & (
   | { type: 'courseCheckpoint'; courseId: string; index: number; total: number; lap: number; laps: number; atTick: number }
   | { type: 'courseFinish'; courseId: string; elapsedTicks: number }
   | { type: 'courseFail'; courseId: string; reason: 'dismounted' | 'aborted' }
+  // Multi-racer (party) races over the same course. Personal events (carry `pid`).
+  | { type: 'raceCountdown'; raceId: number; courseId: string; seconds: number }
+  | { type: 'raceGo'; raceId: number; courseId: string }
+  | { type: 'raceFinish'; raceId: number; courseId: string; place: number; total: number; elapsedTicks: number }
+  | { type: 'raceResult'; raceId: number; courseId: string; place: number; total: number }
   | { type: 'learnAbility'; abilityId: string; rank: number }
   | { type: 'loot'; text: string }
   | { type: 'error'; text: string }

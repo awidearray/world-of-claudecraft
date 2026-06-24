@@ -1272,6 +1272,7 @@ export class GameServer {
       // inside the Sim, so a forged id / ground mount is rejected server-side.
       case 'start_course': if (typeof msg.course === 'string') sim.startCourse(msg.course, pid); break;
       case 'abort_course': sim.abortCourse(pid); break;
+      case 'start_race': if (typeof msg.course === 'string') sim.startRace(msg.course, pid); break;
       // hunter pets
       case 'pet_abandon': sim.abandonPet(pid); break;
       case 'pet_rename':
@@ -1600,6 +1601,8 @@ export class GameServer {
     // This character's best Skytrial times (sent on change — once at join, then on
     // a new PB) for the launcher's per-course best + "new best" feedback.
     maybe('tpb', meta.mountTrialBests);
+    // Live race state for the HUD race panel (rides the wire only while racing).
+    maybe('race', this.sim.raceInfoFor(session.pid));
     return extra === '' ? json : json.slice(0, -1) + extra + '}';
   }
 

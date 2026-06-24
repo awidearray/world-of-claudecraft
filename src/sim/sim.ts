@@ -25,13 +25,13 @@ import {
   TAUNT_FORCE_SECONDS, addThreat, clearThreat, stealthDetectionRadius, threatEntries, threatModifier, topThreatValue,
 } from './threat';
 import { groundHeight, WATER_LEVEL } from './world';
-import type { AccountCosmetics, LeaderboardEntry, MountTrialLeaderEntry } from '../world_api';
+import type { AccountCosmetics, LeaderboardEntry, MountTrialLeaderEntry, RaceInfo, RaceParticipant } from '../world_api';
 import {
   AbilityDef, AbilityEffect, Aura, AuraKind, CAST_PUSHBACK_SEC, CHANNEL_PUSHBACK_FRACTION, CONSUME_DURATION,
   DEFAULT_PARTY_LOOT_STRATEGIES,
   CONSUME_TICKS, CrowdControlDrCategory, DT, Entity, EquipSlot, FISHING_CAST_ID, FISHING_CAST_TIME, GCD,
   CurrencyLootStrategy, INTERACT_RANGE, InvSlot, ItemLootStrategy, LootEntry, LootSlot, LootStrategies, MELEE_RANGE, MAX_LEVEL, MobFamily, MobTemplate,
-  MoveInput, OverheadEmoteId, PetMode, PlayerClass, QuestProgress, QuestState, RUN_SPEED, SimConfig, SimEvent, TURN_SPEED, Vec3,
+  MoveInput, OverheadEmoteId, PetMode, PlayerClass, QuestProgress, QuestState, RUN_SPEED, SimConfig, SimEvent, TICK_RATE, TURN_SPEED, Vec3,
   angleTo, armorReduction, dist2d, emptyMoveInput, isConsuming, meleeMissChance, mobXpValue, normAngle,
   rageFromDealing, rageFromTaking, spellHitChance, xpForLevel,
   MILESTONES, virtualLevel, xpToReachLevel, canPrestige,
@@ -67,6 +67,10 @@ const FLIGHT_MAX_ALTITUDE = 55; // ceiling above the local surface, so you can c
 // (between the 2.1× and 2.5× tier range) so races/time-trials measure piloting
 // skill, not $WOC holdings — keeping earned-mount riders competitive.
 const COURSE_FLIGHT_MULT = 2.3;
+// Multi-racer race timing: the pre-GO countdown (racers hover frozen at the
+// start), and how long a finished race lingers for its result panel.
+const RACE_COUNTDOWN_TICKS = 3 * TICK_RATE;
+const RACE_CLEANUP_TICKS = 8 * TICK_RATE;
 const EVADE_SPEED_MULT = 1.6;
 // An evading mob walks a straight line home (no pathfinding) and stalls if deep
 // water or a collider sits between it and its spawn. Since evading mobs are
@@ -701,6 +705,21 @@ function segmentHitsSphere(a: Vec3, b: Vec3, cx: number, cy: number, cz: number,
   return dx * dx + dy * dy + dz * dz <= r * r;
 }
 
+// An in-progress multi-racer race: players running the same course on a
+// synchronized countdown→GO, placed by finish order. Internal to the sim; the
+// client sees a projected RaceInfo (raceInfoFor).
+interface Race {
+  id: number;
+  courseId: string;
+  participants: number[]; // pids, in join order
+  state: 'countdown' | 'active' | 'done';
+  countdownRemaining: number; // ticks until GO
+  goTick: number; // tickCount at GO
+  finishOrder: number[]; // pids in finish order = placement
+  dnf: Set<number>; // pids that dropped out (lost flight / left)
+  doneTick: number; // tickCount the race ended, for the lingering result panel
+}
+
 export class Sim {
   cfg: Required<Omit<SimConfig, 'noPlayer'>>;
   rng: Rng;
@@ -715,6 +734,8 @@ export class Sim {
   private engagedPids = new Set<number>();
   primaryId = -1; // the local/RL player in single-player contexts
   nextId = 1;
+  private races: Race[] = [];
+  private nextRaceId = 1;
   events: SimEvent[] = [];
   private delayedEvents: { at: number; event: SimEvent }[] = [];
   // social systems
@@ -1199,7 +1220,9 @@ export class Sim {
    *  movement input (z forward, x strafe-right) already read by the caller. */
   private updateFlightMovement(p: Entity, meta: PlayerMeta, mx: number, mz: number): void {
     if (p.sitting) this.standUp(p);
-    if ((mx !== 0 || mz !== 0) && !this.isRooted(p)) {
+    // Frozen at the start line during a race countdown (hover in place until GO).
+    const frozen = meta.courseRun?.state === 'countdown';
+    if (!frozen && (mx !== 0 || mz !== 0) && !this.isRooted(p)) {
       const len = Math.hypot(mx, mz);
       const fx = mx / len, fz = mz / len;
       // Normalize speed during a course run (skill, not holdings); else the
@@ -1302,9 +1325,9 @@ export class Sim {
     const gate = def.checkpoints[run.nextCheckpoint];
     if (!segmentHitsSphere(p.prevPos, p.pos, gate.x, gate.y, gate.z, gate.radius)) return;
 
-    // The very first gate is the start line: the clock begins here, so the time
-    // measures the run itself, not the approach to it.
-    if (run.splits.length === 0) run.startTick = this.tickCount;
+    // Solo time-trials start the clock on the first gate (the start line); a race
+    // clock is GO-based (set in updateRaces), so don't override it here.
+    if (run.raceId === undefined && run.splits.length === 0) run.startTick = this.tickCount;
     run.splits.push(this.tickCount);
     run.nextCheckpoint++;
     if (run.nextCheckpoint >= def.checkpoints.length) {
@@ -1314,13 +1337,14 @@ export class Sim {
     if (run.lap >= def.laps) {
       run.state = 'done';
       run.elapsedTicks = this.tickCount - run.startTick;
-      // Track the in-session best so the HUD can flag a new PB; the server also
-      // persists it to mount_trial_records for the leaderboard + cross-session.
-      const prev = meta.mountTrialBests[def.id];
-      if (prev === undefined || run.elapsedTicks < prev) meta.mountTrialBests[def.id] = run.elapsedTicks;
-      this.emit({ type: 'courseFinish', courseId: def.id, elapsedTicks: run.elapsedTicks, pid: p.id });
-      // Leave the finished run on meta for one tick so the server can read the
-      // result into persistence/leaderboards; the next startCourse overwrites it.
+      // Solo runs feed the time-trial leaderboard + a "new best" flag; race runs
+      // resolve through updateRaces (placement + raceFinish), not the solo board,
+      // so a synchronized-start race time never pollutes the time-trial board.
+      if (run.raceId === undefined) {
+        const prev = meta.mountTrialBests[def.id];
+        if (prev === undefined || run.elapsedTicks < prev) meta.mountTrialBests[def.id] = run.elapsedTicks;
+        this.emit({ type: 'courseFinish', courseId: def.id, elapsedTicks: run.elapsedTicks, pid: p.id });
+      }
     } else {
       this.emit({
         type: 'courseCheckpoint', courseId: def.id,
@@ -1328,6 +1352,149 @@ export class Sim {
         lap: run.lap, laps: def.laps, atTick: this.tickCount, pid: p.id,
       });
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Multi-racer RACES. A leader starts a race for their party (or solo); every
+  // eligible flyer is staged at the start, held through a synchronized countdown,
+  // released together on GO, and placed by finish order over the course substrate.
+  // Race times never feed the solo time-trial board (different start conditions).
+  // -------------------------------------------------------------------------
+
+  /** Start a race for `pid`'s party (or just `pid` solo). Returns true when a race
+   *  formed. Every racer must be on a flying mount (for a flyingOnly course) and
+   *  free of another run; ineligible party members are simply left out. */
+  startRace(courseId: string, pid?: number): boolean {
+    const r = this.resolve(pid);
+    if (!r) return false;
+    const def = COURSES[courseId];
+    if (!def) return false;
+    const party = this.partyOf(r.e.id);
+    const candidates = party ? [...party.members] : [r.e.id];
+    const racers: number[] = [];
+    for (const id of candidates) {
+      const e = this.entities.get(id);
+      const m = this.players.get(id);
+      if (!e || !m || e.dead) continue;
+      if (def.flyingOnly && !isFlyingMount(e.mountId)) continue;
+      if (m.courseRun && (m.courseRun.state === 'active' || m.courseRun.state === 'countdown')) continue; // busy
+      racers.push(id);
+    }
+    if (racers.length === 0) return false;
+
+    const race: Race = {
+      id: this.nextRaceId++, courseId, participants: racers, state: 'countdown',
+      countdownRemaining: RACE_COUNTDOWN_TICKS, goTick: -1, finishOrder: [], dnf: new Set(), doneTick: 0,
+    };
+    this.races.push(race);
+    // Stage racers in side-by-side lanes just behind gate 0, facing it.
+    const c0 = def.checkpoints[0];
+    const c1 = def.checkpoints[1 % def.checkpoints.length];
+    const ax = c0.x - c1.x, az = c0.z - c1.z;
+    const al = Math.hypot(ax, az) || 1;
+    const ux = ax / al, uz = az / al; // unit vector behind gate 0
+    const lx = -uz, lz = ux; // perpendicular (lane offset)
+    for (let i = 0; i < racers.length; i++) {
+      const e = this.entities.get(racers[i])!;
+      const meta = this.players.get(racers[i])!;
+      const lane = i - (racers.length - 1) / 2;
+      e.pos = { x: c0.x + ux * 9 + lx * lane * 3.2, y: c0.y, z: c0.z + uz * 9 + lz * lane * 3.2 };
+      e.prevPos = { ...e.pos };
+      e.facing = Math.atan2(c0.x - e.pos.x, c0.z - e.pos.z);
+      this.rebucket(e);
+      meta.courseRun = { courseId, startTick: -1, nextCheckpoint: 0, lap: 0, splits: [], state: 'countdown', elapsedTicks: 0, raceId: race.id };
+      this.emit({ type: 'raceCountdown', raceId: race.id, courseId, seconds: Math.ceil(RACE_COUNTDOWN_TICKS / TICK_RATE), pid: racers[i] });
+    }
+    return true;
+  }
+
+  /** Advance every race: run the countdown, release on GO (synchronized clocks),
+   *  record placement as racers finish/drop, end + clean up. Called once per tick
+   *  AFTER the per-player loop, so this tick's course-run finishes are visible. */
+  private updateRaces(): void {
+    for (let i = this.races.length - 1; i >= 0; i--) {
+      const race = this.races[i];
+      if (race.state === 'countdown') {
+        race.countdownRemaining -= 1;
+        if (race.countdownRemaining <= 0) {
+          race.state = 'active';
+          race.goTick = this.tickCount;
+          for (const id of race.participants) {
+            const meta = this.players.get(id);
+            if (!meta || meta.courseRun?.raceId !== race.id) { race.dnf.add(id); continue; }
+            meta.courseRun.state = 'active';
+            meta.courseRun.startTick = this.tickCount; // every clock starts at GO
+            this.emit({ type: 'raceGo', raceId: race.id, courseId: race.courseId, pid: id });
+          }
+        }
+        continue;
+      }
+      if (race.state === 'active') {
+        for (const id of race.participants) {
+          if (race.finishOrder.includes(id) || race.dnf.has(id)) continue;
+          const meta = this.players.get(id);
+          if (!meta || meta.courseRun?.raceId !== race.id || meta.courseRun.state === 'failed') {
+            race.dnf.add(id);
+            if (meta && meta.courseRun?.raceId === race.id) meta.courseRun = null;
+            continue;
+          }
+          if (meta.courseRun.state === 'done') {
+            race.finishOrder.push(id);
+            this.emit({
+              type: 'raceFinish', raceId: race.id, courseId: race.courseId,
+              place: race.finishOrder.length, total: race.participants.length,
+              elapsedTicks: meta.courseRun.elapsedTicks, pid: id,
+            });
+          }
+        }
+        if (race.finishOrder.length + race.dnf.size >= race.participants.length) {
+          race.state = 'done';
+          race.doneTick = this.tickCount;
+          for (const id of race.participants) {
+            const place = race.finishOrder.indexOf(id) + 1; // 0 = DNF
+            this.emit({ type: 'raceResult', raceId: race.id, courseId: race.courseId, place, total: race.participants.length, pid: id });
+          }
+        }
+        continue;
+      }
+      // done: linger for the result panel, then drop and clear the runs.
+      if (this.tickCount - race.doneTick >= RACE_CLEANUP_TICKS) {
+        for (const id of race.participants) {
+          const meta = this.players.get(id);
+          if (meta && meta.courseRun?.raceId === race.id) meta.courseRun = null;
+        }
+        this.races.splice(i, 1);
+      }
+    }
+  }
+
+  /** Project the race containing `pid` into the client-facing RaceInfo (leaders /
+   *  finishers first), or null when the player isn't in a race. */
+  raceInfoFor(pid: number): RaceInfo | null {
+    const race = this.races.find((rc) => rc.participants.includes(pid));
+    if (!race) return null;
+    const def = COURSES[race.courseId];
+    const total = def ? courseTotalGates(def) : 0;
+    const lapGates = def ? def.checkpoints.length : 1;
+    const participants: RaceParticipant[] = race.participants.map((id) => {
+      const e = this.entities.get(id);
+      const m = this.players.get(id);
+      const run = m && m.courseRun?.raceId === race.id ? m.courseRun : null;
+      const place = race.finishOrder.indexOf(id) + 1;
+      const dnf = race.dnf.has(id);
+      const gate = place > 0 ? total : run ? Math.min(run.lap * lapGates + run.nextCheckpoint, total) : 0;
+      return { pid: id, name: e?.name ?? '', gate, total, place: place > 0 ? place : 0, done: place > 0, dnf, me: id === pid };
+    });
+    participants.sort((a, b) => {
+      if (a.done !== b.done) return a.done ? -1 : 1;
+      if (a.done && b.done) return a.place - b.place;
+      if (a.dnf !== b.dnf) return a.dnf ? 1 : -1;
+      return b.gate - a.gate;
+    });
+    return {
+      raceId: race.id, courseId: race.courseId, state: race.state,
+      countdown: Math.ceil(Math.max(0, race.countdownRemaining) / TICK_RATE), participants,
+    };
   }
 
   /** Cosmetic skin-select event: rolls a rarity rank (once) and emits the
@@ -1448,6 +1615,9 @@ export class Sim {
   }
   get mountTrialBests(): Record<string, number> {
     return this.primary.mountTrialBests;
+  }
+  get raceInfo(): RaceInfo | null {
+    return this.raceInfoFor(this.primaryId);
   }
   // Offline play has no leaderboard (single player, no server); the online
   // ClientWorld fetches it over REST.
@@ -1905,6 +2075,7 @@ export class Sim {
 
     this.updateDuels();
     this.updateArena();
+    this.updateRaces();
     this.updateTradesAndInvites();
     this.updateInstances();
     this.updateMarket();

@@ -16,7 +16,7 @@ import {
   isOverheadEmoteId,
   type AccountCosmetics, type ArenaInfo, type CharacterSearchResult, type DuelInfo, type FriendInfo,
   type IWorld, type LeaderboardEntry, type MarketInfo, type MountTrialLeaderEntry, type OverheadEmoteId, type PartyInfo,
-  type PresenceStatus, type SocialInfo, type TradeInfo,
+  type PresenceStatus, type RaceInfo, type SocialInfo, type TradeInfo,
 } from '../world_api';
 
 // ---------------------------------------------------------------------------
@@ -414,6 +414,9 @@ export class ClientWorld implements IWorld {
   // This character's best Skytrial run per course (ticks), mirrored from self
   // (`tpb`); for the launcher's per-course best + "new best" feedback.
   mountTrialBests: Record<string, number> = {};
+  // Live multi-racer race state, mirrored from self (`race`); drives the HUD race
+  // panel. Null when not racing.
+  raceInfo: RaceInfo | null = null;
   copper = 0;
   xp = 0;
   // Post-cap progression (Max-Level XP Overflow), mirrored from snapshot self.
@@ -855,6 +858,7 @@ export class ClientWorld implements IWorld {
       // Active course run (delta-sent: present while running + a final null).
       if (s.crun !== undefined) this.courseRun = s.crun ?? null;
       if (s.tpb !== undefined) this.mountTrialBests = s.tpb ?? {};
+      if (s.race !== undefined) this.raceInfo = s.race ?? null;
       this.xp = s.xp ?? 0;
       this.lifetimeXp = s.lxp ?? 0;
       this.restedXp = s.rxp ?? 0;
@@ -1036,6 +1040,9 @@ export class ClientWorld implements IWorld {
   abortCourse(): void {
     this.courseRun = null; // optimistic clear; the snapshot confirms
     this.cmd({ cmd: 'abort_course' });
+  }
+  startRace(courseId: string): void {
+    this.cmd({ cmd: 'start_race', course: courseId });
   }
   unequipMechChroma(chromaId: string): void {
     const itemId = mechChromaItemId(chromaId);
