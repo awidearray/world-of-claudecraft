@@ -6529,14 +6529,35 @@ export class Hud {
       note.textContent = t('hud.course.needFlyer');
       el.appendChild(note);
     } else {
+      const bests = this.sim.mountTrialBests;
       for (const c of COURSE_LIST) {
+        const item = document.createElement('div');
+        item.className = 'course-item';
         const crow = document.createElement('div');
         crow.className = 'course-row';
         const lapsText = c.laps > 1 ? t('hud.course.laps', { count: fmt0(c.laps) }) : t('hud.course.onePass');
+        const myBest = bests[c.id];
+        const bestBit = myBest !== undefined
+          ? `<span class="mount-dot">·</span><span class="course-best">${esc(t('hud.course.best', { time: formatRunTime(myBest / 20) }))}</span>`
+          : '';
         crow.innerHTML =
           `<div class="course-text"><div class="course-name">${esc(c.name)}</div>` +
           `<div class="course-meta"><span class="fly">${esc(t('hud.mounts.flies'))}</span><span class="mount-dot">·</span>` +
-          `<span>${esc(lapsText)}</span><span class="mount-dot">·</span><span>${esc(t('hud.course.par', { time: formatRunTime(c.parTicks / 20) }))}</span></div></div>`;
+          `<span>${esc(lapsText)}</span><span class="mount-dot">·</span><span>${esc(t('hud.course.par', { time: formatRunTime(c.parTicks / 20) }))}</span>${bestBit}</div></div>`;
+        const boardBtn = document.createElement('button');
+        boardBtn.type = 'button';
+        boardBtn.className = 'mount-action is-dismount course-board-btn';
+        boardBtn.textContent = t('hud.course.board');
+        boardBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+        const board = document.createElement('div');
+        board.className = 'course-board';
+        board.hidden = true;
+        boardBtn.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          audio.click();
+          if (!board.hidden) { board.hidden = true; return; }
+          void this.renderCourseBoard(c, board);
+        });
         const cbtn = document.createElement('button');
         cbtn.type = 'button';
         cbtn.className = 'mount-action';
@@ -6550,8 +6571,11 @@ export class Hud {
           el.style.display = 'none'; // close so the rider can fly the course
           this.hideTooltip();
         });
+        crow.appendChild(boardBtn);
         crow.appendChild(cbtn);
-        el.appendChild(crow);
+        item.appendChild(crow);
+        item.appendChild(board);
+        el.appendChild(item);
       }
     }
 
@@ -6640,18 +6664,40 @@ export class Hud {
       const seconds = run.elapsedTicks / 20;
       const par = def.parTicks / 20;
       const delta = par - seconds;
-      const sub = delta >= 0
+      const best = this.sim.mountTrialBests[run.courseId];
+      const isNewBest = best !== undefined && run.elapsedTicks <= best;
+      const parBit = delta >= 0
         ? t('hud.course.beatPar', { time: formatRunTime(delta) })
         : t('hud.course.offPar', { time: formatRunTime(-delta) });
       this.setText(el.querySelector('.ch-name') as HTMLElement, `${def.name} — ${t('hud.course.finish')}`);
       this.setText(el.querySelector('.ch-time') as HTMLElement, formatRunTime(seconds));
-      this.setText(el.querySelector('.ch-sub') as HTMLElement, sub);
+      this.setText(el.querySelector('.ch-sub') as HTMLElement, isNewBest ? `${t('hud.course.newBest')} · ${parBit}` : parBit);
       return;
     }
 
     // failed (rarely seen — the server usually nulls the run on fail)
     el.hidden = true;
     this.courseTimerRunning = false;
+  }
+
+  // Fetch + render a course's realm time-trial leaderboard inline (the player's
+  // own row highlighted). Offline returns no entries.
+  private async renderCourseBoard(course: { id: string; name: string }, boardEl: HTMLElement): Promise<void> {
+    boardEl.hidden = false;
+    boardEl.innerHTML = `<div class="cb-status">${esc(t('hud.course.loadingBoard'))}</div>`;
+    const entries = await this.sim.mountTrialLeaderboard(course.id);
+    if (entries.length === 0) {
+      boardEl.innerHTML = `<div class="cb-status">${esc(t('hud.course.noTimes'))}</div>`;
+      return;
+    }
+    const myName = this.sim.player?.name;
+    boardEl.innerHTML = entries.map((e) => {
+      const me = e.name === myName;
+      return `<div class="cb-row${me ? ' me' : ''}">`
+        + `<span class="cb-rank">${esc(String(e.rank))}</span>`
+        + `<span class="cb-name">${esc(e.name)}${me ? ` <span class="cb-you">${esc(t('hud.course.you'))}</span>` : ''}</span>`
+        + `<span class="cb-time">${esc(formatRunTime(e.ticks / 20))}</span></div>`;
+    }).join('');
   }
 
   // -------------------------------------------------------------------------

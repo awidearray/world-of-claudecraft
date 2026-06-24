@@ -9,7 +9,7 @@ import { MECH_CHROMAS, mechChromaItemId, mechChromaSkinIndex } from '../src/sim/
 import { MOUNT_LIST, mountTierForBalance } from '../src/sim/content/mounts';
 import {
   grantAccountMechChroma, markAccountQuestComplete, revokeAccountMechChroma, saveCharacterState, openPlaySession, closePlaySession,
-  insertChatLogs, pool, loadMarketState, saveMarketState, walletForAccount,
+  insertChatLogs, pool, loadMarketState, saveMarketState, walletForAccount, recordMountTrial,
 } from './db';
 import { holderInfoForPubkey } from './woc_balance';
 import type { AccountChatMuteStatus, AccountCosmetics, RequestMetadata } from './db';
@@ -515,6 +515,7 @@ export class GameServer {
         this.clearStaleInputs();
         const events = this.sim.tick();
         this.routeEvents(events);
+        this.persistCourseFinishes(events);
         this.runAntibotTick();
         acc -= DT;
       }
@@ -706,7 +707,7 @@ export class GameServer {
     cls: import('../src/sim/types').PlayerClass,
     state: import('../src/sim/sim').CharacterState | null,
     isGm = false,
-    meta: RequestMetadata & Partial<AccountChatMuteStatus> & { accountCosmetics?: AccountCosmetics; chatStrikes?: number } = {},
+    meta: RequestMetadata & Partial<AccountChatMuteStatus> & { accountCosmetics?: AccountCosmetics; chatStrikes?: number; mountTrialBests?: Record<string, number> } = {},
   ): ClientSession | { error: string } {
     if (this.sessionsByCharacterId.has(characterId)) return { error: 'character already in world' };
     // Anti-bot: cap simultaneous online characters per account. Accounts can
@@ -721,7 +722,7 @@ export class GameServer {
         return { error: 'too many characters on this account are already in the world' };
       }
     }
-    const pid = this.sim.addPlayer(cls, name, { state: state ?? undefined });
+    const pid = this.sim.addPlayer(cls, name, { state: state ?? undefined, mountTrialBests: meta.mountTrialBests });
     if (isGm) {
       // GM characters: invulnerable, and always at the level cap (the row is
       // created without state, so the first join levels them up)
@@ -1596,6 +1597,9 @@ export class GameServer {
     // Active mount-course run: rides the wire only while a run exists (it changes
     // each gate then), null once when it ends. The HUD draws the timer/gate overlay.
     maybe('crun', meta.courseRun);
+    // This character's best Skytrial times (sent on change — once at join, then on
+    // a new PB) for the launcher's per-course best + "new best" feedback.
+    maybe('tpb', meta.mountTrialBests);
     return extra === '' ? json : json.slice(0, -1) + extra + '}';
   }
 
@@ -1645,6 +1649,19 @@ export class GameServer {
     if (!d) return null;
     const otherPid = d.a === pid ? d.b : d.a;
     return { otherPid, otherName: this.sim.meta(otherPid)?.name ?? '?', state: d.state };
+  }
+
+  // Persist Skytrial finishes to mount_trial_records for the realm leaderboard.
+  // Server-authoritative: the time is the sim's measured elapsedTicks, never a
+  // client number. The sim already updated the in-session best (sent as `tpb`).
+  private persistCourseFinishes(events: SimEvent[]): void {
+    for (const ev of events) {
+      if (ev.type !== 'courseFinish' || ev.pid === undefined) continue;
+      const session = this.clients.get(ev.pid);
+      if (!session) continue;
+      void recordMountTrial(session.characterId, ev.courseId, ev.elapsedTicks)
+        .catch((err) => console.error('mount-trial record failed:', err));
+    }
   }
 
   private routeEvents(events: SimEvent[]): void {

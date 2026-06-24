@@ -120,6 +120,16 @@ export interface LeaderboardEntry {
   realm?: string; // present on the global (cross-realm) home-page board
 }
 
+// One ranked row of a Skytrial time-trial leaderboard (realm-scoped, fastest
+// first). Computed server-side from mount_trial_records; the client only displays.
+export interface MountTrialLeaderEntry {
+  rank: number;
+  name: string;
+  cls: string;
+  level: number;
+  ticks: number; // best run, integer sim ticks (÷20 = seconds)
+}
+
 export type { ArenaFormat, ArenaCombatant, ArenaStanding };
 
 export interface ArenaLadderEntry {
@@ -307,6 +317,11 @@ export interface IWorld {
   courseRun: CourseRunState | null;
   startCourse(courseId: string): void;
   abortCourse(): void;
+  // Skytrial best times. `mountTrialBests` is this character's best run per course
+  // (ticks), for the launcher + "new best" feedback; the realm leaderboard is
+  // fetched on demand (server-computed from mount_trial_records).
+  mountTrialBests: Record<string, number>;
+  mountTrialLeaderboard(trackId: string): Promise<MountTrialLeaderEntry[]>;
   releaseSpirit(): void;
   chat(text: string): void;
   playEmote(emoteId: OverheadEmoteId): void;

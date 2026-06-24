@@ -1026,6 +1026,20 @@
     display: flex; gap: 6px; flex-wrap: wrap; }
   .course-row .course-meta .fly { color: #9fe6ff; }
   .course-locked { font-size: 11px; color: var(--color-text-muted); padding: 6px 2px; }
+  .course-item + .course-item { margin-top: 4px; }
+  .course-row .course-best { color: #8fd6a8; }
+  .course-board-btn { min-width: 64px; }
+  .course-board { margin: 2px 0 6px; padding: 6px 8px; background: #00000033; border-radius: 5px;
+    border: 1px solid #2a2a36; }
+  .course-board .cb-status { font-size: 11px; color: var(--color-text-muted); padding: 2px 0; }
+  .cb-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; padding: 2px 0; }
+  .cb-row.me { color: #ffd24a; }
+  .cb-row .cb-rank { width: 26px; text-align: right; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+  .cb-row.me .cb-rank { color: #ffd24a; }
+  .cb-row .cb-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cb-row .cb-you { color: #9fe6ff; font-size: 10px; }
+  .cb-row .cb-time { font-variant-numeric: tabular-nums; color: #cdbf98; }
+  .cb-row.me .cb-time { color: #ffd24a; }
 
   /* In-world course run overlay (timer + ring/lap progress) */
   #course-hud { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); z-index: 60;

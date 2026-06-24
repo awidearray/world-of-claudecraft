@@ -15,7 +15,7 @@ import { normalizeMoveFacing, sanitizeMoveInput } from '../sim/move_input';
 import {
   isOverheadEmoteId,
   type AccountCosmetics, type ArenaInfo, type CharacterSearchResult, type DuelInfo, type FriendInfo,
-  type IWorld, type LeaderboardEntry, type MarketInfo, type OverheadEmoteId, type PartyInfo,
+  type IWorld, type LeaderboardEntry, type MarketInfo, type MountTrialLeaderEntry, type OverheadEmoteId, type PartyInfo,
   type PresenceStatus, type SocialInfo, type TradeInfo,
 } from '../world_api';
 
@@ -411,6 +411,9 @@ export class ClientWorld implements IWorld {
   // Active mount-course run, mirrored from snapshot self (`crun`); drives the HUD
   // course timer/gate overlay. Null when idle.
   courseRun: CourseRunState | null = null;
+  // This character's best Skytrial run per course (ticks), mirrored from self
+  // (`tpb`); for the launcher's per-course best + "new best" feedback.
+  mountTrialBests: Record<string, number> = {};
   copper = 0;
   xp = 0;
   // Post-cap progression (Max-Level XP Overflow), mirrored from snapshot self.
@@ -851,6 +854,7 @@ export class ClientWorld implements IWorld {
       }
       // Active course run (delta-sent: present while running + a final null).
       if (s.crun !== undefined) this.courseRun = s.crun ?? null;
+      if (s.tpb !== undefined) this.mountTrialBests = s.tpb ?? {};
       this.xp = s.xp ?? 0;
       this.lifetimeXp = s.lxp ?? 0;
       this.restedXp = s.rxp ?? 0;
@@ -1201,6 +1205,15 @@ export class ClientWorld implements IWorld {
   async leaderboard(): Promise<LeaderboardEntry[]> {
     try {
       const res = await fetch(`${this.base}/api/leaderboard?metric=lifetimeXp&limit=100`);
+      if (!res.ok) return [];
+      return (await res.json()).leaders ?? [];
+    } catch {
+      return [];
+    }
+  }
+  async mountTrialLeaderboard(trackId: string): Promise<MountTrialLeaderEntry[]> {
+    try {
+      const res = await fetch(`${this.base}/api/leaderboard/mount-trial?trackId=${encodeURIComponent(trackId)}`);
       if (!res.ok) return [];
       return (await res.json()).leaders ?? [];
     } catch {

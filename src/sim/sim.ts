@@ -25,7 +25,7 @@ import {
   TAUNT_FORCE_SECONDS, addThreat, clearThreat, stealthDetectionRadius, threatEntries, threatModifier, topThreatValue,
 } from './threat';
 import { groundHeight, WATER_LEVEL } from './world';
-import type { AccountCosmetics, LeaderboardEntry } from '../world_api';
+import type { AccountCosmetics, LeaderboardEntry, MountTrialLeaderEntry } from '../world_api';
 import {
   AbilityDef, AbilityEffect, Aura, AuraKind, CAST_PUSHBACK_SEC, CHANNEL_PUSHBACK_FRACTION, CONSUME_DURATION,
   DEFAULT_PARTY_LOOT_STRATEGIES,
@@ -508,6 +508,10 @@ export interface PlayerMeta {
   // advances it each tick (pass-through + timing) and surfaces it to the owner via
   // the self snapshot so the HUD can draw the course timer/splits.
   courseRun: CourseRunState | null;
+  // Best Skytrial run per course id, in ticks. Loaded at join from the server's
+  // records (empty offline); the source of truth is the mount_trial_records
+  // table. Drives "new best" feedback + the per-course best in the launcher.
+  mountTrialBests: Record<string, number>;
 }
 
 // Away-from-keyboard / do-not-disturb presence. `afk` still delivers whispers
@@ -865,7 +869,7 @@ export class Sim {
   // Players: join / leave / persistence
   // -------------------------------------------------------------------------
 
-  addPlayer(cls: PlayerClass, name: string, opts?: { autoEquip?: boolean; state?: CharacterState }): number {
+  addPlayer(cls: PlayerClass, name: string, opts?: { autoEquip?: boolean; state?: CharacterState; mountTrialBests?: Record<string, number> }): number {
     // Characters saved inside a dungeon instance rejoin at its entrance —
     // their old instance is gone (or belongs to someone else) by now.
     let savedPos = opts?.state?.pos ?? null;
@@ -931,6 +935,7 @@ export class Sim {
       away: null,
       mountCast: null,
       courseRun: null,
+      mountTrialBests: opts?.mountTrialBests ? { ...opts.mountTrialBests } : {},
     };
     this.players.set(player.id, meta);
     player.skinCatalog = meta.skinCatalog;
@@ -1309,6 +1314,10 @@ export class Sim {
     if (run.lap >= def.laps) {
       run.state = 'done';
       run.elapsedTicks = this.tickCount - run.startTick;
+      // Track the in-session best so the HUD can flag a new PB; the server also
+      // persists it to mount_trial_records for the leaderboard + cross-session.
+      const prev = meta.mountTrialBests[def.id];
+      if (prev === undefined || run.elapsedTicks < prev) meta.mountTrialBests[def.id] = run.elapsedTicks;
       this.emit({ type: 'courseFinish', courseId: def.id, elapsedTicks: run.elapsedTicks, pid: p.id });
       // Leave the finished run on meta for one tick so the server can read the
       // result into persistence/leaderboards; the next startCourse overwrites it.
@@ -1436,6 +1445,14 @@ export class Sim {
   }
   get courseRun(): CourseRunState | null {
     return this.primary.courseRun;
+  }
+  get mountTrialBests(): Record<string, number> {
+    return this.primary.mountTrialBests;
+  }
+  // Offline play has no leaderboard (single player, no server); the online
+  // ClientWorld fetches it over REST.
+  mountTrialLeaderboard(_trackId: string): Promise<MountTrialLeaderEntry[]> {
+    return Promise.resolve([]);
   }
   get inventory(): InvSlot[] {
     return this.primary.inventory;

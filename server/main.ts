@@ -7,12 +7,13 @@ import {
   listCharacters, getCharacter, createCharacterCapped, deleteCharacter, closeOrphanSessions,
   pruneChatLogs, searchCharacters, characterCountsByRealm, moderationStatusForAccount, renameCharacter,
   findCharacterReportTargetByName, topArenaRatings, topLifetimeXp, chatMuteStatusForAccount, loadAccountCosmetics,
+  topMountTrialTimes, loadMountTrialTimes,
   referralCountForAccount, primarySlugForAccount, lifetimeXpStanding, activeReservationHolder,
 } from './db';
 import { virtualLevel } from '../src/sim/types';
 import { Sim } from '../src/sim/sim';
 import type { PlayerClass } from '../src/sim/types';
-import type { LeaderboardEntry } from '../src/world_api';
+import type { LeaderboardEntry, MountTrialLeaderEntry } from '../src/world_api';
 import { cleanReportReason, createPlayerReport, createSuspiciousRegistrationReport } from './moderation_db';
 import { resolveReportTarget } from './report_target';
 import { bufferHandshakeMessages } from './ws_buffer';
@@ -127,6 +128,26 @@ async function getLeaderboard(scope: 'realm' | 'global'): Promise<LeaderboardEnt
     return await refreshLeaderboard(scope);
   } catch (err) {
     console.error(`leaderboard refresh failed (${scope}):`, err);
+    return cached?.entries ?? [];
+  }
+}
+
+// Per-track Skytrial leaderboard cache: same compute-once/serve-from-memory
+// pattern, keyed by track id (a player asks for one track at a time).
+const mountTrialCache = new Map<string, { at: number; entries: MountTrialLeaderEntry[] }>();
+
+async function getMountTrialLeaderboard(trackId: string): Promise<MountTrialLeaderEntry[]> {
+  const cached = mountTrialCache.get(trackId);
+  if (cached && Date.now() - cached.at < LEADERBOARD_TTL_MS) return cached.entries;
+  try {
+    const rows = await topMountTrialTimes(trackId, LEADERBOARD_SIZE);
+    const entries: MountTrialLeaderEntry[] = rows.map((r, i) => ({
+      rank: i + 1, name: r.name, cls: r.class, level: r.level, ticks: r.bestTicks,
+    }));
+    mountTrialCache.set(trackId, { at: Date.now(), entries });
+    return entries;
+  } catch (err) {
+    console.error(`mount-trial leaderboard refresh failed (${trackId}):`, err);
     return cached?.entries ?? [];
   }
 }
@@ -583,6 +604,16 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       const entries = await getLeaderboard(scope);
       return json(res, 200, { realm: REALM, scope, metric: 'lifetimeXp', leaders: entries.slice(0, limit) });
     }
+    if (req.method === 'GET' && url === '/api/leaderboard/mount-trial') {
+      // realm-scoped Skytrial time-trial board for one track, fastest first,
+      // served from the per-track in-memory cache. ?trackId=<course id>.
+      const params = new URLSearchParams((req.url ?? '').split('?')[1] ?? '');
+      const trackId = (params.get('trackId') ?? '').slice(0, 64);
+      if (!trackId) return json(res, 400, { error: 'trackId required' });
+      const limit = Math.max(1, Math.min(LEADERBOARD_SIZE, Number(params.get('limit')) || LEADERBOARD_SIZE));
+      const entries = await getMountTrialLeaderboard(trackId);
+      return json(res, 200, { realm: REALM, trackId, leaders: entries.slice(0, limit) });
+    }
     if (req.method === 'GET' && url === '/api/releases') {
       // public News & Updates feed, mirrored from GitHub Releases and served
       // from the in-memory cache (refreshed at most every RELEASES_TTL_MS).
@@ -796,6 +827,7 @@ async function main(): Promise<void> {
       return;
     }
     const accountCosmetics = await loadAccountCosmetics(accountId);
+    const mountTrialBests = await loadMountTrialTimes(character.id);
     const result = game.join(
       ws,
       accountId,
@@ -810,6 +842,7 @@ async function main(): Promise<void> {
         reason: chatMute.reason,
         chatStrikes: status.chatStrikes,
         accountCosmetics,
+        mountTrialBests,
       },
     );
     if ('error' in result) {
