@@ -534,6 +534,7 @@ function enterNewspaperState(): void {
 let adBuyPanel: AdBuyPanel | null = null;
 function openAdBuyPanel(): void {
   if (!adBuyPanel) adBuyPanel = new AdBuyPanel();
+  if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__adBuyPanel = adBuyPanel;
   void adBuyPanel.open();
 }
 

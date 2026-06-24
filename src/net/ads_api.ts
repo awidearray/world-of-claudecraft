@@ -117,3 +117,7 @@ class AdsApi {
 }
 
 export const adsApi = new AdsApi();
+
+// Dev-only debug handle (stripped from production builds) — lets local tooling
+// inspect/seed the advertiser session, e.g. to demo the authed buyer panel.
+if (import.meta.env.DEV) (globalThis as Record<string, unknown>).__adsApi = adsApi;
