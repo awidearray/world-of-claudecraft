@@ -11,6 +11,9 @@ import { ChatLogger } from './chat_log';
 import { SocialService } from './social';
 import type { Presence, PresenceStatus, SocialActor, SocialEvent, SocialTransport } from './social';
 import { PgSocialDb } from './social_db';
+import { RentalService } from './rental';
+import type { RentalActor, RentalEvent, RentalTransport } from './rental';
+import { PgRentalDb } from './rental_db';
 import { REALM } from './realm';
 
 const WORLD_SEED = 20061;
@@ -229,6 +232,10 @@ function logSocialErr(err: unknown): void {
   console.error('social command failed:', err);
 }
 
+function logRentalErr(err: unknown): void {
+  console.error('rental command failed:', err);
+}
+
 const CONFUSABLE_CHARS: Record<string, string> = {
   '0': 'o',
   '1': 'i',
@@ -299,6 +306,9 @@ export class GameServer {
   readonly chatLog = new ChatLogger(insertChatLogs);
   private readonly socialDb = new PgSocialDb(pool);
   readonly social: SocialService;
+  private readonly rentalDb = new PgRentalDb(pool);
+  readonly rental: RentalService;
+  private rentalBillTimer = 0;
   private wireCache = new Map<number, EntityWireCache>();
   private lastWireSweepTick = 0;
   private interval: NodeJS.Timeout | null = null;
@@ -311,6 +321,40 @@ export class GameServer {
   constructor() {
     this.sim = new Sim({ seed: WORLD_SEED, playerClass: 'warrior', noPlayer: true });
     this.social = new SocialService(this.socialDb, this.socialTransport());
+    this.rental = new RentalService(this.rentalDb, this.rentalTransport());
+  }
+
+  // -------------------------------------------------------------------------
+  // GPU-rental marketplace transport: bridges the RentalService to the live
+  // client map, mirroring socialTransport(). Keyed by character id.
+  // -------------------------------------------------------------------------
+
+  private rentalTransport(): RentalTransport {
+    const actor = (s: ClientSession): RentalActor => ({ characterId: s.characterId, name: s.name });
+    return {
+      isOnline: (id) => this.sessionByCharacterId(id) !== null,
+      byCharacterId: (id) => { const s = this.sessionByCharacterId(id); return s ? actor(s) : null; },
+      deliver: (id, events: RentalEvent[]) => {
+        const s = this.sessionByCharacterId(id);
+        if (s) this.send(s, { t: 'events', list: events });
+      },
+      pushMarket: (id) => { void this.sendMarketSnapshot(id); },
+    };
+  }
+
+  private rentalActorFor(session: ClientSession): RentalActor {
+    return { characterId: session.characterId, name: session.name };
+  }
+
+  private async sendMarketSnapshot(charId: number): Promise<void> {
+    const session = this.sessionByCharacterId(charId);
+    if (!session) return;
+    try {
+      const snap = await this.rental.snapshot(charId);
+      this.send(session, { t: 'rental', ...snap });
+    } catch (err) {
+      console.error('market snapshot failed:', err);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -404,6 +448,12 @@ export class GameServer {
         void this.saveAll('autosave');
         void this.saveMarket();
       }
+      // Meter live GPU rentals once per minute, transferring $woc renter->host.
+      this.rentalBillTimer += dt;
+      if (this.rentalBillTimer >= 60) {
+        this.rentalBillTimer = 0;
+        void this.rental.tickBilling().catch((err) => console.error('rental billing failed:', err));
+      }
     }, 50);
   }
 
@@ -467,6 +517,10 @@ export class GameServer {
     await this.sendSocialSnapshot(session.characterId);
     await this.social.announcePresence({ characterId: session.characterId, name: session.name }, true)
       .catch((err) => console.error('presence announce failed:', err));
+    // Seed the player's $woc balance + marketplace panel (creates their wallet
+    // with the signup stipend on first login).
+    await this.rental.sendWallet(session.characterId).catch((err) => console.error('wallet send failed:', err));
+    await this.sendMarketSnapshot(session.characterId);
   }
 
   async leave(session: ClientSession, reason: string): Promise<void> {
@@ -474,6 +528,8 @@ export class GameServer {
     this.clients.delete(session.pid);
     this.sessionsByCharacterId.delete(session.characterId);
     this.social.forget(session.characterId);
+    // tear down any GPU listing / live rental this player was part of
+    void this.rental.forget(session.characterId).catch((err) => console.error('rental forget failed:', err));
     // delete from clients first so friends see them as offline in the notice
     void this.social.announcePresence({ characterId: session.characterId, name: session.name }, false)
       .catch((err) => console.error('presence announce failed:', err));
@@ -768,6 +824,19 @@ export class GameServer {
       case 'market_buy': if (typeof msg.id === 'number') sim.marketBuy(msg.id, pid); break;
       case 'market_cancel': if (typeof msg.id === 'number') sim.marketCancel(msg.id, pid); break;
       case 'market_collect': sim.marketCollect(pid); break;
+      // GPU-rental marketplace ($woc): hosting/renting idle graphics power.
+      case 'rig_report': this.rental.reportRig(this.rentalActorFor(session), msg.rig); break;
+      case 'rental_list':
+        this.rental.list(this.rentalActorFor(session), Number(msg.rate), Number(msg.slots), String(msg.note ?? ''));
+        break;
+      case 'rental_unlist': void this.rental.unlist(this.rentalActorFor(session)).catch(logRentalErr); break;
+      case 'rental_rent': if (typeof msg.hostId === 'number') void this.rental.rent(this.rentalActorFor(session), msg.hostId).catch(logRentalErr); break;
+      case 'rental_stop': void this.rental.stop(this.rentalActorFor(session)).catch(logRentalErr); break;
+      case 'rental_connected': this.rental.markConnected(this.rentalActorFor(session)); break;
+      case 'rental_signal':
+        if (typeof msg.session === 'string') this.rental.signal(this.rentalActorFor(session), msg.session, msg.payload);
+        break;
+      case 'rental_refresh': void this.sendMarketSnapshot(session.characterId); break;
       // dev/ops commands, only when ALLOW_DEV_COMMANDS=1 (never in production)
       case 'dev_level': {
         if (process.env.ALLOW_DEV_COMMANDS === '1' && typeof msg.level === 'number') {

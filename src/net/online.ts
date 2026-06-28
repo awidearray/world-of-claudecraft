@@ -7,7 +7,7 @@ import {
   emptyMoveInput,
 } from '../sim/types';
 import { normalizeMoveFacing, sanitizeMoveInput } from '../sim/move_input';
-import type { ArenaInfo, CharacterSearchResult, DuelInfo, IWorld, MarketInfo, PartyInfo, SocialInfo, TradeInfo } from '../world_api';
+import type { ArenaInfo, CharacterSearchResult, DuelInfo, IWorld, MarketInfo, PartyInfo, RentalInfo, SocialInfo, TradeInfo } from '../world_api';
 
 // ---------------------------------------------------------------------------
 // REST
@@ -228,10 +228,13 @@ export class ClientWorld implements IWorld {
   socialInfo: SocialInfo | null = null;
   arenaInfo: ArenaInfo | null = null;
   marketInfo: MarketInfo | null = null;
+  rentalInfo: RentalInfo | null = null;
   markers: Record<number, number> = {}; // entityId -> markerId, mirrored from the self-wire
   realm = '';
   // bumped whenever a fresh social snapshot lands, so an open panel re-renders
   private socialDirty = false;
+  // bumped whenever a fresh GPU-rental snapshot lands
+  private rentalDirty = false;
   // snapshot interpolation
   lastSnapAt = 0;
   snapInterval = 50; // ms, adapts to measured cadence
@@ -358,6 +361,17 @@ export class ClientWorld implements IWorld {
       this.socialDirty = true;
       return;
     }
+    if (msg.t === 'rental') {
+      this.rentalInfo = {
+        balance: msg.balance ?? 0,
+        myRig: msg.myRig ?? null,
+        myListing: msg.myListing ?? null,
+        listings: msg.listings ?? [],
+        session: msg.session ?? null,
+      };
+      this.rentalDirty = true;
+      return;
+    }
     if (msg.t === 'snap') {
       this.applySnapshot(msg);
     }
@@ -368,6 +382,22 @@ export class ClientWorld implements IWorld {
     this.socialDirty = false;
     return v;
   }
+
+  consumeRentalChanged(): boolean {
+    const v = this.rentalDirty;
+    this.rentalDirty = false;
+    return v;
+  }
+
+  // --- GPU-rental marketplace commands (see src/net/rental.ts) ---
+  reportRig(rig: unknown): void { this.cmd({ cmd: 'rig_report', rig }); }
+  rentalList(rate: number, slots: number, note: string): void { this.cmd({ cmd: 'rental_list', rate, slots, note }); }
+  rentalUnlist(): void { this.cmd({ cmd: 'rental_unlist' }); }
+  rentalRent(hostId: number): void { this.cmd({ cmd: 'rental_rent', hostId }); }
+  rentalStop(): void { this.cmd({ cmd: 'rental_stop' }); }
+  rentalConnected(): void { this.cmd({ cmd: 'rental_connected' }); }
+  rentalSignal(session: string, payload: unknown): void { this.cmd({ cmd: 'rental_signal', session, payload }); }
+  rentalRefresh(): void { this.cmd({ cmd: 'rental_refresh' }); }
 
   private applySnapshot(snap: any): void {
     const now = performance.now();

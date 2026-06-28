@@ -94,6 +94,15 @@ see each other in town. `Enter` opens chat.
   its loot/XP/quest credit — others get "You don't have permission to loot
   that."), mobs retarget the next attacker when their victim dies (no free
   resets), join/leave announcements, `/say`-style chat.
+- **The Arcane Foundry — rent idle GPUs for $woc**: players on powerful
+  machines can lend their *idle* rendering power to players on weak ones, paid
+  by the minute in **$woc** (a server-held render-credit currency). On login the
+  client benchmarks its GPU into a tier; a high/ultra-tier rig can list itself
+  at a $woc/min rate, and a renter connects over **peer-to-peer WebRTC** — the
+  host streams its canvas, the renter relays input, and *the server never sees a
+  pixel*. It only brokers the deal: authoritative $woc balances + double-entry
+  ledger, escrow, per-minute metering, and relaying the WebRTC handshake. See
+  [docs/gpu-rental.md](docs/gpu-rental.md).
 
 ## The Hollow Crypt — 5-player elite instance
 

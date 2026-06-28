@@ -3,6 +3,7 @@ import type { CharacterState, MarketSave } from '../src/sim/sim';
 import type { PlayerClass } from '../src/sim/types';
 import type { ChatLogRow } from './chat_log';
 import { SOCIAL_SCHEMA } from './social_db';
+import { RENTAL_SCHEMA } from './rental_db';
 import { REALM } from './realm';
 
 try {
@@ -118,6 +119,7 @@ export async function ensureSchema(): Promise<void> {
     await client.query('SELECT pg_advisory_xact_lock($1)', [0x57_4f_43_01]); // "WOC\x01"
     await client.query(SCHEMA);
     await client.query(SOCIAL_SCHEMA);
+    await client.query(RENTAL_SCHEMA);
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});

@@ -10,6 +10,7 @@ import { music } from './game/music';
 import { handlePickedEntity, hoverCursorKind } from './game/interactions';
 import { clickMoveStep, manualMovementOverrides } from './game/click_move';
 import { Api, ClientWorld, CharacterSummary } from './net/online';
+import { benchmarkRig } from './net/rental';
 import type { IWorld } from './world_api';
 import { assetsReady } from './render/assets/preload';
 import { CharacterPreview } from './render/characters';
@@ -1161,6 +1162,9 @@ async function enterWorld(c: CharacterSummary, button?: HTMLButtonElement): Prom
     if (world.connected && world.entities.has(world.playerId)) {
       clearInterval(poll);
       void startGame(world, null, world);
+      // Benchmark this machine's GPU and report it so the $woc rental
+      // marketplace can tier it (and offer hosting if it's a strong rig).
+      void benchmarkRig().then((rig) => world.reportRig(rig)).catch(() => {});
     } else if (Date.now() - waitStart > 10000) {
       clearInterval(poll);
       world.close();

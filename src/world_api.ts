@@ -134,6 +134,47 @@ export interface MarketInfo {
   myListingCount: number; // how many active listings the viewer already has
 }
 
+// --- GPU-rental marketplace ($woc) ------------------------------------------
+// Mirrors server/rental.ts MarketSnapshot. Distinct from MarketInfo above,
+// which is the Merchant's item auction house.
+
+export interface RentalRigView {
+  gpu: string;
+  score: number; // 0..100 benchmark
+  tier: 'low' | 'mid' | 'high' | 'ultra';
+  cores: number;
+  mobile: boolean;
+}
+
+export interface RentalListingView {
+  hostId: number;
+  hostName: string;
+  gpu: string;
+  tier: 'low' | 'mid' | 'high' | 'ultra';
+  score: number;
+  ratePerMin: number; // $woc/min
+  slots: number;
+  busy: number;
+}
+
+export interface RentalSessionView {
+  id: string;
+  role: 'host' | 'renter';
+  hostName: string;
+  renterName: string;
+  ratePerMin: number;
+  paid: number; // $woc moved so far
+  state: 'connecting' | 'active' | 'ended';
+}
+
+export interface RentalInfo {
+  balance: number; // viewer's $woc
+  myRig: RentalRigView | null;
+  myListing: RentalListingView | null;
+  listings: RentalListingView[];
+  session: RentalSessionView | null;
+}
+
 // The surface the renderer + HUD need from a game world. The offline `Sim`
 // satisfies this structurally; the online `ClientWorld` implements it by
 // mirroring server snapshots and sending commands over the socket.
