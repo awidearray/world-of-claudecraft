@@ -1,70 +1,55 @@
-# feat(defi): LP staking vault (foundation)
+# feat(defi): Liquidity Guardian staker flair (branch 3)
 
-Branch: `feat/woc-lp-staking-vault`, stacked on `feat/woc-gamblefi-core` (#799, the
-v0.17.0-lineage economy core: flow ledger + reward seasons + woc_escrow + keeper).
-Base rationale: the task pins emissions to #799's flow_ledger; that code is NOT on
-`origin/release/v0.17.0` itself, it lives on the #799 head, whose merge base is the
-v0.17.0 fork point. Stacking here is how every other economy PR in this repo works.
+Branch `feat/woc-liquidity-guardian`, stacked on `feat/woc-lp-fee-share` (branch 2)
+-> `feat/woc-lp-staking-vault` (branch 1) -> `feat/woc-gamblefi-core` (#799).
 
-## What this branch ships
-1. `solana/programs/woc_lp_vault/` - non-custodial LP-token staking program
-   (id `9zSKCSDmcTBYc9VSyeDmSn55Hz2gNwS6JAtHGPQ1LRe6`):
-   per-staker position PDA + per-position vault ATA; instructions init_pool,
-   open_position, stake(amount, lock_seconds), extend_lock, unstake, close_position,
-   set_paused. Locks are monotone (never shorten); unstake works even when paused
-   (principal exit never gated); MAX_LOCK_SECONDS = 366d program constant.
-2. `server/lp_vault_client.ts` - pure no-IDL instruction encoders + account
-   decoders (Pool, Position), mirroring woc_escrow_client.ts.
-3. `server/lp_staking.ts` - pure veLP logic: tier table (lock duration ->
-   multiplier bps), position weights, epoch emission budgeting (bounded by flow
-   ledger headroom), pro-rata share split (floor, dust stays in headroom),
-   linear vesting, proportional unstake forfeit.
-4. `server/lp_staking_db.ts` - LP_STAKING_SCHEMA (lp_positions mirror, lp_epochs,
-   lp_accruals) + PgLpStakingDb; registered in db.ts ensureSchema.
-5. `server/lp_staking_service.ts` - injected-deps service: epoch runner
-   (snapshot chain positions -> mirror sync + forfeits -> budget -> reserve via
-   ledger.emit with synthetic txSig `lp_epoch:<pool>:<epoch>` -> accrual rows),
-   read models, unsigned stake/unstake tx builders (non-custodial).
-6. `server/lp_staking_boot.ts` - env wiring; `WOC_LP_STAKING_ENABLED !== '1'` ->
-   null (feature dead, server runs as before); enabled-but-half-configured ->
-   throw at boot (fail loud). main.ts: boot + epoch interval + REST routes
-   (GET /api/woc/lp, GET /api/woc/lp/position, POST /api/woc/lp/tx/stake|unstake)
-   + /internal/woc/lp/epoch ops trigger (WOC_OPS_SECRET).
-7. flow_ledger.ts FlowSource extended: `lp_emission` (out), `lp_forfeit_recycle` (in).
-   NO new ledger; NO parallel emission path. Accrual reservation goes through
-   recordOutflowWithinBudget (advisory-locked, idempotent on synthetic sig), so
-   concurrent arena settles can never double-spend the same headroom.
+## Thesis (utility, not price)
+The LP staking vault (branch 1) locks liquidity; branch 3 gives that lock a VISIBLE,
+EARNED social payoff so provision is a status people keep, not a yield they flip. A
+cosmetic prestige ladder derived from staked LP position weight AND tenure. It never
+touches gameplay power and extends the existing #473/#1105 holder-flair pipeline
+(same Entity identity-field pattern, same nameplate painter, same refresh loop); it
+does NOT add a parallel flair system.
 
-## Reward model (why accrual != payment)
-Each epoch the service reserves an emission (bounded by min(rate, headroom*capBps))
-through the ledger FIRST, then splits it into per-staker accruals that vest linearly
-over LP_VEST_SECONDS. Unstaking forfeits unvested accruals proportionally; forfeits
-are credited back as `lp_forfeit_recycle` inflows (headroom returns). Actual token
-payment is branch 2 (fee-share distributor via reward-season API + keeper pattern).
-Anti-mercenary: multiplier derives from REMAINING lock (ve-decay), vesting delays
-exit, forfeit claws back on unstake.
+## Anti farm-and-dump (the point)
+A Guardian tier needs BOTH a live staked position (weight above the dust floor) AND a
+minimum continuous TENURE (`GUARDIAN_SEASONING_SECONDS`, 7d: a position younger than
+that shows no flair) plus a REMAINING-lock ladder in lockstep with the veLP reward
+tiers. Flash-staking cannot mint the title (tenure), and unstaking drops it on the
+next refresh (weight). Cosmetic-only, so zero pay-to-win even at Abyssguard.
 
-## Two-phase epoch idempotency
-1. txn: insert lp_epochs row (status pending) + accrual rows (computed shares).
-2. ledger.emit(synthetic sig). ok -> mark epoch reserved; budget_exceeded ->
-   mark epoch void (accruals dead); duplicate -> a previous crash already
-   reserved it -> mark reserved.
-Cross-process single-flight via pg advisory lock (distinct key from keeper).
+## What ships (built + wired)
+1. `src/sim/guardian_tier.ts` - PURE shared math: `GUARDIAN_TIER_DEFS` (remaining-lock
+   ladder, veLP-lockstep), `GUARDIAN_SEASONING_SECONDS`, `guardianTierIndex(pos, now,
+   minStake)`. No IO, no clock; identical on server and client.
+2. `server/lp_guardian.ts` - `guardianInfoForPubkey(pubkey)`: reads the woc_lp_vault
+   Position over the same raw-fetch RPC seam as holder flair, per-wallet cached,
+   fail-closed to tier 0 when unconfigured or on any RPC error.
+3. `server/lp_guardian_db.ts` - `guardianTiersForNames(names, pool, minStake, now)`:
+   maps character names -> linked wallets -> the lp_positions mirror -> tiers in ONE
+   query (zero chain reads); powers the leaderboard decoration.
+4. `src/ui/guardian_flair.ts` - client presentation (shield badge data URL, aura
+   filter, titles) over the shared core, sibling of `holder_tier.ts`.
+5. `src/render/nameplate_painter.ts` - draws the Guardian aura + shield badge on the
+   nameplate, gated on `guardianTier`.
+6. WIRING (this branch's integration layer):
+   - `Entity.guardianTier?` (`src/sim/types.ts`), a cosmetic identity field the sim
+     never reads.
+   - `server/game.ts`: encoded in `wireEntity` (terse `gt`, identity-rider like `ht`);
+     the holder-tier refresh loop now does ONE wallet lookup and sets BOTH flairs.
+   - `src/net/online.ts`: decodes `gt` -> `guardianTier` (defaults 0).
+   - `server/main.ts`: the lifetime-XP leaderboard is enriched with guardian tiers.
+   - `src/ui/i18n.catalog/index.ts`: `wallet.guardianTiers.*` names + titles.
 
-## Flags / fail-closed
-- WOC_LP_STAKING_ENABLED (default off -> buildLpStakingService returns null).
-- Enabled requires WOC_LP_VAULT_PROGRAM_ID, WOC_LP_MINT, WOC_LP_SEASON_ID.
-- Emissions additionally require LP_EMISSION_RATE_BASE > 0 (default 0 = accrue
-  nothing; stake/unstake reads still work).
-- On-chain: pool set_paused for emergencies; unstake always available.
+## Fail-closed / invariants
+- Rides `WOC_LP_STAKING_ENABLED`: unconfigured -> `guardianInfoForPubkey` returns
+  tier 0 with NO RPC -> `guardianTier` never set -> `gt` never on the wire -> painter
+  no-ops. No token movement, no keys, no on-chain program of its own.
+- `guardianTier` is server-set cosmetic; `src/sim` never reads it (architecture.test
+  sim-purity guard passes). No sim logic added -> determinism untouched. Wire lockstep
+  covered by snapshots.test + the new guardian_broadcast.test.
 
-## Tests
-- lp_vault_client.test.ts: discriminators, arg encoding, account order/flags vs lib.rs.
-- lp_staking.test.ts: tiers, weights, budget bounding (adversarial), split
-  conservation, vesting boundaries, forfeit math.
-- lp_staking_service.test.ts: epoch runner with in-memory fakes (MemFlowDb),
-  crash-recovery idempotency, concurrent emit vs arena spend, forfeit crediting.
-- lp_staking_db.integration.test.ts: real Postgres (gated like flow_ledger_db one).
-- lp_vault.devnet.test.ts (WOC_DEVNET_TEST=1): live devnet: init_pool, open+stake,
-  extend_lock, early-unstake refused, unstake after expiry, close_position; logged sigs.
-- boot fail-closed test: flag unset -> null; half config -> throws.
+## Known draft gate
+- `i18n_completeness` M16: the new wordy guardian titles need their 5 non-Latin fills
+  at release (same maintainer-fill step as the inherited #799 `wocSeason.*` keys).
+  Documented; no logic defect.
