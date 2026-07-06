@@ -157,6 +157,9 @@ import { type ChatClock, clampChatClock, formatChatTimestamp } from './chat_time
 import { type ChatBoxGeometry, clampChatBox, parseChatBox, serializeChatBox } from './chat_window';
 import type { ClaudiumNativeRailId } from './claudium_view';
 import type {
+  ClaudiumGiftConfirmPayload,
+  ClaudiumGiftQuoteInput,
+  ClaudiumHistoryPayload,
   ClaudiumQuotePayload,
   ClaudiumRedeemPayload,
   ClaudiumSnapshot,
@@ -427,6 +430,12 @@ export interface ClaudiumHooks {
   nativeQuote(rail: ClaudiumNativeRailId, claudium: number): Promise<ClaudiumQuotePayload>;
   nativeConfirm(reference: string, signature: string): Promise<ClaudiumRedeemPayload>;
   redeem(code: string): Promise<ClaudiumRedeemPayload>;
+  /** Quote a native payment that issues a gift card on settlement. */
+  giftcardQuote(input: ClaudiumGiftQuoteInput): Promise<ClaudiumQuotePayload>;
+  /** Confirm a gift-card purchase; success carries the issued code + cardId. */
+  giftcardConfirm(reference: string, signature: string): Promise<ClaudiumGiftConfirmPayload>;
+  /** Fetch one newest-first page of the caller's Claudium ledger. */
+  historyPage(limit: number, before?: string): Promise<ClaudiumHistoryPayload>;
 }
 
 export interface BugReportPayload {
@@ -3503,6 +3512,33 @@ export class Hud {
         denominationClaudium: null,
         reason: 'unavailable',
       }),
+    // Gift-card purchase reuses the native-rail quote/confirm plumbing; with no hooks
+    // (offline / service off) each resolves the same typed unavailable state.
+    giftcardQuote: (input) =>
+      this.claudiumHooks?.giftcardQuote(input) ??
+      Promise.resolve<ClaudiumQuotePayload>({
+        reference: null,
+        rail: input.rail,
+        claudium: input.claudium,
+        amountBase: null,
+        destination: null,
+        mint: null,
+        memo: null,
+        quoteExpiryMs: null,
+        split: null,
+        reason: 'unavailable',
+      }),
+    giftcardConfirm: (reference, signature) =>
+      this.claudiumHooks?.giftcardConfirm(reference, signature) ??
+      Promise.resolve<ClaudiumGiftConfirmPayload>({
+        settled: false,
+        reason: 'unavailable',
+        giftCardCode: null,
+        cardId: null,
+      }),
+    historyPage: (limit, before) =>
+      this.claudiumHooks?.historyPage(limit, before) ??
+      Promise.resolve<ClaudiumHistoryPayload>({ entries: [], nextCursor: null }),
     ...this.windowFocus('#claudium-window'),
     onVisibilityChange: () => this.syncAnyWindowOpenState(),
   });

@@ -61,6 +61,67 @@ export type ClaudiumQuotePayload = ClaudiumNativeQuoteInput & {
 /** The redeem result the deps return (mirrors the service SDK shape). */
 export type ClaudiumRedeemPayload = ClaudiumRedeemResult;
 
+/** The five gift-card occasion templates the picker offers. */
+export type ClaudiumGiftOccasion = 'birthday' | 'holiday' | 'congrats' | 'thankyou' | 'generic';
+
+/** How the buyer wants the issued card delivered once the payment settles. */
+export type ClaudiumGiftDelivery = 'email' | 'link' | 'reveal';
+
+/**
+ * The gift-card purchase inputs the window collects and hands to the quote hook. All
+ * money values (amount, split) come back on the quote; the window computes nothing.
+ * recipientEmail is required only for email delivery; toSelf is a UI convenience the
+ * window resolves to the buyer's own email (or reveal) before quoting.
+ */
+export interface ClaudiumGiftQuoteInput {
+  claudium: number;
+  rail: ClaudiumNativeRailId;
+  occasion: ClaudiumGiftOccasion;
+  delivery: ClaudiumGiftDelivery;
+  toSelf: boolean;
+  recipientEmail?: string;
+  message?: string;
+  deliverAtMs?: number;
+}
+
+/**
+ * The gift-card confirm result: settled + the issued redeem code + cardId (present
+ * only once the on-chain payment settles). The window builds the redeem URL + QR from
+ * the code; it never fabricates one.
+ */
+export interface ClaudiumGiftConfirmPayload {
+  settled: boolean;
+  reason: string | null;
+  giftCardCode: string | null;
+  cardId: string | null;
+}
+
+/** One ledger row the history view renders (mirrors the service LedgerEntryV1). */
+export type ClaudiumHistoryReason =
+  | 'purchase_stripe'
+  | 'purchase_sol'
+  | 'purchase_usdc'
+  | 'purchase_woc'
+  | 'giftcard_redeem'
+  | 'spend'
+  | 'refund_clawback'
+  | 'chargeback_clawback'
+  | 'giftcard_void_clawback';
+
+export interface ClaudiumHistoryEntry {
+  entryId: string;
+  delta: number;
+  reason: ClaudiumHistoryReason;
+  ref: string;
+  atMs: number;
+}
+
+/** One newest-first page of ledger entries + the next cursor (null on the last page). */
+export interface ClaudiumHistoryPayload {
+  entries: ClaudiumHistoryEntry[];
+  nextCursor: string | null;
+}
+
 /**
  * Hud-supplied glue. The window paints from what these return and reports actions
  * back; it never reaches into Hud. snapshot() is the async service read; buy() runs
@@ -87,6 +148,22 @@ export interface ClaudiumWindowDeps {
   nativeConfirm?(reference: string, signature: string): Promise<ClaudiumRedeemPayload>;
   /** Redeem a gift-card code into the caller's balance. */
   redeem?(code: string): Promise<ClaudiumRedeemPayload>;
+  /**
+   * Quote a native-rail payment whose settlement ISSUES a gift card (rather than
+   * crediting the buyer). Reuses the same native quote plumbing as nativeQuote; only
+   * the fulfillment differs. Returns the same quote payload shape.
+   */
+  giftcardQuote?(input: ClaudiumGiftQuoteInput): Promise<ClaudiumQuotePayload>;
+  /**
+   * Confirm a gift-card purchase by reference + the pasted on-chain signature. On
+   * success the payload carries the issued redeem code + cardId.
+   */
+  giftcardConfirm?(reference: string, signature: string): Promise<ClaudiumGiftConfirmPayload>;
+  /**
+   * Fetch one newest-first page of the caller's Claudium ledger. `before` is the
+   * cursor from the prior page; omit it for the first page.
+   */
+  historyPage?(limit: number, before?: string): Promise<ClaudiumHistoryPayload>;
 }
 
 const EMPTY_SNAPSHOT: ClaudiumSnapshot = {

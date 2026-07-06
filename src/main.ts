@@ -1702,6 +1702,42 @@ async function startGame(
           reason: redeem.reason,
         };
       },
+      // A gift-card quote reuses the SAME native-rail quote path as a credit purchase,
+      // only the fulfillment differs (kind 'giftcard' + the recipient/occasion). The
+      // window renders the returned amount/address/memo/split verbatim; it computes
+      // nothing. For a gift-to-self the recipient email is omitted, so the service
+      // issues the card to the buyer's own account; occasion selects the card template.
+      giftcardQuote: async (input) => {
+        const quote = await economy.nativeQuote({
+          rail: input.rail,
+          claudium: input.claudium,
+          fulfillment: {
+            kind: 'giftcard',
+            recipientEmail: input.toSelf ? undefined : input.recipientEmail,
+            message: input.message,
+            deliverAtMs: input.deliverAtMs,
+            occasion: input.occasion,
+          },
+        });
+        return { ...quote, wocDecimals: input.rail === 'woc' ? WOC_TOKEN_DECIMALS : null };
+      },
+      // Confirm re-derives settlement from the on-chain signature; a settled gift-card
+      // fulfillment carries the issued redeem code + cardId the window shows as a QR.
+      giftcardConfirm: async (reference, signature) => {
+        const confirm = await economy.nativeConfirm({ reference, signature });
+        return {
+          settled: confirm.settled,
+          reason: confirm.reason,
+          giftCardCode: confirm.fulfillment?.giftCardCode ?? null,
+          cardId: confirm.fulfillment?.cardId ?? null,
+        };
+      },
+      // One newest-first page of the caller's ledger; the account is resolved from the
+      // bearer token server-side. The history view renders the entries verbatim.
+      historyPage: async (limit, before) => {
+        const page = await economy.historyPage({ limit, before });
+        return { entries: page.entries, nextCursor: page.nextCursor };
+      },
     });
   }
   function interactKey(): void {

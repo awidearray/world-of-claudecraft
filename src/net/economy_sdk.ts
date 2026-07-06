@@ -74,10 +74,26 @@ export interface ClaudiumSpend {
 /** The native Solana settlement rails the economy service now owns. */
 export type ClaudiumNativeRail = 'sol' | 'usdc' | 'woc';
 
-/** The fulfillment leg of a native quote. accountId is set server-side for credit. */
+/** The five gift-card occasion templates the service supports. */
+export type ClaudiumGiftOccasion = 'birthday' | 'holiday' | 'congrats' | 'thankyou' | 'generic';
+
+/**
+ * The fulfillment leg of a native quote. accountId is set server-side for credit.
+ * A giftcard fulfillment carries the recipient email (delivery by email), a personal
+ * message, an optional scheduled deliverAtMs, and the occasion template id. The
+ * occasion is a UI selection that maps to one of the five service card templates; it
+ * rides as an extra JSON key the service reads (the base NativeQuoteRequestV1 shape
+ * carries recipientEmail/message/deliverAtMs; occasion is the sanctioned addition).
+ */
 export type ClaudiumFulfillment =
   | { kind: 'credit' }
-  | { kind: 'giftcard'; recipientEmail?: string; message?: string; deliverAtMs?: number };
+  | {
+      kind: 'giftcard';
+      recipientEmail?: string;
+      message?: string;
+      deliverAtMs?: number;
+      occasion?: ClaudiumGiftOccasion;
+    };
 
 /** The WOC split line the service returns (base-unit strings + treasury address). */
 export interface ClaudiumNativeSplit {
@@ -106,12 +122,47 @@ export interface ClaudiumNativeQuote {
   reason: string | null;
 }
 
-/** The native confirm result: settled + the resulting balance or gift-card code. */
+/**
+ * The native confirm result: settled + the resulting balance (credit fulfillment) or
+ * the issued gift-card code + cardId (giftcard fulfillment). The service returns the
+ * fulfillment as an opaque record; the SDK narrows the two keys the UI renders.
+ */
 export interface ClaudiumNativeConfirm {
   settled: boolean;
   reason: string | null;
   observedAmountBase: string | null;
-  fulfillment: { balance: number | null; giftCardCode: string | null } | null;
+  fulfillment: {
+    balance: number | null;
+    giftCardCode: string | null;
+    cardId: string | null;
+  } | null;
+}
+
+/** One ledger entry as the service returns it (mirrors LedgerEntryV1). */
+export type ClaudiumLedgerReason =
+  | 'purchase_stripe'
+  | 'purchase_sol'
+  | 'purchase_usdc'
+  | 'purchase_woc'
+  | 'giftcard_redeem'
+  | 'spend'
+  | 'refund_clawback'
+  | 'chargeback_clawback'
+  | 'giftcard_void_clawback';
+
+export interface ClaudiumLedgerEntry {
+  entryId: string;
+  accountId: number;
+  delta: number;
+  reason: ClaudiumLedgerReason;
+  ref: string;
+  atMs: number;
+}
+
+/** A paginated, newest-first ledger page (mirrors ClaudiumHistoryPageV1). */
+export interface ClaudiumHistoryPage {
+  entries: ClaudiumLedgerEntry[];
+  nextCursor: string | null;
 }
 
 /** The gift-card redeem result: credited amount + resulting balance, or a reason. */
@@ -186,6 +237,7 @@ const OFF_GIFTCARD_STATUS: ClaudiumGiftCardStatus = {
   status: 'not_found',
   denominationClaudium: null,
 };
+const OFF_HISTORY: ClaudiumHistoryPage = { entries: [], nextCursor: null };
 
 export class EconomyClient {
   constructor(private readonly cfg: EconomyClientConfig) {}
@@ -285,6 +337,18 @@ export class EconomyClient {
       `/api/claudium/giftcard/status?code=${encodeURIComponent(code)}`,
       OFF_GIFTCARD_STATUS,
     );
+  }
+
+  /**
+   * Fetch one newest-first page of the caller's Claudium ledger. `before` is the
+   * cursor from the prior page (the entryId of its last row); omit it for the first
+   * page. The account is resolved server-side from the bearer token. Returns the
+   * empty page when the service is off, so the history view renders its empty state.
+   */
+  historyPage(input: { limit: number; before?: string }): Promise<ClaudiumHistoryPage> {
+    const q = new URLSearchParams({ limit: String(input.limit) });
+    if (input.before) q.set('before', input.before);
+    return this.get(`/api/claudium/history/page?${q.toString()}`, OFF_HISTORY);
   }
 }
 
