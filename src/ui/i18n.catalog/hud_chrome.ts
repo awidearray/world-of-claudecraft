@@ -156,7 +156,6 @@ export const hudChromeStrings = {
     reviewLineCard: 'You pay {usd}, you receive {claudium} Claudium.',
     expiresIn: 'Quote expires in {time}',
     quoteExpired: 'This quote expired. Get a new one.',
-    scanLabel: 'Or scan to pay',
     copyAddress: 'Copy address',
     copied: 'Copied',
     payNote:

@@ -281,7 +281,6 @@ export const nl_NL: EnTranslations = {
       "reviewLineCard": "You pay {usd}, you receive {claudium} Claudium.",
       "expiresIn": "Quote expires in {time}",
       "quoteExpired": "This quote expired. Get a new one.",
-      "scanLabel": "Or scan to pay",
       "copyAddress": "Copy address",
       "copied": "Copied",
       "payNote": "Send the exact amount with the memo from your own wallet, then paste the transaction signature to confirm. The service verifies it on-chain before crediting.",

@@ -5907,7 +5907,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.reviewLabel': '확인',
   'hudChrome.claudium.reviewLine': '{pay} {rail}을(를) 지불하고 {claudium} 클라우디움 ({usd})을(를) 받습니다.',
   'hudChrome.claudium.reviewLineCard': '{usd}을(를) 지불하고 {claudium} 클라우디움을 받습니다.',
-  'hudChrome.claudium.scanLabel': '스캔하여 결제',
   'hudChrome.claudium.copyAddress': '주소 복사',
   'hudChrome.claudium.copied': '복사됨',
   'hudChrome.claudium.confirmPending': '온체인 확인을 기다리는 중입니다. 잠시 시간이 걸릴 수 있습니다.',

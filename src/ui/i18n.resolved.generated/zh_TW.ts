@@ -281,7 +281,6 @@ export const zh_TW: EnTranslations = {
       "reviewLineCard": "您支付 {usd}，獲得 {claudium} 克勞迪姆。",
       "expiresIn": "報價將在 {time} 後過期",
       "quoteExpired": "此報價已過期。請重新取得。",
-      "scanLabel": "或掃碼支付",
       "copyAddress": "複製地址",
       "copied": "已複製",
       "payNote": "從你自己的錢包傳送帶備註的精確金額，然後貼上交易簽章以確認。服務會在鏈上驗證後才入帳。",

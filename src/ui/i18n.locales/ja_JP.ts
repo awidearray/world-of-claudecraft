@@ -5919,7 +5919,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.reviewLine':
     '{pay} {rail} をお支払いいただき、{claudium} クラウジウム（{usd}）を受け取ります。',
   'hudChrome.claudium.reviewLineCard': '{usd} をお支払いいただき、{claudium} クラウジウムを受け取ります。',
-  'hudChrome.claudium.scanLabel': 'スキャンして支払う',
   'hudChrome.claudium.copyAddress': 'アドレスをコピー',
   'hudChrome.claudium.copied': 'コピーしました',
   'hudChrome.claudium.confirmPending': 'オンチェーンの確認を待っています。少し時間がかかることがあります。',

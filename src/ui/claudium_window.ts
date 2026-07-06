@@ -39,7 +39,6 @@ import {
 import { markDialogRoot } from './dialog_root';
 import { esc } from './esc';
 import { formatNumber, type TranslationKey, t } from './i18n';
-import { claudiumPayQrSvg } from './qr';
 import { svgIcon } from './ui_icons';
 
 /** The buy rails: the legacy stripe CARD rail plus the three native Solana rails. */
@@ -405,10 +404,6 @@ export class ClaudiumWindow {
             }),
           )
         : '';
-    const qr = claudiumPayQrSvg(panel.destination, panel.amountBase);
-    const qrHtml = qr
-      ? `<figure class="cl-qr">${qr}<figcaption class="cl-field-label">${esc(t('hudChrome.claudium.scanLabel'))}</figcaption></figure>`
-      : '';
     // D6: a calm pending state while the confirm is in flight; a reassuring retry
     // state on not_finalized; plain-language success/failure otherwise.
     const confirmDone = this.confirmStatusHtml();
@@ -419,7 +414,6 @@ export class ClaudiumWindow {
       this.fieldWithCopy('hudChrome.claudium.addressLabel', panel.destination ?? '') +
       this.field('hudChrome.claudium.memoLabel', panel.memo ?? '') +
       splitHtml +
-      qrHtml +
       `<p class="cl-countdown" role="status">${esc(countdown)}</p>` +
       `<p class="cl-pay-note">${esc(t('hudChrome.claudium.payNote'))}</p>` +
       `<label class="cl-field-label" for="cl-sig">${esc(t('hudChrome.claudium.signatureLabel'))}</label>` +
@@ -450,7 +444,7 @@ export class ClaudiumWindow {
       `<div class="cl-field">` +
       `<span class="cl-field-label">${esc(t(labelKey))}</span>` +
       `<div class="cl-field-copy">` +
-      `<code class="cl-field-value">${esc(value)}</code>` +
+      `<code class="cl-field-value cl-address">${esc(value)}</code>` +
       `<button type="button" class="cl-copy-btn" data-copy-address="${esc(value)}" aria-label="${esc(t('hudChrome.claudium.copyAddress'))}">${esc(t('hudChrome.claudium.copyAddress'))}</button>` +
       `</div>` +
       `</div>`

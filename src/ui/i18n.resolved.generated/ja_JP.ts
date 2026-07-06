@@ -281,7 +281,6 @@ export const ja_JP: EnTranslations = {
       "reviewLineCard": "{usd} をお支払いいただき、{claudium} クラウジウムを受け取ります。",
       "expiresIn": "見積もりは {time} で失効します",
       "quoteExpired": "この見積もりは失効しました。新しく取得してください。",
-      "scanLabel": "スキャンして支払う",
       "copyAddress": "アドレスをコピー",
       "copied": "コピーしました",
       "payNote": "自分のウォレットからメモを付けて正確な金額を送金し、取引の署名を貼り付けて確認してください。サービスがオンチェーンで検証してから残高に反映します。",

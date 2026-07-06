@@ -5598,7 +5598,6 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.reviewLabel': '確認',
   'hudChrome.claudium.reviewLine': '您支付 {pay} {rail}，獲得 {claudium} 克勞迪姆（{usd}）。',
   'hudChrome.claudium.reviewLineCard': '您支付 {usd}，獲得 {claudium} 克勞迪姆。',
-  'hudChrome.claudium.scanLabel': '或掃碼支付',
   'hudChrome.claudium.copyAddress': '複製地址',
   'hudChrome.claudium.copied': '已複製',
   'hudChrome.claudium.confirmPending': '正在等待鏈上確認，這可能需要一點時間。',

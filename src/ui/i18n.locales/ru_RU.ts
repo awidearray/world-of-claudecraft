@@ -6035,7 +6035,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.reviewLabel': 'Проверка',
   'hudChrome.claudium.reviewLine': 'Вы платите {pay} {rail} и получаете {claudium} Клаудиума ({usd}).',
   'hudChrome.claudium.reviewLineCard': 'Вы платите {usd} и получаете {claudium} Клаудиума.',
-  'hudChrome.claudium.scanLabel': 'Или отсканируйте для оплаты',
   'hudChrome.claudium.copyAddress': 'Скопировать адрес',
   'hudChrome.claudium.copied': 'Скопировано',
   'hudChrome.claudium.confirmPending': 'Ожидание подтверждения в сети. Это может занять некоторое время.',

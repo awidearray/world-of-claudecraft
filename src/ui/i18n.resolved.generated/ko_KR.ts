@@ -281,7 +281,6 @@ export const ko_KR: EnTranslations = {
       "reviewLineCard": "{usd}을(를) 지불하고 {claudium} 클라우디움을 받습니다.",
       "expiresIn": "견적은 {time} 후 만료됩니다",
       "quoteExpired": "이 견적은 만료되었습니다. 새로 받으세요.",
-      "scanLabel": "스캔하여 결제",
       "copyAddress": "주소 복사",
       "copied": "복사됨",
       "payNote": "본인 지갑에서 메모와 함께 정확한 금액을 전송한 다음 거래 서명을 붙여넣어 확인하세요. 서비스가 온체인에서 검증한 후 적립합니다.",
