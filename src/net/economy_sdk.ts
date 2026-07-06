@@ -71,6 +71,63 @@ export interface ClaudiumSpend {
   reason: string | null;
 }
 
+/** The native Solana settlement rails the economy service now owns. */
+export type ClaudiumNativeRail = 'sol' | 'usdc' | 'woc';
+
+/** The fulfillment leg of a native quote. accountId is set server-side for credit. */
+export type ClaudiumFulfillment =
+  | { kind: 'credit' }
+  | { kind: 'giftcard'; recipientEmail?: string; message?: string; deliverAtMs?: number };
+
+/** The WOC split line the service returns (base-unit strings + treasury address). */
+export interface ClaudiumNativeSplit {
+  burnBase: string;
+  treasuryBase: string;
+  treasury: string;
+}
+
+/**
+ * A native-rail quote as the service returns it: the exact crypto amount to send
+ * (amountBase, a base-unit string), the destination address, the memo/reference,
+ * the quote expiry, and (woc only) the split line. reason is set (and the quote is
+ * unusable) when the rail is disabled or the oracle is down; the UI then renders a
+ * clean disabled state. The client renders these verbatim, computing nothing.
+ */
+export interface ClaudiumNativeQuote {
+  reference: string | null;
+  rail: ClaudiumNativeRail | null;
+  claudium: number | null;
+  amountBase: string | null;
+  destination: string | null;
+  mint: string | null;
+  memo: string | null;
+  quoteExpiryMs: number | null;
+  split: ClaudiumNativeSplit | null;
+  reason: string | null;
+}
+
+/** The native confirm result: settled + the resulting balance or gift-card code. */
+export interface ClaudiumNativeConfirm {
+  settled: boolean;
+  reason: string | null;
+  observedAmountBase: string | null;
+  fulfillment: { balance: number | null; giftCardCode: string | null } | null;
+}
+
+/** The gift-card redeem result: credited amount + resulting balance, or a reason. */
+export interface ClaudiumGiftCardRedeem {
+  credited: boolean;
+  balance: number | null;
+  denominationClaudium: number | null;
+  reason: string | null;
+}
+
+/** The gift-card status lookup result (no account context). */
+export interface ClaudiumGiftCardStatus {
+  status: 'ACTIVE' | 'REDEEMED' | 'EXPIRED' | 'VOID' | 'not_found';
+  denominationClaudium: number | null;
+}
+
 /** How the SDK reaches the authed game-server routes: a live token + realm base. */
 export interface EconomyClientConfig {
   token(): string | null | undefined;
@@ -100,6 +157,34 @@ const OFF_SPEND: ClaudiumSpend = {
   balance: null,
   costClaudium: null,
   reason: 'unavailable',
+};
+const OFF_NATIVE_QUOTE: ClaudiumNativeQuote = {
+  reference: null,
+  rail: null,
+  claudium: null,
+  amountBase: null,
+  destination: null,
+  mint: null,
+  memo: null,
+  quoteExpiryMs: null,
+  split: null,
+  reason: 'unavailable',
+};
+const OFF_NATIVE_CONFIRM: ClaudiumNativeConfirm = {
+  settled: false,
+  reason: 'unavailable',
+  observedAmountBase: null,
+  fulfillment: null,
+};
+const OFF_GIFTCARD_REDEEM: ClaudiumGiftCardRedeem = {
+  credited: false,
+  balance: null,
+  denominationClaudium: null,
+  reason: 'unavailable',
+};
+const OFF_GIFTCARD_STATUS: ClaudiumGiftCardStatus = {
+  status: 'not_found',
+  denominationClaudium: null,
 };
 
 export class EconomyClient {
@@ -169,6 +254,37 @@ export class EconomyClient {
     idempotencyKey: string;
   }): Promise<ClaudiumSpend> {
     return this.post('/api/claudium/spend', input, OFF_SPEND);
+  }
+
+  /**
+   * Ask the service to quote a native-rail payment. The service returns the exact
+   * crypto amount, destination, memo, and expiry; the client renders them and (for
+   * a credit fulfillment) later confirms with the on-chain signature.
+   */
+  nativeQuote(input: {
+    rail: ClaudiumNativeRail;
+    claudium: number;
+    fulfillment: ClaudiumFulfillment;
+  }): Promise<ClaudiumNativeQuote> {
+    return this.post('/api/claudium/native/quote', input, OFF_NATIVE_QUOTE);
+  }
+
+  /** Confirm a native payment by its reference + the on-chain tx signature. */
+  nativeConfirm(input: { reference: string; signature: string }): Promise<ClaudiumNativeConfirm> {
+    return this.post('/api/claudium/native/confirm', input, OFF_NATIVE_CONFIRM);
+  }
+
+  /** Redeem a gift-card code into the caller's balance. */
+  redeemGiftCard(input: { code: string }): Promise<ClaudiumGiftCardRedeem> {
+    return this.post('/api/claudium/giftcard/redeem', input, OFF_GIFTCARD_REDEEM);
+  }
+
+  /** Look up a gift-card's status by code (no account context). */
+  giftCardStatus(code: string): Promise<ClaudiumGiftCardStatus> {
+    return this.get(
+      `/api/claudium/giftcard/status?code=${encodeURIComponent(code)}`,
+      OFF_GIFTCARD_STATUS,
+    );
   }
 }
 

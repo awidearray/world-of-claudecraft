@@ -155,7 +155,12 @@ import {
 } from './chat_channels';
 import { type ChatClock, clampChatClock, formatChatTimestamp } from './chat_timestamp';
 import { type ChatBoxGeometry, clampChatBox, parseChatBox, serializeChatBox } from './chat_window';
-import type { ClaudiumRail, ClaudiumSnapshot } from './claudium_window';
+import type { ClaudiumNativeRailId } from './claudium_view';
+import type {
+  ClaudiumQuotePayload,
+  ClaudiumRedeemPayload,
+  ClaudiumSnapshot,
+} from './claudium_window';
 import { ClaudiumWindow } from './claudium_window';
 import { formatClockTime } from './clock';
 import { CombatAnnouncer } from './combat_announcer';
@@ -410,13 +415,18 @@ export interface ReportHooks {
 /**
  * Online-only glue that backs the Claudium store window. main.ts wires this from
  * the client economy SDK (which hits the game server's /api/claudium/* routes).
- * snapshot() reads the current service state; buy()/spend() begin the client-signed
- * purchase / cosmetic-redeem flows. All values originate in the economy service.
+ * snapshot() reads the current service state; buy() begins the legacy stripe (card)
+ * purchase; spend() redeems a cosmetic. nativeQuote()/nativeConfirm() drive the
+ * native-rail (SOL/USDC/WOC) pay flow, and redeem() the gift-card tab. All values
+ * originate in the economy service; the window computes nothing.
  */
 export interface ClaudiumHooks {
   snapshot(): Promise<ClaudiumSnapshot>;
-  buy(rail: ClaudiumRail, sku: string): void;
+  buy(sku: string): void;
   spend(itemId: string, kind: 'cosmetic' | 'skin' | 'item'): void;
+  nativeQuote(rail: ClaudiumNativeRailId, claudium: number): Promise<ClaudiumQuotePayload>;
+  nativeConfirm(reference: string, signature: string): Promise<ClaudiumRedeemPayload>;
+  redeem(code: string): Promise<ClaudiumRedeemPayload>;
 }
 
 export interface BugReportPayload {
@@ -3458,8 +3468,41 @@ export class Hud {
         price: { usdPerClaudium: null, wocBaseUnitsPerClaudium: null },
         storeItems: [],
       }),
-    buy: (rail, sku) => this.claudiumHooks?.buy(rail, sku),
+    buy: (sku) => this.claudiumHooks?.buy(sku),
     spend: (itemId, kind) => this.claudiumHooks?.spend(itemId, kind),
+    // The native-rail and redeem deps must always resolve a payload (the window
+    // awaits them), so with no hooks (offline / service off) they resolve the same
+    // typed unavailable state the disabled UI renders, never undefined.
+    nativeQuote: (rail, claudium) =>
+      this.claudiumHooks?.nativeQuote(rail, claudium) ??
+      Promise.resolve<ClaudiumQuotePayload>({
+        reference: null,
+        rail,
+        claudium,
+        amountBase: null,
+        destination: null,
+        mint: null,
+        memo: null,
+        quoteExpiryMs: null,
+        split: null,
+        reason: 'unavailable',
+      }),
+    nativeConfirm: (reference, signature) =>
+      this.claudiumHooks?.nativeConfirm(reference, signature) ??
+      Promise.resolve<ClaudiumRedeemPayload>({
+        credited: false,
+        balance: null,
+        denominationClaudium: null,
+        reason: 'unavailable',
+      }),
+    redeem: (code) =>
+      this.claudiumHooks?.redeem(code) ??
+      Promise.resolve<ClaudiumRedeemPayload>({
+        credited: false,
+        balance: null,
+        denominationClaudium: null,
+        reason: 'unavailable',
+      }),
     ...this.windowFocus('#claudium-window'),
     onVisibilityChange: () => this.syncAnyWindowOpenState(),
   });

@@ -1635,6 +1635,9 @@ async function startGame(
     // fail closed; the SDK itself returns typed unavailable states, never throws.
     // The game therefore boots and plays with the service OFF: snapshot() resolves
     // to the disabled state and the window renders its empty notice.
+    // The $WOC token is 6-decimal; the service quote does not echo the decimals, so
+    // the window is told them for the woc rail's base-unit display.
+    const WOC_TOKEN_DECIMALS = 6;
     const economy = new EconomyClient({ token: () => api.token, base: api.base });
     hud.attachClaudium({
       snapshot: async () => {
@@ -1656,11 +1659,48 @@ async function startGame(
           storeItems,
         };
       },
-      buy: (rail, sku) => {
-        void startClaudiumPurchase(economy, rail, sku);
+      // The legacy card rail: the buy tab's stripe SKU ladder still drives the
+      // server-signed stripe purchase intent.
+      buy: (sku) => {
+        void startClaudiumPurchase(economy, 'stripe', sku);
       },
       spend: (itemId, kind) => {
         void economy.spend({ itemId, kind, idempotencyKey: newIdempotencyKey() });
+      },
+      // A native-rail quote credits the caller's own balance (fulfillment 'credit');
+      // the service resolves the credited account server-side. The window renders the
+      // returned amount/address/memo/split verbatim; it computes nothing. WOC base
+      // units are 6-decimal (the $WOC mint), which the service quote does not echo, so
+      // the window is told the decimals for the woc rail here.
+      nativeQuote: async (rail, claudium) => {
+        const quote = await economy.nativeQuote({
+          rail,
+          claudium,
+          fulfillment: { kind: 'credit' },
+        });
+        return { ...quote, wocDecimals: rail === 'woc' ? WOC_TOKEN_DECIMALS : null };
+      },
+      // Confirm re-derives settlement from the on-chain signature; a credited
+      // fulfillment carries the new balance the window shows.
+      nativeConfirm: async (reference, signature) => {
+        const confirm = await economy.nativeConfirm({ reference, signature });
+        const balance = confirm.fulfillment?.balance ?? null;
+        return {
+          credited: confirm.settled && balance !== null,
+          balance,
+          denominationClaudium: null,
+          reason: confirm.reason,
+        };
+      },
+      // The gift-card tab redeems a code into the caller's balance.
+      redeem: async (code) => {
+        const redeem = await economy.redeemGiftCard({ code });
+        return {
+          credited: redeem.credited,
+          balance: redeem.balance,
+          denominationClaudium: redeem.denominationClaudium,
+          reason: redeem.reason,
+        };
       },
     });
   }
