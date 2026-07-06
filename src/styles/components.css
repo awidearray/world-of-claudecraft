@@ -2057,7 +2057,7 @@
     font-size: 13px;
     cursor: var(--cursor-pointer);
   }
-  .cl-tab[aria-pressed="true"] {
+  .cl-tab[aria-selected="true"] {
     border-color: var(--color-gold);
     background: var(--color-primary-glow);
     color: var(--color-gold);

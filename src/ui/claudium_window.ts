@@ -190,11 +190,16 @@ export class ClaudiumWindow {
   private paint(view: ClaudiumView): void {
     const body = this.deps.root().querySelector<HTMLElement>('.cl-body');
     if (!body) return;
+    const panel = view.disabled
+      ? ''
+      : `<div id="cl-tabpanel" role="tabpanel" aria-labelledby="cl-tab-${this.tab}">` +
+        (this.tab === 'buy' ? this.buyTabHtml(view) : this.redeemTabHtml(view)) +
+        `</div>`;
     body.innerHTML =
       this.balanceHtml(view) +
       this.noticeHtml(view) +
       this.tabsHtml(view) +
-      (this.tab === 'buy' ? this.buyTabHtml(view) : this.redeemTabHtml(view)) +
+      panel +
       this.disclosureHtml();
     this.wire(body, view);
     this.syncCountdown();
@@ -227,11 +232,15 @@ export class ClaudiumWindow {
   private tabsHtml(view: ClaudiumView): string {
     if (view.disabled) return '';
     const tab = (id: Tab, label: string): string => {
-      const pressed = this.tab === id ? 'true' : 'false';
-      return `<button type="button" class="cl-tab" data-tab="${id}" aria-pressed="${pressed}">${esc(label)}</button>`;
+      const selected = this.tab === id ? 'true' : 'false';
+      const tabIndex = this.tab === id ? '0' : '-1';
+      return (
+        `<button type="button" class="cl-tab" role="tab" id="cl-tab-${id}" data-tab="${id}" ` +
+        `aria-selected="${selected}" aria-controls="cl-tabpanel" tabindex="${tabIndex}">${esc(label)}</button>`
+      );
     };
     return (
-      `<div class="cl-tabs" role="group" aria-label="${esc(t('hudChrome.claudium.tabsLabel'))}">` +
+      `<div class="cl-tabs" role="tablist" aria-label="${esc(t('hudChrome.claudium.tabsLabel'))}">` +
       tab('buy', t('hudChrome.claudium.tabBuy')) +
       tab('redeem', t('hudChrome.claudium.tabRedeem')) +
       `</div>`
@@ -522,15 +531,27 @@ export class ClaudiumWindow {
         ? `<p class="cl-empty" role="status">${esc(t('hudChrome.claudium.storeEmpty'))}</p>`
         : view.storeRows
             .map((row) => {
-              const cost = t('hudChrome.claudium.storeCost', {
+              // Show the cost with its USD equivalent (D2), so a store price reads
+              // as real money like the balance and SKU rows do.
+              const cost = t('hudChrome.claudium.amountWithUsd', {
                 amount: formatNumber(row.costClaudium, { maximumFractionDigits: 0 }),
+                usd: this.usdEquiv(row.costClaudium, view.usdPerClaudium),
               });
+              // D7: when the balance cannot cover this item, swap the redeem button
+              // for a "top up" affordance that jumps back to the buy tab.
+              const affordable = view.balance !== null && view.balance >= row.costClaudium;
+              const action = affordable
+                ? `<button type="button" class="cl-item-buy" data-item="${esc(row.itemId)}" data-kind="${esc(row.kind)}" aria-label="${esc(cost)}">${esc(t('hudChrome.claudium.spendButton'))}</button>`
+                : `<div class="cl-item-topup">` +
+                  `<span class="cl-item-short">${esc(t('hudChrome.claudium.insufficientBalance'))}</span>` +
+                  `<button type="button" class="cl-topup-btn" data-topup>${esc(t('hudChrome.claudium.topUpButton'))}</button>` +
+                  `</div>`;
               return (
                 `<div class="cl-item">` +
                 `<span class="cl-item-name">${esc(row.name)}</span>` +
                 `<span class="cl-item-kind">${esc(kindLabel(row.kind))}</span>` +
                 `<span class="cl-item-cost">${esc(cost)}</span>` +
-                `<button type="button" class="cl-item-buy" data-item="${esc(row.itemId)}" data-kind="${esc(row.kind)}" aria-label="${esc(cost)}">${esc(t('hudChrome.claudium.spendButton'))}</button>` +
+                action +
                 `</div>`
               );
             })
@@ -639,6 +660,16 @@ export class ClaudiumWindow {
           this.deps.spend(itemId, kind);
         }
       });
+    });
+    // D7: the store "top up" affordance jumps back to the buy tab (where the store
+    // and the rail picker live) and scrolls the buy controls into view.
+    body.querySelector<HTMLButtonElement>('[data-topup]')?.addEventListener('click', () => {
+      if (this.tab !== 'buy') this.tab = 'buy';
+      this.clearQuote();
+      this.paint(view);
+      const railsEl = this.deps.root().querySelector('.cl-rails');
+      railsEl?.scrollIntoView({ block: 'nearest' });
+      (railsEl?.querySelector('.cl-rail:not(:disabled)') as HTMLElement | null)?.focus();
     });
   }
 
