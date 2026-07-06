@@ -164,7 +164,6 @@ import {
 } from './player_card';
 import { handleAvatar, handleCharacterSitemap, handleProfilePage } from './profile_page';
 import { recordUsageCacheEvent, recordUsageMetric, setUsageCacheSize } from './provider_usage';
-import { handleTipConfirm, handleTipQuote } from './tips_api';
 import {
   assetUploadRateLimited,
   authThrottled,
@@ -184,6 +183,7 @@ import { resolveReportTarget } from './report_target';
 import { handleSitePresenceHeartbeat } from './site_presence';
 import { adminRolesForAccount } from './staff_db';
 import { cacheControlFor, etagFor, isNotModified } from './static_cache';
+import { handleTipConfirm, handleTipQuote } from './tips_api';
 import { passesTurnstile } from './turnstile';
 import {
   MAX_ASSET_BYTES,

@@ -60,14 +60,7 @@ export interface JobConfirmResult {
 /** A job's settlement status, as the service mirrors it. status 'not_found' when off. */
 export interface JobStatusResult {
   jobId: string;
-  status:
-    | 'funded'
-    | 'active'
-    | 'completed'
-    | 'refunded'
-    | 'expired'
-    | 'not_found'
-    | 'unavailable';
+  status: 'funded' | 'active' | 'completed' | 'refunded' | 'expired' | 'not_found' | 'unavailable';
   amountBase: string;
   employerAccountId: number;
   guardAccountId: number;

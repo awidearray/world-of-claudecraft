@@ -89,7 +89,6 @@ import {
 import * as jobEscrow from './job_escrow';
 import type { JobObservation } from './job_milestone';
 import { jobsDb } from './jobs_db';
-import * as playerEconomyProxy from './player_economy_proxy';
 import { type LiveSharedIp, sharedIpsFromLiveSessions } from './live_shared_ips';
 import { trackReachedLevel5 } from './meta_capi';
 import {
@@ -104,6 +103,7 @@ import {
   ModerationService,
 } from './moderation_service';
 import { consumeMsgToken, createMsgRateBucket, type MsgRateBucketState } from './msg_rate_limit';
+import * as playerEconomyProxy from './player_economy_proxy';
 import { nextRaidResetMs } from './raid_reset';
 import { REALM, REALM_PUBLIC_ORIGIN, REALM_RESET_TIME_ZONE } from './realm';
 import { createSerialWriter } from './serial_writer';
