@@ -5901,6 +5901,22 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.close': '클라우디움 닫기',
   'hudChrome.claudium.balanceLabel': '잔액',
   'hudChrome.claudium.balanceUnit': '{amount} 클라우디움',
+  'hudChrome.claudium.amountWithUsd': '{amount} 클라우디움 ({usd})',
+  'hudChrome.claudium.splitLabel': '분할',
+  'hudChrome.claudium.splitSummary': '{burn} {rail} 소각, {treasury} {rail} 재무로',
+  'hudChrome.claudium.reviewLabel': '확인',
+  'hudChrome.claudium.reviewLine': '{pay} {rail}을(를) 지불하고 {claudium} 클라우디움 ({usd})을(를) 받습니다.',
+  'hudChrome.claudium.reviewLineCard': '{usd}을(를) 지불하고 {claudium} 클라우디움을 받습니다.',
+  'hudChrome.claudium.scanLabel': '스캔하여 결제',
+  'hudChrome.claudium.copyAddress': '주소 복사',
+  'hudChrome.claudium.copied': '복사됨',
+  'hudChrome.claudium.confirmPending': '온체인 확인을 기다리는 중입니다. 잠시 시간이 걸릴 수 있습니다.',
+  'hudChrome.claudium.confirmNotFinalized':
+    '결제가 아직 온체인에서 확인되지 않았습니다. 정상적인 상황이니 잠시 후 다시 확인하세요.',
+  'hudChrome.claudium.confirmRequote': '가격이 변동되었습니다. 새 견적을 받아 다시 시도하세요.',
+  'hudChrome.claudium.retryButton': '다시 시도',
+  'hudChrome.claudium.requoteButton': '새 견적 받기',
+  'hudChrome.claudium.insufficientBalance': '클라우디움이 부족합니다',
   'hudChrome.claudium.unavailable':
     '클라우디움 상점을 현재 이용할 수 없습니다. 잔액과 구매 내역에는 영향이 없습니다. 잠시 후 다시 시도해 주세요.',
   'hudChrome.claudium.disclosure':

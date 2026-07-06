@@ -5592,6 +5592,22 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.close': '關閉克勞迪姆',
   'hudChrome.claudium.balanceLabel': '餘額',
   'hudChrome.claudium.balanceUnit': '{amount} 克勞迪姆',
+  'hudChrome.claudium.amountWithUsd': '{amount} 克勞迪姆（{usd}）',
+  'hudChrome.claudium.splitLabel': '拆分',
+  'hudChrome.claudium.splitSummary': '銷毀 {burn} {rail}，{treasury} {rail} 轉入金庫',
+  'hudChrome.claudium.reviewLabel': '確認',
+  'hudChrome.claudium.reviewLine': '您支付 {pay} {rail}，獲得 {claudium} 克勞迪姆（{usd}）。',
+  'hudChrome.claudium.reviewLineCard': '您支付 {usd}，獲得 {claudium} 克勞迪姆。',
+  'hudChrome.claudium.scanLabel': '或掃碼支付',
+  'hudChrome.claudium.copyAddress': '複製地址',
+  'hudChrome.claudium.copied': '已複製',
+  'hudChrome.claudium.confirmPending': '正在等待鏈上確認，這可能需要一點時間。',
+  'hudChrome.claudium.confirmNotFinalized':
+    '您的付款尚未在鏈上確認。這是正常現象，請稍等片刻後再次確認。',
+  'hudChrome.claudium.confirmRequote': '價格已變動。請重新取得報價後再試。',
+  'hudChrome.claudium.retryButton': '重試',
+  'hudChrome.claudium.requoteButton': '重新取得報價',
+  'hudChrome.claudium.insufficientBalance': '克勞迪姆不足',
   'hudChrome.claudium.unavailable':
     '克勞迪姆商店目前無法使用。您的餘額和購買不受影響，請稍後再試。',
   'hudChrome.claudium.disclosure':

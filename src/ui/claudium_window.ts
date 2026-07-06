@@ -33,11 +33,13 @@ import {
   type ClaudiumStoreItemInput,
   type ClaudiumView,
   claudiumRailOptions,
+  claudiumToUsd,
   formatQuoteCountdown,
 } from './claudium_view';
 import { markDialogRoot } from './dialog_root';
 import { esc } from './esc';
 import { formatNumber, type TranslationKey, t } from './i18n';
+import { claudiumPayQrSvg } from './qr';
 import { svgIcon } from './ui_icons';
 
 /** The buy rails: the legacy stripe CARD rail plus the three native Solana rails. */
@@ -112,6 +114,9 @@ export class ClaudiumWindow {
   private quoteClaudium: number | null = null;
   private quoteSeq = 0;
   private confirmResult: ClaudiumRedeemPayload | null = null;
+  // True while a native confirm is in flight: the pay panel shows a calm
+  // "waiting for on-chain confirmation" state instead of dead air (D6).
+  private confirmPending = false;
   private redeemResult: ClaudiumRedeemPayload | null = null;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
   private lastView: ClaudiumView | null = null;
@@ -197,10 +202,13 @@ export class ClaudiumWindow {
 
   private balanceHtml(view: ClaudiumView): string {
     // The balance is the ONE number the disabled state hides: with no service there
-    // is no balance to show, so render a dash rather than a fabricated zero.
+    // is no balance to show, so render a dash rather than a fabricated zero. When a
+    // balance IS known, show its USD equivalent in parentheses (D2): the peg makes
+    // the soft-currency count legible as real money.
     const shown = view.hasBalance
-      ? t('hudChrome.claudium.balanceUnit', {
+      ? t('hudChrome.claudium.amountWithUsd', {
           amount: formatNumber(view.balance ?? 0, { maximumFractionDigits: 0 }),
+          usd: this.usdEquiv(view.balance ?? 0, view.usdPerClaudium),
         })
       : t('hudChrome.claudium.balanceUnit', { amount: '--' });
     return (
@@ -322,6 +330,14 @@ export class ClaudiumWindow {
     return buildClaudiumQuotePanel(rail, this.quote, Date.now(), woc);
   }
 
+  private railName(rail: ClaudiumNativeRailId): string {
+    return rail === 'sol'
+      ? t('hudChrome.claudium.railSol')
+      : rail === 'usdc'
+        ? t('hudChrome.claudium.railUsdc')
+        : t('hudChrome.claudium.railWoc');
+  }
+
   private payPanelHtml(panel: ClaudiumQuotePanel): string {
     if (panel.disabled) {
       const reason =
@@ -330,52 +346,71 @@ export class ClaudiumWindow {
           : panel.reason === 'oracle_unavailable'
             ? t('hudChrome.claudium.oracleUnavailable')
             : t('hudChrome.claudium.buyUnavailable');
+      // A disabled quote is a plain-language recovery: explain, then offer a fresh
+      // quote (re-quote), never a raw reason code (D6 error mapping).
       return (
         `<div class="cl-pay">` +
         `<p class="cl-rail-note" role="status">${esc(reason)}</p>` +
-        `<button type="button" class="cl-rail" data-quote-cancel>${esc(t('hudChrome.claudium.back'))}</button>` +
+        `<div class="cl-pay-actions">` +
+        `<button type="button" class="cl-rail" data-quote-cancel>${esc(t('hudChrome.claudium.requoteButton'))}</button>` +
+        `</div>` +
         `</div>`
       );
     }
     const amount = panel.amountDisplay ?? '';
-    const railName =
-      panel.rail === 'sol'
-        ? t('hudChrome.claudium.railSol')
-        : panel.rail === 'usdc'
-          ? t('hudChrome.claudium.railUsdc')
-          : t('hudChrome.claudium.railWoc');
+    const railName = this.railName(panel.rail);
     const sendLine = t('hudChrome.claudium.sendExactly', { amount, rail: railName });
     const countdown = panel.expired
       ? t('hudChrome.claudium.quoteExpired')
       : t('hudChrome.claudium.expiresIn', { time: formatQuoteCountdown(panel.countdownMs) });
+    // D3: the split shows as ONE clean line ("X WOC burned, Y WOC to treasury") on
+    // its own labelled row, never crowding the amount or the treasury address.
     const splitHtml = panel.split
-      ? `<div class="cl-split">` +
-        `<span class="cl-split-line">${esc(t('hudChrome.claudium.splitBurn', { amount: panel.split.burnDisplay, rail: railName }))}</span>` +
-        `<span class="cl-split-line">${esc(t('hudChrome.claudium.splitTreasury', { amount: panel.split.treasuryDisplay, rail: railName }))}</span>` +
-        `</div>`
+      ? this.field(
+          'hudChrome.claudium.splitLabel',
+          t('hudChrome.claudium.splitSummary', {
+            burn: panel.split.burnDisplay,
+            treasury: panel.split.treasuryDisplay,
+            rail: railName,
+          }),
+        )
       : '';
-    const field = (labelKey: TranslationKey, value: string): string =>
-      `<div class="cl-field">` +
-      `<span class="cl-field-label">${esc(t(labelKey))}</span>` +
-      `<code class="cl-field-value">${esc(value)}</code>` +
-      `</div>`;
-    const confirmDone = this.confirmResult
-      ? `<p class="cl-rail-note" role="status">` +
-        esc(
-          this.confirmResult.credited
-            ? t('hudChrome.claudium.confirmCredited', {
-                amount: formatNumber(this.confirmResult.balance ?? 0, { maximumFractionDigits: 0 }),
-              })
-            : t('hudChrome.claudium.confirmFailed'),
-        ) +
-        `</p>`
+    // D5: an explicit review line before the commit action. For WOC the treasury
+    // destination is the split treasury; the USD equivalent uses the quoted
+    // Claudium count so the player sees exactly what they pay and receive.
+    const usd =
+      panel.claudium !== null
+        ? this.usdEquiv(panel.claudium, this.lastView?.usdPerClaudium ?? null)
+        : '';
+    const claudiumText =
+      panel.claudium !== null ? formatNumber(panel.claudium, { maximumFractionDigits: 0 }) : '';
+    const reviewHtml =
+      panel.claudium !== null
+        ? this.field(
+            'hudChrome.claudium.reviewLabel',
+            t('hudChrome.claudium.reviewLine', {
+              pay: amount,
+              rail: railName,
+              claudium: claudiumText,
+              usd,
+            }),
+          )
+        : '';
+    const qr = claudiumPayQrSvg(panel.destination, panel.amountBase);
+    const qrHtml = qr
+      ? `<figure class="cl-qr">${qr}<figcaption class="cl-field-label">${esc(t('hudChrome.claudium.scanLabel'))}</figcaption></figure>`
       : '';
+    // D6: a calm pending state while the confirm is in flight; a reassuring retry
+    // state on not_finalized; plain-language success/failure otherwise.
+    const confirmDone = this.confirmStatusHtml();
     return (
       `<div class="cl-pay">` +
       `<p class="cl-pay-amount"><strong>${esc(sendLine)}</strong></p>` +
-      field('hudChrome.claudium.addressLabel', panel.destination ?? '') +
-      field('hudChrome.claudium.memoLabel', panel.memo ?? '') +
+      reviewHtml +
+      this.fieldWithCopy('hudChrome.claudium.addressLabel', panel.destination ?? '') +
+      this.field('hudChrome.claudium.memoLabel', panel.memo ?? '') +
       splitHtml +
+      qrHtml +
       `<p class="cl-countdown" role="status">${esc(countdown)}</p>` +
       `<p class="cl-pay-note">${esc(t('hudChrome.claudium.payNote'))}</p>` +
       `<label class="cl-field-label" for="cl-sig">${esc(t('hudChrome.claudium.signatureLabel'))}</label>` +
@@ -383,17 +418,93 @@ export class ClaudiumWindow {
       `placeholder="${esc(t('hudChrome.claudium.signaturePlaceholder'))}" />` +
       `<div class="cl-pay-actions">` +
       `<button type="button" class="cl-rail" data-quote-cancel>${esc(t('hudChrome.claudium.back'))}</button>` +
-      `<button type="button" class="cl-item-buy" data-quote-confirm>${esc(t('hudChrome.claudium.confirmButton'))}</button>` +
+      `<button type="button" class="cl-item-buy" data-quote-confirm${this.confirmPending ? ' disabled' : ''}>${esc(t('hudChrome.claudium.confirmButton'))}</button>` +
       `</div>` +
       confirmDone +
       `</div>`
     );
   }
 
+  private field(labelKey: TranslationKey, value: string): string {
+    // Each field on its OWN row with a clear label above the value (D3): the label
+    // is a block, the value a block, so nothing runs together.
+    return (
+      `<div class="cl-field">` +
+      `<span class="cl-field-label">${esc(t(labelKey))}</span>` +
+      `<code class="cl-field-value">${esc(value)}</code>` +
+      `</div>`
+    );
+  }
+
+  private fieldWithCopy(labelKey: TranslationKey, value: string): string {
+    return (
+      `<div class="cl-field">` +
+      `<span class="cl-field-label">${esc(t(labelKey))}</span>` +
+      `<div class="cl-field-copy">` +
+      `<code class="cl-field-value">${esc(value)}</code>` +
+      `<button type="button" class="cl-copy-btn" data-copy-address="${esc(value)}" aria-label="${esc(t('hudChrome.claudium.copyAddress'))}">${esc(t('hudChrome.claudium.copyAddress'))}</button>` +
+      `</div>` +
+      `</div>`
+    );
+  }
+
+  /**
+   * The confirm status line under the pay actions. Order: an in-flight confirm is a
+   * calm pending line (D6); then the result maps to plain-language copy with a
+   * recovery action, never a raw reason code. not_finalized is reassuring (retry),
+   * an expired/oracle reason offers a fresh quote, other failures a plain retry.
+   */
+  private confirmStatusHtml(): string {
+    if (this.confirmPending) {
+      return `<p class="cl-rail-note cl-pending" role="status">${esc(t('hudChrome.claudium.confirmPending'))}</p>`;
+    }
+    const result = this.confirmResult;
+    if (!result) return '';
+    if (result.credited) {
+      return (
+        `<p class="cl-rail-note cl-success" role="status">` +
+        esc(
+          t('hudChrome.claudium.confirmCredited', {
+            amount: formatNumber(result.balance ?? 0, { maximumFractionDigits: 0 }),
+          }),
+        ) +
+        `</p>`
+      );
+    }
+    const reason = result.reason;
+    if (reason === 'not_finalized') {
+      return (
+        `<p class="cl-rail-note" role="status">${esc(t('hudChrome.claudium.confirmNotFinalized'))}</p>` +
+        `<div class="cl-pay-actions"><button type="button" class="cl-rail" data-quote-confirm>${esc(t('hudChrome.claudium.retryButton'))}</button></div>`
+      );
+    }
+    if (reason === 'expired' || reason === 'oracle_unavailable') {
+      return (
+        `<p class="cl-rail-note" role="status">${esc(t('hudChrome.claudium.confirmRequote'))}</p>` +
+        `<div class="cl-pay-actions"><button type="button" class="cl-rail" data-quote-cancel>${esc(t('hudChrome.claudium.requoteButton'))}</button></div>`
+      );
+    }
+    return `<p class="cl-rail-note" role="status">${esc(t('hudChrome.claudium.confirmFailed'))}</p>`;
+  }
+
   private usdLabel(usd: number): string {
     // The service sends whole-dollar SKUs ($1..$10000). Render with locale grouping
     // but no cents, so $10000 reads $10,000 in en and localizes elsewhere.
-    return `$${formatNumber(usd, { maximumFractionDigits: 0 })}`;
+    return t('hudChrome.claudium.usdAmount', {
+      usd: formatNumber(usd, { maximumFractionDigits: 0 }),
+    });
+  }
+
+  /**
+   * The USD equivalent of a Claudium amount at the view's peg, as a $ figure with
+   * cents. Used where no per-row USD is present (the balance, a store price). The
+   * peg is service-owned; this only projects it (claudiumToUsd), it never prices.
+   */
+  private usdEquiv(claudium: number, usdPerClaudium: number | null): string {
+    const usd = claudiumToUsd(claudium, usdPerClaudium);
+    return t('hudChrome.claudium.usdAmount', {
+      usd: formatNumber(usd, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    });
   }
 
   // ---- Cosmetic store (shared under the buy tab) ------------------------------
@@ -503,9 +614,18 @@ export class ClaudiumWindow {
       this.clearQuote();
       this.paint(view);
     });
-    body.querySelector<HTMLButtonElement>('[data-quote-confirm]')?.addEventListener('click', () => {
-      const sig = body.querySelector<HTMLInputElement>('#cl-sig')?.value.trim() ?? '';
-      void this.confirmNative(sig, view);
+    body.querySelectorAll<HTMLButtonElement>('[data-quote-confirm]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const sig = body.querySelector<HTMLInputElement>('#cl-sig')?.value.trim() ?? '';
+        void this.confirmNative(sig, view);
+      });
+    });
+    body.querySelectorAll<HTMLButtonElement>('[data-copy-address]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const addr = btn.dataset.copyAddress ?? '';
+        if (addr) void navigator.clipboard?.writeText(addr).catch(() => {});
+        btn.textContent = t('hudChrome.claudium.copied');
+      });
     });
     body.querySelector<HTMLButtonElement>('[data-redeem]')?.addEventListener('click', () => {
       const code = body.querySelector<HTMLInputElement>('#cl-code')?.value.trim() ?? '';
@@ -552,7 +672,12 @@ export class ClaudiumWindow {
 
   private async confirmNative(signature: string, view: ClaudiumView): Promise<void> {
     if (!this.deps.nativeConfirm || !this.quote?.reference || signature === '') return;
+    if (this.confirmPending) return;
     const reference = this.quote.reference;
+    // Show the calm pending state immediately, then await the on-chain check (D6).
+    this.confirmPending = true;
+    this.confirmResult = null;
+    this.paint(view);
     let result: ClaudiumRedeemPayload;
     try {
       result = await this.deps.nativeConfirm(reference, signature);
@@ -565,6 +690,7 @@ export class ClaudiumWindow {
       };
     }
     if (!this.isOpen) return;
+    this.confirmPending = false;
     this.confirmResult = result;
     // A credited confirm refreshes the balance from the service on the next render.
     if (result.credited) void this.render();
@@ -594,6 +720,7 @@ export class ClaudiumWindow {
     this.quote = null;
     this.quoteClaudium = null;
     this.confirmResult = null;
+    this.confirmPending = false;
     this.stopCountdown();
   }
 

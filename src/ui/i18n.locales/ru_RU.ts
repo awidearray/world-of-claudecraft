@@ -6029,6 +6029,22 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.close': 'Закрыть Клаудиум',
   'hudChrome.claudium.balanceLabel': 'Баланс',
   'hudChrome.claudium.balanceUnit': '{amount} Клаудиума',
+  'hudChrome.claudium.amountWithUsd': '{amount} Клаудиума ({usd})',
+  'hudChrome.claudium.splitLabel': 'Распределение',
+  'hudChrome.claudium.splitSummary': 'сжигается {burn} {rail}, {treasury} {rail} в казну',
+  'hudChrome.claudium.reviewLabel': 'Проверка',
+  'hudChrome.claudium.reviewLine': 'Вы платите {pay} {rail} и получаете {claudium} Клаудиума ({usd}).',
+  'hudChrome.claudium.reviewLineCard': 'Вы платите {usd} и получаете {claudium} Клаудиума.',
+  'hudChrome.claudium.scanLabel': 'Или отсканируйте для оплаты',
+  'hudChrome.claudium.copyAddress': 'Скопировать адрес',
+  'hudChrome.claudium.copied': 'Скопировано',
+  'hudChrome.claudium.confirmPending': 'Ожидание подтверждения в сети. Это может занять некоторое время.',
+  'hudChrome.claudium.confirmNotFinalized':
+    'Ваш платеж еще не подтвержден в сети. Это нормально: подождите немного и подтвердите снова.',
+  'hudChrome.claudium.confirmRequote': 'Цена изменилась. Получите новую котировку и повторите попытку.',
+  'hudChrome.claudium.retryButton': 'Повторить',
+  'hudChrome.claudium.requoteButton': 'Получить новую котировку',
+  'hudChrome.claudium.insufficientBalance': 'Недостаточно Клаудиума',
   'hudChrome.claudium.unavailable':
     'Магазин Клаудиума сейчас недоступен. Ваш баланс и покупки не затронуты. Пожалуйста, зайдите позже.',
   'hudChrome.claudium.disclosure':

@@ -5912,6 +5912,23 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.close': 'クラウジウムを閉じる',
   'hudChrome.claudium.balanceLabel': '残高',
   'hudChrome.claudium.balanceUnit': '{amount} クラウジウム',
+  'hudChrome.claudium.amountWithUsd': '{amount} クラウジウム（{usd}）',
+  'hudChrome.claudium.splitLabel': '内訳',
+  'hudChrome.claudium.splitSummary': '{burn} {rail} をバーン、{treasury} {rail} をトレジャリーへ',
+  'hudChrome.claudium.reviewLabel': '確認',
+  'hudChrome.claudium.reviewLine':
+    '{pay} {rail} をお支払いいただき、{claudium} クラウジウム（{usd}）を受け取ります。',
+  'hudChrome.claudium.reviewLineCard': '{usd} をお支払いいただき、{claudium} クラウジウムを受け取ります。',
+  'hudChrome.claudium.scanLabel': 'スキャンして支払う',
+  'hudChrome.claudium.copyAddress': 'アドレスをコピー',
+  'hudChrome.claudium.copied': 'コピーしました',
+  'hudChrome.claudium.confirmPending': 'オンチェーンの確認を待っています。少し時間がかかることがあります。',
+  'hudChrome.claudium.confirmNotFinalized':
+    'お支払いはまだオンチェーンで確認されていません。これは正常です。少し待ってからもう一度確認してください。',
+  'hudChrome.claudium.confirmRequote': '価格が変動しました。新しい見積もりを取得して再試行してください。',
+  'hudChrome.claudium.retryButton': '再試行',
+  'hudChrome.claudium.requoteButton': '新しい見積もりを取得',
+  'hudChrome.claudium.insufficientBalance': 'クラウジウムが不足しています',
   'hudChrome.claudium.unavailable':
     'クラウジウムストアは現在利用できません。残高や購入には影響ありません。しばらくしてから再度お試しください。',
   'hudChrome.claudium.disclosure':

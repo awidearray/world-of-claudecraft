@@ -3,9 +3,11 @@ import {
   buildClaudiumQuotePanel,
   buildClaudiumView,
   CLAUDIUM_RAIL_ORDER,
+  CLAUDIUM_USD_PEG,
   type ClaudiumNativeQuoteInput,
   type ClaudiumViewInput,
   claudiumRailOptions,
+  claudiumToUsd,
   formatQuoteCountdown,
   scaleBaseUnits,
 } from '../src/ui/claudium_view';
@@ -110,6 +112,34 @@ describe('buildClaudiumView funded state (service on)', () => {
     expect(view.disabled).toBe(false);
     expect(view.hasBalance).toBe(true);
     expect(view.balance).toBe(0);
+  });
+});
+
+describe('USD equivalent (D2 money clarity)', () => {
+  it('exposes the service peg on the funded view for a balance/store USD figure', () => {
+    const view = buildClaudiumView(funded);
+    expect(view.usdPerClaudium).toBe(0.01);
+  });
+
+  it('leaves the peg null in the disabled state (no amounts render)', () => {
+    const view = buildClaudiumView({
+      balance: null,
+      skus: [],
+      price: { usdPerClaudium: null, wocBaseUnitsPerClaudium: null },
+      storeItems: [],
+    });
+    expect(view.usdPerClaudium).toBeNull();
+  });
+
+  it('claudiumToUsd multiplies by the service peg', () => {
+    expect(claudiumToUsd(1000, 0.01)).toBeCloseTo(10, 10);
+    expect(claudiumToUsd(1250, 0.01)).toBeCloseTo(12.5, 10);
+  });
+
+  it('claudiumToUsd falls back to the constant peg when the service peg is null', () => {
+    expect(CLAUDIUM_USD_PEG).toBe(0.01);
+    expect(claudiumToUsd(500, null)).toBeCloseTo(5, 10);
+    expect(claudiumToUsd(500, Number.NaN)).toBeCloseTo(5, 10);
   });
 });
 

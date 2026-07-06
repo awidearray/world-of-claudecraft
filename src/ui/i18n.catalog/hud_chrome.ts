@@ -108,6 +108,10 @@ export const hudChromeStrings = {
     close: 'Close Claudium',
     balanceLabel: 'Balance',
     balanceUnit: '{amount} Claudium',
+    // A Claudium amount with its US-dollar equivalent in parentheses, shown where
+    // it aids trust (the balance, a store price). {usd} is a preformatted $ figure.
+    amountWithUsd: '{amount} Claudium ({usd})',
+    usdAmount: '${usd}',
     unavailable:
       'The Claudium store is unavailable right now. Your balance and purchases are unaffected; please check back shortly.',
     disclosure:
@@ -140,10 +144,21 @@ export const hudChromeStrings = {
     sendExactly: 'Send exactly {amount} {rail}',
     addressLabel: 'Send to',
     memoLabel: 'Memo (required)',
+    splitLabel: 'Split',
     splitBurn: '{amount} {rail} burned',
     splitTreasury: '{amount} {rail} to treasury',
+    // The one-line split summary shown on the pay panel: burn amount, then treasury.
+    splitSummary: '{burn} {rail} burned, {treasury} {rail} to treasury',
+    // The explicit review line before the commit action: what the player pays and
+    // what they receive, with the USD equivalent for trust.
+    reviewLabel: 'Review',
+    reviewLine: 'You pay {pay} {rail}, you receive {claudium} Claudium ({usd}).',
+    reviewLineCard: 'You pay {usd}, you receive {claudium} Claudium.',
     expiresIn: 'Quote expires in {time}',
     quoteExpired: 'This quote expired. Get a new one.',
+    scanLabel: 'Or scan to pay',
+    copyAddress: 'Copy address',
+    copied: 'Copied',
     payNote:
       'Send the exact amount with the memo from your own wallet, then paste the transaction signature to confirm. The service verifies it on-chain before crediting.',
     signatureLabel: 'Transaction signature',
@@ -151,6 +166,20 @@ export const hudChromeStrings = {
     confirmButton: 'Confirm payment',
     confirmCredited: 'Credited {amount} Claudium.',
     confirmFailed: 'That payment could not be confirmed yet. Please try again shortly.',
+    // The calm pending state shown while the on-chain confirmation is verified.
+    confirmPending: 'Waiting for on-chain confirmation. This can take a moment.',
+    // The reassuring retry state when the network has not finalized the payment yet
+    // (a not_finalized result), distinct from a hard failure.
+    confirmNotFinalized:
+      'Your payment is not confirmed on-chain yet. This is normal; wait a moment and confirm again.',
+    // A friendly re-quote prompt when the quote expired or the oracle went down
+    // mid-flow, offered with a retry action instead of a raw reason code.
+    confirmRequote: 'The price moved on. Please get a fresh quote and try again.',
+    retryButton: 'Try again',
+    requoteButton: 'Get a fresh quote',
+    // Store top-up affordance (D7): shown when the balance is below an item cost.
+    insufficientBalance: 'Not enough Claudium',
+    topUpButton: 'Top up',
     redeemTitle: 'Redeem a gift card',
     enterCode: 'Enter your gift card code',
     codePlaceholder: 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX',

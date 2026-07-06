@@ -130,6 +130,27 @@ export interface ClaudiumQuotePanel {
   } | null;
 }
 
+/**
+ * The display peg: how many US dollars one Claudium is worth. The service sends
+ * usdPerClaudium on the price payload; this is the fallback when it is absent, so
+ * a USD equivalent is always available for trust (1 Claudium = $0.01).
+ */
+export const CLAUDIUM_USD_PEG = 0.01;
+
+/**
+ * The US-dollar equivalent of a Claudium amount at the given peg. Pure: it does
+ * NOT re-price anything (the service owns SKU pricing); it only multiplies the
+ * displayed Claudium count by the peg so a player sees the money value beside the
+ * soft-currency count. A null/non-finite peg falls back to CLAUDIUM_USD_PEG so a
+ * USD figure is always shown. Returns a number the consumer formats via
+ * formatNumber; never a string, never rounded here.
+ */
+export function claudiumToUsd(claudium: number, usdPerClaudium: number | null): number {
+  const peg =
+    usdPerClaudium !== null && Number.isFinite(usdPerClaudium) ? usdPerClaudium : CLAUDIUM_USD_PEG;
+  return claudium * peg;
+}
+
 /** The redeem-tab result state. */
 export interface ClaudiumRedeemResult {
   credited: boolean;
@@ -145,6 +166,14 @@ export interface ClaudiumView {
   hasBalance: boolean;
   /** The integer balance to render, or null in the disabled state. */
   balance: number | null;
+  /**
+   * The display peg (US dollars per Claudium) the window uses to show a USD
+   * equivalent beside a Claudium count where no per-row USD is present (the
+   * balance, the store items). Mirrors the service price; falls back to
+   * CLAUDIUM_USD_PEG so a USD figure is always available. Null only in the
+   * disabled state, where no amounts render.
+   */
+  usdPerClaudium: number | null;
   buyRows: ClaudiumBuyRow[];
   rails: ClaudiumRailAvailability;
   /** True when neither rail can transact (nothing to buy or oracle down + no skus). */
@@ -168,6 +197,7 @@ export function buildClaudiumView(input: ClaudiumViewInput): ClaudiumView {
       disabled: true,
       hasBalance: false,
       balance: null,
+      usdPerClaudium: null,
       buyRows: [],
       rails: { stripe: false, woc: false },
       buyDisabled: true,
@@ -193,6 +223,7 @@ export function buildClaudiumView(input: ClaudiumViewInput): ClaudiumView {
     disabled: false,
     hasBalance: true,
     balance: input.balance,
+    usdPerClaudium: input.price.usdPerClaudium,
     buyRows,
     rails: { stripe, woc },
     buyDisabled: !stripe && !woc,
