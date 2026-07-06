@@ -82,6 +82,14 @@
        raw hex). Exact pre-existing value. */
     --color-quality-default: #fff;
 
+    /* Claudium pay-QR: a scannable code is a functional bitmap, not themed chrome,
+       so it stays high-contrast dark-on-white in EVERY theme preset (a wallet
+       camera expects dark modules on a light quiet zone; theming it would invert
+       or wash it out on the light Parchment preset). The theme system does NOT
+       recompute these; that is intentional. */
+    --color-qr-bg: #ffffff;
+    --color-qr-fg: #0b0b0b;
+
     /* Empty paperdoll slot greys (char_window.ts uses these so the painter carries
        no raw hex): the muted "Empty" label and the dimmed placeholder-icon border.
        Exact pre-existing values. */

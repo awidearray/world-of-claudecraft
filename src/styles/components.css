@@ -1876,7 +1876,7 @@
 
   /* ---------- claudium ---------- */
   #claudium-window {
-    width: min(440px, 92vw);
+    width: min(440px, calc(100vw - 24px));
   }
   .cl-body {
     margin-top: 8px;
@@ -1889,26 +1889,26 @@
     justify-content: space-between;
     gap: 8px;
     padding: 8px 10px;
-    border: 1px solid #463a1c;
-    background: #ffffff08;
-    border-radius: 4px;
+    border: 1px solid var(--color-border-default);
+    background: var(--color-bg-input);
+    border-radius: var(--radius-sm);
   }
   .cl-balance-label {
     color: var(--color-text-muted);
     font-size: 12px;
   }
   .cl-balance-value {
-    color: #ffe27a;
+    color: var(--color-gold);
     font-size: 15px;
     font-weight: 700;
   }
   .cl-notice {
     margin: 10px 0 0;
     padding: 8px 10px;
-    border: 1px solid #8a6427;
-    border-radius: 4px;
-    background: #160f08;
-    color: #ffb07a;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-dark);
+    color: var(--color-text-error);
     font-size: 12px;
     line-height: 1.4;
   }
@@ -1923,7 +1923,7 @@
   }
   .cl-section h3 {
     margin: 0 0 6px;
-    color: var(--gold);
+    color: var(--color-gold);
     font-family: var(--title-font);
     font-size: 12px;
   }
@@ -1935,29 +1935,29 @@
     flex: 1;
     min-height: 40px;
     padding: 8px;
-    border: 1px solid #463a1c;
-    border-radius: 4px;
-    background: #ffffff08;
-    color: #f0e4c8;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-input);
+    color: var(--color-text-light);
     font-size: 13px;
     cursor: var(--cursor-pointer);
   }
   .cl-rail[aria-pressed="true"] {
-    border-color: #b8902a;
-    background: #f5c84322;
-    color: #ffe27a;
+    border-color: var(--color-gold);
+    background: var(--color-primary-glow);
+    color: var(--color-gold);
   }
   .cl-rail:disabled {
     opacity: 0.45;
     cursor: var(--cursor-arrow);
   }
   .cl-rail:focus-visible {
-    outline: 2px solid var(--gold);
+    outline: 2px solid var(--color-gold);
     outline-offset: 2px;
   }
   .cl-rail-note {
     margin: 6px 0 0;
-    color: #ffb07a;
+    color: var(--color-text-error);
     font-size: 11px;
   }
   .cl-amount-label {
@@ -1977,26 +1977,26 @@
     gap: 8px;
     min-height: 40px;
     padding: 8px 10px;
-    border: 1px solid #463a1c;
-    border-radius: 4px;
-    background: #ffffff08;
-    color: #f0e4c8;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-input);
+    color: var(--color-text-light);
     font-size: 13px;
     text-align: left;
     cursor: var(--cursor-pointer);
   }
   .cl-sku:focus-visible,
   .cl-item-buy:focus-visible {
-    outline: 2px solid var(--gold);
+    outline: 2px solid var(--color-gold);
     outline-offset: 2px;
   }
   .cl-sku-claudium {
-    color: #ffe27a;
+    color: var(--color-gold);
     font-size: 12px;
   }
   .cl-sku-buy {
     justify-self: end;
-    color: var(--gold);
+    color: var(--color-gold);
     font-size: 12px;
     font-weight: 700;
   }
@@ -2006,12 +2006,12 @@
     align-items: center;
     gap: 8px;
     padding: 8px 10px;
-    border: 1px solid #463a1c;
-    border-radius: 4px;
-    background: #ffffff08;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-input);
   }
   .cl-item-name {
-    color: #f0e4c8;
+    color: var(--color-text-light);
     font-size: 13px;
   }
   .cl-item-kind {
@@ -2019,7 +2019,7 @@
     font-size: 11px;
   }
   .cl-item-cost {
-    color: #ffe27a;
+    color: var(--color-gold);
     font-size: 12px;
   }
   .cl-item-buy {
@@ -2028,10 +2028,10 @@
     min-height: 40px;
     min-width: 80px;
     padding: 6px 12px;
-    border: 1px solid #8a6427;
-    border-radius: 4px;
-    background: #f5c84322;
-    color: #ffe27a;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-glow);
+    color: var(--color-gold);
     font-size: 12px;
     cursor: var(--cursor-pointer);
   }
@@ -2169,13 +2169,13 @@
     align-items: center;
     gap: 4px;
     margin: 0;
-    --cl-qr-bg: var(--color-text-light);
-    --cl-qr-fg: var(--color-bg-dark);
+    --cl-qr-bg: var(--color-qr-bg);
+    --cl-qr-fg: var(--color-qr-fg);
   }
   .cl-qr-svg {
-    border: 4px solid var(--color-text-light);
+    border: 4px solid var(--color-qr-bg);
     border-radius: var(--radius-sm);
-    background: var(--color-text-light);
+    background: var(--color-qr-bg);
   }
   /* Store insufficient-balance top-up affordance (D7). */
   .cl-item-topup {
