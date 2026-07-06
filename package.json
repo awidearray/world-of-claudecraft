@@ -117,6 +117,7 @@
     "electron-builder": "^26.15.6",
     "esbuild": "^0.28.1",
     "jsdom": "^29.1.1",
+    "jsqr": "^1.4.0",
     "lightningcss": "1.32.0",
     "playwright": "1.61.1",
     "puppeteer-core": "^25.1.0",
