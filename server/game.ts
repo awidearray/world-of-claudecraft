@@ -89,6 +89,7 @@ import {
 import * as jobEscrow from './job_escrow';
 import type { JobObservation } from './job_milestone';
 import { jobsDb } from './jobs_db';
+import * as playerEconomyProxy from './player_economy_proxy';
 import { type LiveSharedIp, sharedIpsFromLiveSessions } from './live_shared_ips';
 import { trackReachedLevel5 } from './meta_capi';
 import {
@@ -847,10 +848,27 @@ export class GameServer {
       raidResetMs: (nowMs) => nextRaidResetMs(nowMs, REALM_RESET_TIME_ZONE),
     });
     this.social = new SocialService(this.socialDb, this.socialTransport());
+    // #923 split: deposit VERIFICATION is the economy service's job. The game
+    // builds the payer's deposit tx and drives the settler-signed release/refund
+    // (settler key stays server-side), but it verifies the on-chain deposit by
+    // asking the service through the player-economy proxy, never by reading the
+    // chain itself. verifyDeposit -> the service confirm (finality-gated match);
+    // verifyJobState -> the service's mirrored funded status. Both fail closed
+    // (return false) when the service is off, so a deposit is never trusted
+    // un-verified and the reconcile sweep never prunes a possibly-funded job.
     const escrowOps: JobEscrowOps = {
       buildOpenTransaction: jobEscrow.buildOpenTransaction,
-      verifyDeposit: jobEscrow.verifyDeposit,
-      verifyJobState: jobEscrow.verifyJobState,
+      verifyDeposit: async (args) => {
+        const r = await playerEconomyProxy.jobConfirm({
+          jobId: args.jobId.toString(),
+          signature: args.signature,
+        });
+        return r.funded;
+      },
+      verifyJobState: async (jobId) => {
+        const r = await playerEconomyProxy.jobStatus(jobId.toString());
+        return r.status === 'funded' || r.status === 'active';
+      },
       releaseJob: jobEscrow.releaseJob,
       refundJob: jobEscrow.refundJob,
       jobAccountExists: jobEscrow.jobAccountExists,

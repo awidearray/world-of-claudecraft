@@ -722,6 +722,46 @@ export class Api {
     return this.post(`/api/jobs/${jobId}/confirm`, { signature });
   }
 
+  // #923 player-economy TIP: the game server (and behind it, the economy service)
+  // owns the amount + memo + destination + on-chain verification. The client
+  // computes NONE of it: it asks for a quote, sends the exact transfer the quote
+  // names (with the memo attached), then confirms so the service verifies it.
+
+  // Quote a tip: the game server resolves the recipient (by name) + payer (from
+  // the bearer token) and the economy service pins the exact transfer + memo the
+  // sender must send. The client passes the typed recipient name + amount; it
+  // computes no money.
+  async tipQuote(body: {
+    characterId: number;
+    recipientName: string;
+    amountBase: string;
+  }): Promise<{
+    ok: boolean;
+    toAccountId?: number;
+    recipientName?: string;
+    memo: string | null;
+    destination: string | null;
+    mint: string | null;
+    amountBase: string | null;
+    expiresAtMs: number | null;
+    error?: string;
+  }> {
+    // The server resolves the recipient name to a verified wallet and the payer
+    // from the bearer token; the client never resolves or holds the destination.
+    return this.post('/api/player-economy/tip/quote', body);
+  }
+
+  // Confirm the tip transfer (the service verifies it finalized on-chain, exact
+  // amount, right recipient, matching memo, then records it once).
+  async tipConfirm(body: {
+    toAccountId: number;
+    amountBase: string;
+    signature: string;
+    memo: string;
+  }): Promise<{ settled: boolean; observedAmountBase: string | null; reason: string | null }> {
+    return this.post('/api/player-economy/tip/confirm', body);
+  }
+
   // The helper accepts an offered job; the server begins tracking the milestone.
   async jobAccept(jobId: string): Promise<{ status: string }> {
     return this.post(`/api/jobs/${jobId}/accept`, {});
