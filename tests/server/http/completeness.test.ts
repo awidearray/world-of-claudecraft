@@ -289,6 +289,12 @@ describe('registry completeness: migrated baseline (public reads + auth + charac
     { method: 'POST', path: '/api/claudium/purchase' },
     { method: 'POST', path: '/api/claudium/purchase/woc/confirm' },
     { method: 'POST', path: '/api/claudium/spend' },
+    // Native Solana settlement rails + gift-card redeem (the economy service owns
+    // settlement; these proxy to it and fail closed like the rest of the family).
+    { method: 'POST', path: '/api/claudium/native/quote' },
+    { method: 'POST', path: '/api/claudium/native/confirm' },
+    { method: 'POST', path: '/api/claudium/giftcard/redeem' },
+    { method: 'GET', path: '/api/claudium/giftcard/status' },
     // v0.20.0 third slice: the map editor surface, migrated in-merge. The custom
     // map family (server/maps_routes.ts) and the uploaded-GLB family
     // (server/user_assets_routes.ts). GET /api/assets/:file is the

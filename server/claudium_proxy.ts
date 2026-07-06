@@ -296,6 +296,208 @@ export async function claudiumHistory(accountId: string): Promise<ClaudiumHistor
   return { entries: data };
 }
 
+/**
+ * The three native settlement rails the economy service now owns (Solana). Distinct
+ * from the legacy 'stripe' card rail: the service quotes the crypto amount, the
+ * player pays from their own wallet, and the service verifies + credits.
+ */
+export type ClaudiumNativeRail = 'sol' | 'usdc' | 'woc';
+
+export function parseNativeRail(value: unknown): ClaudiumNativeRail | null {
+  return value === 'sol' || value === 'usdc' || value === 'woc' ? value : null;
+}
+
+/** The fulfillment leg of a native quote: credit the balance, or mint a gift card. */
+export type ClaudiumFulfillment =
+  | { kind: 'credit'; accountId: string }
+  | { kind: 'giftcard'; recipientEmail?: string; message?: string; deliverAtMs?: number };
+
+/**
+ * The WOC split line the service returns (both base-unit strings + the treasury
+ * address). Present only on the woc rail; the game renders it verbatim, never
+ * recomputes it.
+ */
+export interface ClaudiumNativeSplit {
+  burnBase: string;
+  treasuryBase: string;
+  treasury: string;
+}
+
+/**
+ * A native-rail quote: the exact crypto amount to send (amountBase, a base-unit
+ * string at the rail's decimals), the destination address, the memo/reference the
+ * service verifies against, and the quote expiry. reason is set (and the quote is
+ * unusable) when the oracle is down or the rail is disabled; the game renders a
+ * clean disabled state. Every field is service-authoritative; the game computes none.
+ */
+export interface ClaudiumNativeQuoteResult {
+  reference: string | null;
+  rail: ClaudiumNativeRail | null;
+  claudium: number | null;
+  amountBase: string | null;
+  destination: string | null;
+  mint: string | null;
+  memo: string | null;
+  quoteExpiryMs: number | null;
+  split: ClaudiumNativeSplit | null;
+  reason: string | null;
+}
+
+/**
+ * The native confirm result: the service re-derives settlement from the on-chain
+ * signature. settled is false (with a reason) when the service is off or the tx
+ * did not verify; fulfillment carries the new balance (credit) or the gift-card
+ * code (giftcard) when it did.
+ */
+export interface ClaudiumNativeConfirmResult {
+  settled: boolean;
+  reason: string | null;
+  observedAmountBase: string | null;
+  fulfillment: { balance: number | null; giftCardCode: string | null } | null;
+}
+
+/** The gift-card redeem result: credited amount + resulting balance, or a reason. */
+export interface ClaudiumGiftCardRedeemResult {
+  credited: boolean;
+  balance: number | null;
+  denominationClaudium: number | null;
+  reason: string | null;
+}
+
+/** The gift-card status lookup result (no account context). */
+export interface ClaudiumGiftCardStatusResult {
+  status: 'ACTIVE' | 'REDEEMED' | 'EXPIRED' | 'VOID' | 'not_found';
+  denominationClaudium: number | null;
+}
+
+/** POST native/quote. Quote null (reason 'unavailable') when the service is off. */
+export async function claudiumNativeQuote(input: {
+  rail: ClaudiumNativeRail;
+  claudium: number;
+  fulfillment: ClaudiumFulfillment;
+}): Promise<ClaudiumNativeQuoteResult> {
+  const data = await callService<{
+    reference: string;
+    rail: ClaudiumNativeRail;
+    claudium: number;
+    amountBase: string;
+    destination: string;
+    mint?: string | null;
+    memo: string;
+    quoteExpiryMs: number;
+    split?: ClaudiumNativeSplit;
+    reason?: string;
+  }>({ method: 'POST', path: 'native/quote', body: input });
+  if (!data) {
+    return {
+      reference: null,
+      rail: null,
+      claudium: null,
+      amountBase: null,
+      destination: null,
+      mint: null,
+      memo: null,
+      quoteExpiryMs: null,
+      split: null,
+      reason: 'unavailable',
+    };
+  }
+  return {
+    reference: typeof data.reference === 'string' ? data.reference : null,
+    rail: parseNativeRail(data.rail),
+    claudium: typeof data.claudium === 'number' ? data.claudium : null,
+    amountBase: typeof data.amountBase === 'string' ? data.amountBase : null,
+    destination: typeof data.destination === 'string' ? data.destination : null,
+    mint: typeof data.mint === 'string' ? data.mint : null,
+    memo: typeof data.memo === 'string' ? data.memo : null,
+    quoteExpiryMs: typeof data.quoteExpiryMs === 'number' ? data.quoteExpiryMs : null,
+    split:
+      data.split &&
+      typeof data.split.burnBase === 'string' &&
+      typeof data.split.treasuryBase === 'string' &&
+      typeof data.split.treasury === 'string'
+        ? {
+            burnBase: data.split.burnBase,
+            treasuryBase: data.split.treasuryBase,
+            treasury: data.split.treasury,
+          }
+        : null,
+    reason: typeof data.reason === 'string' ? data.reason : null,
+  };
+}
+
+/** POST native/confirm. settled:false (reason 'unavailable') when the service is off. */
+export async function claudiumNativeConfirm(input: {
+  reference: string;
+  signature: string;
+}): Promise<ClaudiumNativeConfirmResult> {
+  const data = await callService<{
+    settled: boolean;
+    reason?: string;
+    observedAmountBase?: string;
+    fulfillment?: { balance?: number; giftCardCode?: string };
+  }>({ method: 'POST', path: 'native/confirm', body: input });
+  if (!data) {
+    return { settled: false, reason: 'unavailable', observedAmountBase: null, fulfillment: null };
+  }
+  const f = data.fulfillment;
+  return {
+    settled: Boolean(data.settled),
+    reason: typeof data.reason === 'string' ? data.reason : null,
+    observedAmountBase:
+      typeof data.observedAmountBase === 'string' ? data.observedAmountBase : null,
+    fulfillment: f
+      ? {
+          balance: typeof f.balance === 'number' ? f.balance : null,
+          giftCardCode: typeof f.giftCardCode === 'string' ? f.giftCardCode : null,
+        }
+      : null,
+  };
+}
+
+/** POST giftcard/redeem. credited:false (reason 'unavailable') when the service is off. */
+export async function claudiumGiftCardRedeem(input: {
+  code: string;
+  accountId: string;
+}): Promise<ClaudiumGiftCardRedeemResult> {
+  const data = await callService<{
+    credited: boolean;
+    balance: number;
+    denominationClaudium?: number;
+    reason?: string;
+  }>({ method: 'POST', path: 'giftcard/redeem', body: input });
+  if (!data) {
+    return { credited: false, balance: null, denominationClaudium: null, reason: 'unavailable' };
+  }
+  return {
+    credited: Boolean(data.credited),
+    balance: typeof data.balance === 'number' ? data.balance : null,
+    denominationClaudium:
+      typeof data.denominationClaudium === 'number' ? data.denominationClaudium : null,
+    reason: typeof data.reason === 'string' ? data.reason : null,
+  };
+}
+
+/** GET giftcard/status?code=... status 'not_found' when the service is off or unknown. */
+export async function claudiumGiftCardStatus(code: string): Promise<ClaudiumGiftCardStatusResult> {
+  const data = await callService<{
+    status: string;
+    denominationClaudium?: number;
+  }>({ method: 'GET', path: `giftcard/status?code=${encodeURIComponent(code)}` });
+  const status =
+    data?.status === 'ACTIVE' ||
+    data?.status === 'REDEEMED' ||
+    data?.status === 'EXPIRED' ||
+    data?.status === 'VOID'
+      ? data.status
+      : 'not_found';
+  return {
+    status,
+    denominationClaudium:
+      typeof data?.denominationClaudium === 'number' ? data.denominationClaudium : null,
+  };
+}
+
 /** GET store. The cosmetic catalog, priced in Claudium by the service. Empty when off. */
 export async function claudiumStore(): Promise<ClaudiumStoreResult> {
   const data = await callService<ClaudiumStoreItem[]>({ method: 'GET', path: 'store' });

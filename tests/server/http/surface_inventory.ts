@@ -917,6 +917,50 @@ export const SURFACE_INVENTORY: readonly SurfaceRoute[] = [
     limiter: null,
     requireOwnedExpected: null,
   },
+  // Native Solana settlement rails + gift-card redeem/status. Same twin shape as
+  // the rest of the family: the exact-path arms live in server/claudium.ts, served
+  // by the shared handleClaudiumApi dispatch core (registry RouteDef + legacy
+  // startsWith('/api/claudium') prefix arm). All auth-gated (full session).
+  {
+    dispatcher: DISPATCH.mainApi,
+    method: 'POST',
+    path: '/api/claudium/native/quote',
+    handler: 'handleClaudiumApi arm: /api/claudium/native/quote',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.full,
+    limiter: null,
+    requireOwnedExpected: null,
+  },
+  {
+    dispatcher: DISPATCH.mainApi,
+    method: 'POST',
+    path: '/api/claudium/native/confirm',
+    handler: 'handleClaudiumApi arm: /api/claudium/native/confirm',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.full,
+    limiter: null,
+    requireOwnedExpected: null,
+  },
+  {
+    dispatcher: DISPATCH.mainApi,
+    method: 'POST',
+    path: '/api/claudium/giftcard/redeem',
+    handler: 'handleClaudiumApi arm: /api/claudium/giftcard/redeem',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.full,
+    limiter: null,
+    requireOwnedExpected: null,
+  },
+  {
+    dispatcher: DISPATCH.mainApi,
+    method: 'GET',
+    path: '/api/claudium/giftcard/status',
+    handler: 'handleClaudiumApi arm: /api/claudium/giftcard/status',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.full,
+    limiter: null,
+    requireOwnedExpected: null,
+  },
   {
     dispatcher: DISPATCH.mainApi,
     method: 'POST',

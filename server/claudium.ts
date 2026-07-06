@@ -15,16 +15,23 @@
 
 import type * as http from 'node:http';
 import {
+  type ClaudiumFulfillment,
+  type ClaudiumNativeRail,
   type ClaudiumRail,
   claudiumBalance,
   claudiumConfirmWoc,
+  claudiumGiftCardRedeem,
+  claudiumGiftCardStatus,
   claudiumHistory,
+  claudiumNativeConfirm,
+  claudiumNativeQuote,
   claudiumPrice,
   claudiumPurchase,
   claudiumServiceConfigured,
   claudiumSkus,
   claudiumSpend,
   claudiumStore,
+  parseNativeRail,
 } from './claudium_proxy';
 import { accountAndScopeForToken, moderationStatusForAccount } from './db';
 import { ctxAccountId } from './http/context';
@@ -64,6 +71,28 @@ function parseRail(value: unknown): ClaudiumRail | null {
 
 function parseSpendKind(value: unknown): 'cosmetic' | 'skin' | 'item' | null {
   return value === 'cosmetic' || value === 'skin' || value === 'item' ? value : null;
+}
+
+/**
+ * Build the native-quote fulfillment leg from the request body, resolving the
+ * caller's own accountId for a 'credit' fulfillment (the client never chooses the
+ * credited account). Returns null on an unrecognized kind so the route can reject.
+ */
+function parseFulfillment(value: unknown, account: string): ClaudiumFulfillment | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const f = value as Record<string, unknown>;
+  if (f.kind === 'credit') {
+    // The credited account is ALWAYS the authenticated caller, never a body field.
+    return { kind: 'credit', accountId: account };
+  }
+  if (f.kind === 'giftcard') {
+    const out: ClaudiumFulfillment = { kind: 'giftcard' };
+    if (typeof f.recipientEmail === 'string') out.recipientEmail = f.recipientEmail;
+    if (typeof f.message === 'string') out.message = f.message;
+    if (typeof f.deliverAtMs === 'number') out.deliverAtMs = f.deliverAtMs;
+    return out;
+  }
+  return null;
 }
 
 /** Whether the economy service env is configured (does not confirm reachability). */
@@ -159,6 +188,62 @@ export async function handleClaudiumApi(
       await claudiumSpend({ accountId: account, itemId, kind, idempotencyKey }),
     );
   }
+  if (req.method === 'POST' && path === '/api/claudium/native/quote') {
+    const body = (await readBody(req).catch(() => ({}))) as Record<string, unknown>;
+    const rail: ClaudiumNativeRail | null = parseNativeRail(body.rail);
+    const claudium = typeof body.claudium === 'number' ? body.claudium : Number.NaN;
+    const fulfillment = parseFulfillment(body.fulfillment, account);
+    if (!rail || !Number.isFinite(claudium) || claudium <= 0 || !fulfillment) {
+      return json(res, 200, {
+        reference: null,
+        rail: null,
+        claudium: null,
+        amountBase: null,
+        destination: null,
+        mint: null,
+        memo: null,
+        quoteExpiryMs: null,
+        split: null,
+        reason: 'invalid_request',
+      });
+    }
+    return json(res, 200, await claudiumNativeQuote({ rail, claudium, fulfillment }));
+  }
+  if (req.method === 'POST' && path === '/api/claudium/native/confirm') {
+    const body = (await readBody(req).catch(() => ({}))) as Record<string, unknown>;
+    const reference = typeof body.reference === 'string' ? body.reference : '';
+    const signature = typeof body.signature === 'string' ? body.signature : '';
+    if (reference === '' || signature === '') {
+      return json(res, 200, {
+        settled: false,
+        reason: 'invalid_request',
+        observedAmountBase: null,
+        fulfillment: null,
+      });
+    }
+    return json(res, 200, await claudiumNativeConfirm({ reference, signature }));
+  }
+  if (req.method === 'POST' && path === '/api/claudium/giftcard/redeem') {
+    const body = (await readBody(req).catch(() => ({}))) as Record<string, unknown>;
+    const code = typeof body.code === 'string' ? body.code : '';
+    if (code === '') {
+      return json(res, 200, {
+        credited: false,
+        balance: null,
+        denominationClaudium: null,
+        reason: 'invalid_request',
+      });
+    }
+    // The redeemed balance always credits the authenticated caller's account.
+    return json(res, 200, await claudiumGiftCardRedeem({ code, accountId: account }));
+  }
+  if (req.method === 'GET' && path === '/api/claudium/giftcard/status') {
+    const code = url.searchParams.get('code') ?? '';
+    if (code === '') {
+      return json(res, 200, { status: 'not_found', denominationClaudium: null });
+    }
+    return json(res, 200, await claudiumGiftCardStatus(code));
+  }
   // An in-family unknown subpath / method (the account is already resolved).
   return json(res, 404, { error: 'unknown endpoint' });
 }
@@ -224,6 +309,34 @@ export const routes: RouteDef[] = [
   {
     method: 'POST',
     path: '/api/claudium/spend',
+    surface: 'api',
+    middleware: [activeGuard],
+    handler: claudiumHandler,
+  },
+  {
+    method: 'POST',
+    path: '/api/claudium/native/quote',
+    surface: 'api',
+    middleware: [activeGuard],
+    handler: claudiumHandler,
+  },
+  {
+    method: 'POST',
+    path: '/api/claudium/native/confirm',
+    surface: 'api',
+    middleware: [activeGuard],
+    handler: claudiumHandler,
+  },
+  {
+    method: 'POST',
+    path: '/api/claudium/giftcard/redeem',
+    surface: 'api',
+    middleware: [activeGuard],
+    handler: claudiumHandler,
+  },
+  {
+    method: 'GET',
+    path: '/api/claudium/giftcard/status',
     surface: 'api',
     middleware: [activeGuard],
     handler: claudiumHandler,
