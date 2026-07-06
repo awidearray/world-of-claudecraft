@@ -82,6 +82,16 @@
        raw hex). Exact pre-existing value. */
     --color-quality-default: #fff;
 
+    /* Theme-adaptive surface overlays (used by the Claudium window and any panel
+       that needs an inset/sunken surface that reads on BOTH the dark presets and
+       the light Parchment preset). They are TRANSLUCENT on purpose: a faint white
+       lifts a surface off any panel colour, a faint black sinks a field well below
+       it, so the same token works on a dark OR a light panel without the theme
+       system having to recompute a per-preset opaque colour. Mirrors the repo-wide
+       #ffffffNN overlay convention, named so a painter carries no raw rgba. */
+    --color-surface-inset: rgba(255, 255, 255, 0.04);
+    --color-surface-well: rgba(0, 0, 0, 0.22);
+
     /* Empty paperdoll slot greys (char_window.ts uses these so the painter carries
        no raw hex): the muted "Empty" label and the dimmed placeholder-icon border.
        Exact pre-existing values. */

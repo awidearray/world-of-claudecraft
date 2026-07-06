@@ -1890,7 +1890,7 @@
     gap: 8px;
     padding: 8px 10px;
     border: 1px solid var(--color-border-default);
-    background: var(--color-bg-input);
+    background: var(--color-surface-inset);
     border-radius: var(--radius-sm);
   }
   .cl-balance-label {
@@ -1937,7 +1937,7 @@
     padding: 8px;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-input);
+    background: var(--color-surface-inset);
     color: var(--color-text-light);
     font-size: 13px;
     cursor: var(--cursor-pointer);
@@ -1979,7 +1979,7 @@
     padding: 8px 10px;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-input);
+    background: var(--color-surface-inset);
     color: var(--color-text-light);
     font-size: 13px;
     text-align: left;
@@ -2008,7 +2008,7 @@
     padding: 8px 10px;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-input);
+    background: var(--color-surface-inset);
   }
   .cl-item-name {
     color: var(--color-text-light);
@@ -2052,7 +2052,7 @@
     padding: 8px;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-input);
+    background: var(--color-surface-inset);
     color: var(--color-text-light);
     font-size: 13px;
     cursor: var(--cursor-pointer);
@@ -2076,7 +2076,7 @@
     padding: 12px;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-input);
+    background: var(--color-surface-inset);
   }
   .cl-pay-amount {
     margin: 0;
@@ -2096,7 +2096,7 @@
     padding: 8px 10px;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-dark);
+    background: var(--color-surface-well);
     color: var(--color-text-light);
     font-size: 12px;
     word-break: break-all;
@@ -2146,7 +2146,7 @@
     padding: 8px 10px;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm);
-    background: var(--color-bg-dark);
+    background: var(--color-surface-well);
     color: var(--color-text-light);
     font-size: 13px;
   }
