@@ -191,13 +191,23 @@ export async function tipConfirm(input: {
 
 // ---- bodyguard / job escrow -------------------------------------------------
 
-/** POST job/quote. Returns the escrow + exact amount + memo. ok:false when off. */
+/**
+ * POST job/quote. Registers the escrow with the service and returns the escrow
+ * destination + exact amount + memo. ok:false when off.
+ *
+ * The game derives the job PDA it will deposit to (from a numeric jobId, per the
+ * job_escrow seed rule) and passes it as `escrow: { jobIdNum, handle }`. The
+ * service re-derives the same PDA and rejects a mismatch, so both sides agree on
+ * ONE destination. Without the handle the service rejects an escrow-shaped
+ * request (missing_handle).
+ */
 export async function jobQuote(input: {
   employerAccountId: number;
   guardAccountId: number;
   role: 'bodyguard';
   amountBase: string;
   durationMs: number;
+  escrow: { jobIdNum: string; handle: string };
 }): Promise<JobQuoteResult> {
   const data = await callService<{
     jobId: string;

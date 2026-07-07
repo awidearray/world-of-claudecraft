@@ -858,6 +858,22 @@ export class GameServer {
     // un-verified and the reconcile sweep never prunes a possibly-funded job.
     const escrowOps: JobEscrowOps = {
       buildOpenTransaction: jobEscrow.buildOpenTransaction,
+      // Register the escrow with the service before the payer deposits, pinning
+      // the deposit destination to the job PDA the game derived. The service
+      // re-derives the same PDA and rejects a mismatch; a false result (service
+      // off, or handle rejected) means the job is not posted, so a deposit is
+      // never taken that the service could not verify.
+      registerEscrow: async (args) => {
+        const r = await playerEconomyProxy.jobQuote({
+          employerAccountId: args.employerAccountId,
+          guardAccountId: args.guardAccountId,
+          role: 'bodyguard',
+          amountBase: args.amountBase.toString(),
+          durationMs: args.durationMs,
+          escrow: args.escrow,
+        });
+        return r.ok && r.escrow === args.escrow.handle;
+      },
       verifyDeposit: async (args) => {
         const r = await playerEconomyProxy.jobConfirm({
           jobId: args.jobId.toString(),

@@ -65,6 +65,7 @@ describe('player-economy proxy: unconfigured (service OFF)', () => {
       role: 'bodyguard',
       amountBase: '1000000',
       durationMs: 600000,
+      escrow: { jobIdNum: '1720000000001', handle: 'So11111111111111111111111111111111111111112' },
     });
     expect(r.ok).toBe(false);
     expect(r.jobId).toBeNull();
@@ -132,6 +133,7 @@ describe('player-economy proxy: configured but unreachable', () => {
       role: 'bodyguard',
       amountBase: '1000000',
       durationMs: 600000,
+      escrow: { jobIdNum: '1720000000002', handle: 'So11111111111111111111111111111111111111112' },
     });
     expect(r.ok).toBe(false);
     expect(r.reason).toBe('unavailable');

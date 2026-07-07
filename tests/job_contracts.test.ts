@@ -54,8 +54,14 @@ class FakeEscrow implements JobEscrowOps {
   jobStateOk = true; // does the on-chain Job exist on our exact terms?
   exists = true; // does the on-chain job account still exist?
   failReleaseTimes = 0; // simulate transient RPC failures
+  registerResult = true; // does the economy service accept + agree on the handle?
+  registered: Array<{ jobIdNum: string; handle: string }> = [];
   async buildOpenTransaction(a: { jobId: bigint }) {
     return { txBase64: `TX_${a.jobId}`, jobPda: `PDA_${a.jobId}`, vault: `VAULT_${a.jobId}` };
+  }
+  async registerEscrow(a: { escrow: { jobIdNum: string; handle: string } }) {
+    this.registered.push(a.escrow);
+    return this.registerResult;
   }
   async verifyDeposit() {
     return this.verifyResult;
