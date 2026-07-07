@@ -69,6 +69,19 @@ export interface JobEscrowOps {
     mint: string;
     amountBase: bigint;
   }): Promise<{ txBase64: string; jobPda: string; vault: string }>;
+  // Register the escrow with the economy service so it verifies the deposit
+  // against the SAME destination the game will deposit to. The service re-derives
+  // the job PDA from jobIdNum and rejects a mismatch; a false return means the
+  // service is off or rejected the handle, so the job is not posted. The escrow
+  // handle is the job PDA the game derived (buildOpenTransaction's jobPda), and
+  // jobIdNum is the numeric jobId that seeds it.
+  registerEscrow(args: {
+    employerAccountId: number;
+    guardAccountId: number;
+    amountBase: bigint;
+    durationMs: number;
+    escrow: { jobIdNum: string; handle: string };
+  }): Promise<boolean>;
   verifyDeposit(args: {
     signature: string;
     jobId: bigint;
@@ -190,6 +203,25 @@ export class JobContractService {
       mint: input.mint,
       amountBase: input.amountBase,
     });
+    // Register the escrow with the economy service, pinning the deposit
+    // destination to the SAME job PDA this deposit funds. The service re-derives
+    // the PDA from the numeric jobId and rejects a mismatch; if it is off or
+    // rejects the handle, do not post the job (the deposit could never be
+    // verified). This is what makes the game and the service agree on ONE escrow
+    // destination: the game deposits to built.jobPda and the service verifies
+    // exactly that address.
+    const nowSec = Math.floor(Date.now() / 1000);
+    const durationMs = Math.max(1, (input.deadlineSec - nowSec) * 1000);
+    const registered = await this.escrow.registerEscrow({
+      employerAccountId: input.payer.accountId,
+      guardAccountId: input.helper.accountId,
+      amountBase: input.amountBase,
+      durationMs,
+      escrow: { jobIdNum: jobId.toString(), handle: built.jobPda },
+    });
+    if (!registered) {
+      throw new Error('job contracts are unavailable right now, try again shortly');
+    }
     const job: JobRecord = {
       jobId,
       realm: this.realm,

@@ -556,6 +556,10 @@ export async function sendTokens(
   currency: TransferCurrency,
   recipient: string,
   amount: string,
+  // Optional server-issued memo (#923 player-economy tips): when present it is
+  // attached to the tx so the economy service can match the settled transfer to
+  // exactly one tip quote. The client never invents it; it comes from tipQuote.
+  memo?: string,
 ): Promise<string> {
   const address = currentWallet().address;
   if (!address) throw new Error('connect a wallet first');
@@ -576,6 +580,17 @@ export async function sendTokens(
     // does); the sender funds the rent. Then the checked transfer.
     ixs.push(createAssociatedTokenAccountIdempotentInstruction(owner, toAta, to, mint));
     ixs.push(createTransferCheckedInstruction(ownerAta, mint, toAta, owner, base, info.decimals));
+  }
+  // Memo last: binds this transfer to the server-issued tip quote so the economy
+  // service can match it to exactly one tip intent.
+  if (memo) {
+    ixs.push(
+      new TransactionInstruction({
+        programId: MEMO_PROGRAM_ID,
+        keys: [],
+        data: Buffer.from(memo, 'utf8'),
+      }),
+    );
   }
 
   const conn = getConnection();

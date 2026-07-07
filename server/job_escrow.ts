@@ -5,6 +5,16 @@
 // a job's escrow to the helper (release) or back to the payer (refund); it can
 // never divert funds. Server-only IO module — no SQL, no client import.
 //
+// SPLIT (#923): the on-chain DEPOSIT VERIFICATION that used to live here
+// (verifyDeposit / verifyJobState / decodeJobAccount: read the finalized tx,
+// finality-gate it, decode the Anchor Job account, and match the server's terms)
+// has moved to the economy service. The service owns the job_escrow program
+// source and the settlement/verification path; the game verifies a deposit by
+// asking the service through server/player_economy_proxy.ts, never by reading
+// the chain here. What remains here is the non-custodial tx CONSTRUCTION (the
+// payer's deposit the player signs) and the settler-signed release/refund the
+// milestone engine drives, neither of which is verification.
+//
 // We hand-encode Anchor instructions (8-byte discriminator + borsh args) rather
 // than pull in @coral-xyz/anchor, mirroring how server/sns.ts composes raw
 // instructions and keeping the server's dependency set tiny.
@@ -24,7 +34,6 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { getFinalizedTx, ownerSpentBase, txSucceeded, usesToken2022 } from './solana_tx';
 import {
   JOB_ESCROW_PROGRAM_ID,
   JOB_ESCROW_SETTLER_SECRET,
@@ -181,86 +190,17 @@ export async function buildOpenTransaction(
   };
 }
 
-/**
- * Verify the payer's deposit actually landed in OUR escrow: the tx finalized and
- * succeeded, it isn't a Token-2022 look-alike, the payer spent at least the
- * reward, the job PDA exists under our program, and the vault holds the amount.
- */
-export async function verifyDeposit(args: {
-  signature: string;
-  jobId: bigint;
-  payer: string;
-  helper: string;
-  mint: string;
-  amountBase: bigint;
-}): Promise<boolean> {
-  const tx = await getFinalizedTx(args.signature);
-  if (!tx || !txSucceeded(tx)) return false;
-  if (usesToken2022(tx, args.mint)) return false;
-  if (ownerSpentBase(tx, args.payer, args.mint) < args.amountBase) return false;
-  return verifyJobState(args.jobId, args);
-}
-
+// Deposit verification moved to the economy service (#923). The game confirms a
+// deposit by asking the service (server/player_economy_proxy.ts -> the service's
+// finality-gated settlement engine), which owns the job_escrow program source
+// and the on-chain match/finality gate. There is no chain-reading verify path in
+// this module anymore; game.ts wires the JobEscrowOps verify seam to the proxy.
+// The shared JobTerms shape the orchestration passes to that seam:
 export interface JobTerms {
   payer: string;
   helper: string;
   mint: string;
   amountBase: bigint;
-}
-
-/**
- * Confirm the on-chain escrow for `jobId` exists under our program, was opened on
- * EXACTLY the server's terms, and the vault holds the reward — without needing a
- * deposit tx signature. Asserting the recorded settler (== ours), payer, helper,
- * mint, and amount is what stops a client from crafting their own open() at the
- * server-assigned PDA with a different settler (which would leave the helper
- * unpayable). Used by both confirmDeposit and the reconcile sweep.
- */
-export async function verifyJobState(jobId: bigint, terms: JobTerms): Promise<boolean> {
-  const job = jobPda(jobId);
-  const info = await connection().getAccountInfo(job, 'finalized');
-  if (!info || !info.owner.equals(PROGRAM_ID)) return false;
-
-  const decoded = decodeJobAccount(info.data);
-  if (!decoded) return false;
-  if (!decoded.settler.equals(settlerKeypair().publicKey)) return false;
-  if (!decoded.payer.equals(new PublicKey(terms.payer))) return false;
-  if (!decoded.helper.equals(new PublicKey(terms.helper))) return false;
-  if (!decoded.mint.equals(new PublicKey(terms.mint))) return false;
-  if (decoded.amount !== terms.amountBase) return false;
-
-  const vault = vaultFor(job, new PublicKey(terms.mint));
-  const bal = await connection()
-    .getTokenAccountBalance(vault, 'finalized')
-    .catch(() => null);
-  return !!bal && BigInt(bal.value.amount) >= terms.amountBase;
-}
-
-// Decode the Anchor `Job` account: 8-byte discriminator, then job_id u64, payer,
-// helper, mint pubkeys, amount u64, settler, vault pubkeys, bump u8 — matching
-// programs/job-escrow/src/lib.rs. Returns null if the buffer is too short.
-function decodeJobAccount(data: Buffer): {
-  payer: PublicKey;
-  helper: PublicKey;
-  mint: PublicKey;
-  amount: bigint;
-  settler: PublicKey;
-  vault: PublicKey;
-} | null {
-  if (data.length < 8 + 8 + 32 + 32 + 32 + 8 + 32 + 32 + 1) return null;
-  let o = 8 + 8; // skip discriminator + job_id
-  const payer = new PublicKey(data.subarray(o, o + 32));
-  o += 32;
-  const helper = new PublicKey(data.subarray(o, o + 32));
-  o += 32;
-  const mint = new PublicKey(data.subarray(o, o + 32));
-  o += 32;
-  const amount = data.readBigUInt64LE(o);
-  o += 8;
-  const settler = new PublicKey(data.subarray(o, o + 32));
-  o += 32;
-  const vault = new PublicKey(data.subarray(o, o + 32));
-  return { payer, helper, mint, amount, settler, vault };
 }
 
 async function signAndSendSettler(ixs: TransactionInstruction[]): Promise<string> {

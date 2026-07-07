@@ -183,6 +183,7 @@ import { resolveReportTarget } from './report_target';
 import { handleSitePresenceHeartbeat } from './site_presence';
 import { adminRolesForAccount } from './staff_db';
 import { cacheControlFor, etagFor, isNotModified } from './static_cache';
+import { handleTipConfirm, handleTipQuote } from './tips_api';
 import { passesTurnstile } from './turnstile';
 import {
   MAX_ASSET_BYTES,
@@ -1126,6 +1127,18 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       const q = new URL(req.url ?? '/', 'http://localhost').searchParams.get('q') ?? '';
       const results = q.trim().length >= 1 ? await searchCharacters(q, 8) : [];
       return json(res, 200, { results });
+    }
+    // #923 player-economy TIPS: BFF pass-through to the economy service. The
+    // game server holds no tip money logic; the service quotes + verifies.
+    if (req.method === 'POST' && url === '/api/player-economy/tip/quote') {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      return handleTipQuote(req, res, accountId);
+    }
+    if (req.method === 'POST' && url === '/api/player-economy/tip/confirm') {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      return handleTipConfirm(req, res, accountId);
     }
     if (req.method === 'POST' && url === '/api/reports') {
       const accountId = await bearerActiveAccount(req, res);

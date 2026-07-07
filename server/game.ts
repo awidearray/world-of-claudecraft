@@ -103,6 +103,7 @@ import {
   ModerationService,
 } from './moderation_service';
 import { consumeMsgToken, createMsgRateBucket, type MsgRateBucketState } from './msg_rate_limit';
+import * as playerEconomyProxy from './player_economy_proxy';
 import { nextRaidResetMs } from './raid_reset';
 import { REALM, REALM_PUBLIC_ORIGIN, REALM_RESET_TIME_ZONE } from './realm';
 import { createSerialWriter } from './serial_writer';
@@ -847,10 +848,43 @@ export class GameServer {
       raidResetMs: (nowMs) => nextRaidResetMs(nowMs, REALM_RESET_TIME_ZONE),
     });
     this.social = new SocialService(this.socialDb, this.socialTransport());
+    // #923 split: deposit VERIFICATION is the economy service's job. The game
+    // builds the payer's deposit tx and drives the settler-signed release/refund
+    // (settler key stays server-side), but it verifies the on-chain deposit by
+    // asking the service through the player-economy proxy, never by reading the
+    // chain itself. verifyDeposit -> the service confirm (finality-gated match);
+    // verifyJobState -> the service's mirrored funded status. Both fail closed
+    // (return false) when the service is off, so a deposit is never trusted
+    // un-verified and the reconcile sweep never prunes a possibly-funded job.
     const escrowOps: JobEscrowOps = {
       buildOpenTransaction: jobEscrow.buildOpenTransaction,
-      verifyDeposit: jobEscrow.verifyDeposit,
-      verifyJobState: jobEscrow.verifyJobState,
+      // Register the escrow with the service before the payer deposits, pinning
+      // the deposit destination to the job PDA the game derived. The service
+      // re-derives the same PDA and rejects a mismatch; a false result (service
+      // off, or handle rejected) means the job is not posted, so a deposit is
+      // never taken that the service could not verify.
+      registerEscrow: async (args) => {
+        const r = await playerEconomyProxy.jobQuote({
+          employerAccountId: args.employerAccountId,
+          guardAccountId: args.guardAccountId,
+          role: 'bodyguard',
+          amountBase: args.amountBase.toString(),
+          durationMs: args.durationMs,
+          escrow: args.escrow,
+        });
+        return r.ok && r.escrow === args.escrow.handle;
+      },
+      verifyDeposit: async (args) => {
+        const r = await playerEconomyProxy.jobConfirm({
+          jobId: args.jobId.toString(),
+          signature: args.signature,
+        });
+        return r.funded;
+      },
+      verifyJobState: async (jobId) => {
+        const r = await playerEconomyProxy.jobStatus(jobId.toString());
+        return r.status === 'funded' || r.status === 'active';
+      },
       releaseJob: jobEscrow.releaseJob,
       refundJob: jobEscrow.refundJob,
       jobAccountExists: jobEscrow.jobAccountExists,

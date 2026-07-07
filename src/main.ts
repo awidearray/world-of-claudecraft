@@ -6722,22 +6722,78 @@ function openWalletPanel(): void {
     updateSendButton();
   };
 
+  // #923 split: the client computes NO tip money or verification. It asks the
+  // economy service (through the game server) for a quote that names the EXACT
+  // amount, destination, and memo; sends precisely that transfer with the memo
+  // attached; then confirms so the service verifies it finalized on-chain. The
+  // amount the sender types is only converted to base units to request the quote;
+  // the settled figures come from the service.
   const doSend = async (): Promise<void> => {
     if (sending || !connectedAddress || !resolved) return;
+    const online = activeOnline;
+    if (!online || !api.token) {
+      feedbackBox.className = 'wp-feedback bad';
+      feedbackBox.textContent = t('walletPanel.loginToSend');
+      return;
+    }
     const amount = amountInput.value.trim();
+    let amountBase: string;
+    try {
+      amountBase = parseAmountToBase(amount, CURRENCY_DECIMALS[currency]).toString();
+    } catch (err: any) {
+      feedbackBox.className = 'wp-feedback bad';
+      feedbackBox.textContent = err?.message
+        ? t('walletPanel.sendFailedWith', { message: err.message })
+        : t('walletPanel.sendFailed');
+      return;
+    }
     sending = true;
     updateSendButton();
     feedbackBox.className = 'wp-feedback';
     feedbackBox.textContent = t('walletPanel.approveTransfer');
     try {
+      // 1) Quote: the service pins the amount, destination wallet, and memo.
+      const quote = await api.tipQuote({
+        characterId: online.characterId,
+        recipientName: recipientInput.value.trim(),
+        amountBase,
+      });
+      if (
+        !quote.ok ||
+        !quote.memo ||
+        !quote.destination ||
+        !quote.amountBase ||
+        quote.toAccountId === undefined
+      ) {
+        feedbackBox.className = 'wp-feedback bad';
+        feedbackBox.textContent = t('walletPanel.sendFailed');
+        return;
+      }
+      // 2) Send exactly the transfer the quote names, with its memo. The wallet
+      // signs; it does not decide the amount or destination.
       const wallet = await loadWallet();
-      const signature = await wallet.sendTokens(currency, resolved.pubkey, amount);
+      const signature = await wallet.sendTokens(currency, quote.destination, amount, quote.memo);
+      // 3) Confirm: the service verifies the settled transfer on-chain and records
+      // it. Whether it "settled" is the service's decision, not the client's.
+      const confirm = await api.tipConfirm({
+        toAccountId: quote.toAccountId,
+        amountBase: quote.amountBase,
+        signature,
+        memo: quote.memo,
+      });
       const label = WALLET_CURRENCIES.find((c) => c.key === currency)!.label;
-      feedbackBox.className = 'wp-feedback ok';
-      feedbackBox.innerHTML =
-        `${escapeHtml(t('walletPanel.sent', { amount, currency: label, name: resolved.name }))} ` +
-        `<a href="${escapeHtml(solscanTxUrl(signature, import.meta.env.VITE_SOLANA_RPC_URL))}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('walletPanel.viewTransaction'))} ↗</a>`;
-      amountInput.value = '';
+      if (confirm.settled) {
+        feedbackBox.className = 'wp-feedback ok';
+        feedbackBox.innerHTML =
+          `${escapeHtml(t('walletPanel.sent', { amount, currency: label, name: resolved.name }))} ` +
+          `<a href="${escapeHtml(solscanTxUrl(signature, import.meta.env.VITE_SOLANA_RPC_URL))}" target="_blank" rel="noopener noreferrer">${escapeHtml(t('walletPanel.viewTransaction'))} ↗</a>`;
+        amountInput.value = '';
+      } else {
+        // The transfer may still finalize (a retryable reason); surface it as sent
+        // with a pending note rather than a hard failure so the player can retry.
+        feedbackBox.className = 'wp-feedback bad';
+        feedbackBox.textContent = t('walletPanel.sendFailed');
+      }
       if (connectedAddress) {
         void refreshWocBalance(connectedAddress);
         void loadBalances(connectedAddress);
