@@ -154,6 +154,18 @@ export const hudChromeStrings = {
     reviewLabel: 'Review',
     reviewLine: 'You pay {pay} {rail}, you receive {claudium} Claudium ({usd}).',
     reviewLineCard: 'You pay {usd}, you receive {claudium} Claudium.',
+    // The discount row shown next to the split when the service reports a discount.
+    // {percent} is the preformatted percentage figure the service sent (bps / 100).
+    discountLabel: 'Discount',
+    discountSummary: '{percent}% off the effective peg price',
+    // Original vs credited quantity: the buyer pays the full amount and receives more
+    // Claudium. Plain arrows, never an em or en dash.
+    discountBonus: '{base} to {credited} Claudium (+{bonus})',
+    // The $WOC incentive line: surfaced even at the floor so the player sees the perk.
+    // Hyphen only, never a dash.
+    wocIncentive: 'Pay with $WOC - always 15%+ off',
+    // Appended when a limited-time promo is folded into the $WOC discount.
+    wocPromoNote: 'Includes a limited-time promo',
     expiresIn: 'Quote expires in {time}',
     quoteExpired: 'This quote expired. Get a new one.',
     copyAddress: 'Copy address',

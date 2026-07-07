@@ -78,9 +78,28 @@ export interface ClaudiumRailOption {
 }
 
 /**
+ * The discount block the service now returns on every native quote. Every value is
+ * service-computed: the view NEVER derives a percentage, a bonus, or a credited
+ * amount, it only carries these through and formats them. "X% off the effective peg
+ * price": the buyer pays the full amount (amountBase, unchanged) and receives MORE
+ * Claudium (claudiumCredited >= baseClaudium). floorBps is the always-on $WOC floor
+ * (1500 for the woc rail, else 0); promoBps is the admin/limited-time part.
+ */
+export interface ClaudiumNativeDiscountInput {
+  rail: ClaudiumNativeRailId;
+  baseClaudium: number;
+  discountBps: number;
+  claudiumCredited: number;
+  bonusClaudium: number;
+  breakdown: { floorBps: number; promoBps: number };
+  effectiveCentsPer100: number;
+}
+
+/**
  * A native-rail quote as the service returns it. The view projects this into a
  * panel; it never derives amountBase, the split, or the expiry. reason is set when
  * the rail is disabled or the oracle is down (the panel then renders disabled).
+ * discount is the service-computed discount block (null when the service omits it).
  */
 export interface ClaudiumNativeQuoteInput {
   reference: string | null;
@@ -92,6 +111,7 @@ export interface ClaudiumNativeQuoteInput {
   memo: string | null;
   quoteExpiryMs: number | null;
   split: { burnBase: string; treasuryBase: string; treasury: string } | null;
+  discount?: ClaudiumNativeDiscountInput | null;
   reason: 'oracle_unavailable' | 'rail_disabled' | string | null;
 }
 
@@ -127,6 +147,24 @@ export interface ClaudiumQuotePanel {
     treasuryBase: string;
     treasuryDisplay: string;
     treasury: string;
+  } | null;
+  /**
+   * The service-computed discount projection, present only when the quote carried a
+   * discount with discountBps > 0 (a zero discount shows no discount row). Every
+   * value is passed through verbatim from the service; the view derives nothing.
+   * percent is discountBps / 100 (a number the consumer formats), the only arithmetic
+   * here and a pure unit rescale of a service integer, never a price computation.
+   * floorBps > 0 means the always-on $WOC floor applies; promoBps > 0 means a
+   * limited-time promo is folded in.
+   */
+  discount: {
+    discountBps: number;
+    percent: number;
+    baseClaudium: number;
+    claudiumCredited: number;
+    bonusClaudium: number;
+    floorBps: number;
+    promoBps: number;
   } | null;
 }
 
@@ -300,6 +338,7 @@ export function buildClaudiumQuotePanel(
     countdownMs: 0,
     expired: true,
     split: null,
+    discount: null,
   } as const;
   if (!quote || quote.reason) {
     return { ...base, disabled: true, reason: quote?.reason ?? 'unavailable' };
@@ -323,6 +362,22 @@ export function buildClaudiumQuotePanel(
           treasury: quote.split.treasury,
         }
       : null;
+  // The discount row is shown only when the service reported an actual discount
+  // (discountBps > 0); a zero discount projects to null so no row renders. percent is
+  // the sole arithmetic and is a pure unit rescale (bps / 100) of a service integer.
+  const d = quote.discount;
+  const discount =
+    d && d.discountBps > 0
+      ? {
+          discountBps: d.discountBps,
+          percent: d.discountBps / 100,
+          baseClaudium: d.baseClaudium,
+          claudiumCredited: d.claudiumCredited,
+          bonusClaudium: d.bonusClaudium,
+          floorBps: d.breakdown.floorBps,
+          promoBps: d.breakdown.promoBps,
+        }
+      : null;
   return {
     rail,
     disabled: false,
@@ -338,6 +393,7 @@ export function buildClaudiumQuotePanel(
     countdownMs,
     expired: countdownMs <= 0,
     split,
+    discount,
   };
 }
 

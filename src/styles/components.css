@@ -2101,6 +2101,16 @@
     font-size: 12px;
     word-break: break-all;
   }
+  .cl-discount-value {
+    border-color: var(--color-text-success);
+    color: var(--color-text-success);
+  }
+  .cl-discount-incentive {
+    margin: 4px 0 0;
+    color: var(--color-text-success);
+    font-size: 11px;
+    line-height: 1.4;
+  }
   .cl-field-copy {
     display: flex;
     align-items: stretch;

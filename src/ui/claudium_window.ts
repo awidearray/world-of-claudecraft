@@ -21,6 +21,22 @@
 // are CSS tokens (class names), no literal hex/px in this module.
 
 import {
+  buildGiftQuoteInput,
+  buildGiftReview,
+  CLAUDIUM_GIFT_DELIVERIES,
+  CLAUDIUM_GIFT_OCCASIONS,
+  type ClaudiumGiftDelivery,
+  type ClaudiumGiftDraft,
+  type ClaudiumGiftOccasion,
+  type ClaudiumGiftQuoteInput,
+  type ClaudiumGiftReview,
+  classifyGiftError,
+  emptyGiftDraft,
+  giftDraftReadyToReview,
+  giftRedeemUrl,
+  isValidGiftEmail,
+} from './claudium_gift_view';
+import {
   buildClaudiumQuotePanel,
   buildClaudiumView,
   type ClaudiumNativeQuoteInput,
@@ -35,10 +51,13 @@ import {
   claudiumRailOptions,
   claudiumToUsd,
   formatQuoteCountdown,
+  NATIVE_RAIL_DECIMALS,
+  scaleBaseUnits,
 } from './claudium_view';
 import { markDialogRoot } from './dialog_root';
 import { esc } from './esc';
 import { formatNumber, type TranslationKey, t } from './i18n';
+import { qrToSvg } from './qr';
 import { svgIcon } from './ui_icons';
 
 /** The buy rails: the legacy stripe CARD rail plus the three native Solana rails. */
@@ -60,29 +79,6 @@ export type ClaudiumQuotePayload = ClaudiumNativeQuoteInput & {
 
 /** The redeem result the deps return (mirrors the service SDK shape). */
 export type ClaudiumRedeemPayload = ClaudiumRedeemResult;
-
-/** The five gift-card occasion templates the picker offers. */
-export type ClaudiumGiftOccasion = 'birthday' | 'holiday' | 'congrats' | 'thankyou' | 'generic';
-
-/** How the buyer wants the issued card delivered once the payment settles. */
-export type ClaudiumGiftDelivery = 'email' | 'link' | 'reveal';
-
-/**
- * The gift-card purchase inputs the window collects and hands to the quote hook. All
- * money values (amount, split) come back on the quote; the window computes nothing.
- * recipientEmail is required only for email delivery; toSelf is a UI convenience the
- * window resolves to the buyer's own email (or reveal) before quoting.
- */
-export interface ClaudiumGiftQuoteInput {
-  claudium: number;
-  rail: ClaudiumNativeRailId;
-  occasion: ClaudiumGiftOccasion;
-  delivery: ClaudiumGiftDelivery;
-  toSelf: boolean;
-  recipientEmail?: string;
-  message?: string;
-  deliverAtMs?: number;
-}
 
 /**
  * The gift-card confirm result: settled + the issued redeem code + cardId (present
@@ -173,11 +169,20 @@ const EMPTY_SNAPSHOT: ClaudiumSnapshot = {
   storeItems: [],
 };
 
-type Tab = 'buy' | 'redeem';
+type Tab = 'buy' | 'gift' | 'history' | 'redeem';
+
+/** The gift wizard phase: collecting the draft, quoting, paying, or done. */
+type GiftPhase = 'compose' | 'review' | 'pending' | 'success' | 'error';
 
 function isNativeRail(rail: ClaudiumRailId): rail is ClaudiumNativeRailId {
   return rail === 'sol' || rail === 'usdc' || rail === 'woc';
 }
+
+/** The play origin the issued gift redeem link points at (window builds the QR of it). */
+const GIFT_REDEEM_ORIGIN = 'https://play.worldofclaudecraft.com';
+
+/** How many ledger rows one history page pulls (server caps; UUID cursor paginates). */
+const HISTORY_PAGE_SIZE = 20;
 
 export class ClaudiumWindow {
   private openerFocus: HTMLElement | null = null;
@@ -196,6 +201,21 @@ export class ClaudiumWindow {
   private redeemResult: ClaudiumRedeemPayload | null = null;
   private countdownTimer: ReturnType<typeof setInterval> | null = null;
   private lastView: ClaudiumView | null = null;
+  // ---- Gift wizard state ----
+  private giftPhase: GiftPhase = 'compose';
+  private giftDraft: ClaudiumGiftDraft = emptyGiftDraft();
+  // The in-flight gift quote (native rail) + the seq that guards a stale resolve.
+  private giftQuote: ClaudiumQuotePayload | null = null;
+  private giftQuoteSeq = 0;
+  private giftConfirm: ClaudiumGiftConfirmPayload | null = null;
+  private giftError: string | null = null;
+  // ---- History state ----
+  private historyEntries: ClaudiumHistoryEntry[] = [];
+  private historyCursor: string | null = null;
+  private historyLoading = false;
+  private historyLoaded = false;
+  private historyError = false;
+  private historyFilter: ClaudiumHistoryReason | 'all' = 'all';
 
   constructor(private readonly deps: ClaudiumWindowDeps) {}
 
@@ -269,7 +289,7 @@ export class ClaudiumWindow {
     const panel = view.disabled
       ? ''
       : `<div id="cl-tabpanel" role="tabpanel" aria-labelledby="cl-tab-${this.tab}">` +
-        (this.tab === 'buy' ? this.buyTabHtml(view) : this.redeemTabHtml(view)) +
+        this.tabPanelHtml(view) +
         `</div>`;
     body.innerHTML =
       this.balanceHtml(view) +
@@ -318,9 +338,24 @@ export class ClaudiumWindow {
     return (
       `<div class="cl-tabs" role="tablist" aria-label="${esc(t('hudChrome.claudium.tabsLabel'))}">` +
       tab('buy', t('hudChrome.claudium.tabBuy')) +
+      tab('gift', t('hudChrome.claudium.tabGift')) +
+      tab('history', t('hudChrome.claudium.tabHistory')) +
       tab('redeem', t('hudChrome.claudium.tabRedeem')) +
       `</div>`
     );
+  }
+
+  private tabPanelHtml(view: ClaudiumView): string {
+    switch (this.tab) {
+      case 'gift':
+        return this.giftTabHtml();
+      case 'history':
+        return this.historyTabHtml();
+      case 'redeem':
+        return this.redeemTabHtml(view);
+      default:
+        return this.buyTabHtml(view);
+    }
   }
 
   // ---- Buy tab ----------------------------------------------------------------
@@ -481,6 +516,10 @@ export class ClaudiumWindow {
             }),
           )
         : '';
+    // The service-computed discount: "N% off", with the base-to-credited bonus. Shown
+    // only when the service reported an actual discount (the view already null-guards
+    // discountBps > 0). Every number here is service-owned; the window only formats it.
+    const discountHtml = panel.discount ? this.discountHtml(panel.discount) : '';
     // D6: a calm pending state while the confirm is in flight; a reassuring retry
     // state on not_finalized; plain-language success/failure otherwise.
     const confirmDone = this.confirmStatusHtml();
@@ -488,6 +527,7 @@ export class ClaudiumWindow {
       `<div class="cl-pay">` +
       `<p class="cl-pay-amount"><strong>${esc(sendLine)}</strong></p>` +
       reviewHtml +
+      discountHtml +
       this.fieldWithCopy('hudChrome.claudium.addressLabel', panel.destination ?? '') +
       this.field('hudChrome.claudium.memoLabel', panel.memo ?? '') +
       splitHtml +
@@ -501,6 +541,38 @@ export class ClaudiumWindow {
       `<button type="button" class="cl-item-buy" data-quote-confirm${this.confirmPending ? ' disabled' : ''}>${esc(t('hudChrome.claudium.confirmButton'))}</button>` +
       `</div>` +
       confirmDone +
+      `</div>`
+    );
+  }
+
+  /**
+   * The discount block: a "N% off" summary, the base-to-credited bonus line, and (for
+   * the $WOC rail floor) an always-on incentive note. Every value is service-computed
+   * and passed through by the view; this only formats the numbers via formatNumber and
+   * never derives a discount. Plain arrows/words only, never an em or en dash.
+   */
+  private discountHtml(discount: NonNullable<ClaudiumQuotePanel['discount']>): string {
+    const percent = formatNumber(discount.percent, { maximumFractionDigits: 2 });
+    const summary = t('hudChrome.claudium.discountSummary', { percent });
+    const bonus = t('hudChrome.claudium.discountBonus', {
+      base: formatNumber(discount.baseClaudium, { maximumFractionDigits: 0 }),
+      credited: formatNumber(discount.claudiumCredited, { maximumFractionDigits: 0 }),
+      bonus: formatNumber(discount.bonusClaudium, { maximumFractionDigits: 0 }),
+    });
+    const value = `${summary} (${bonus})`;
+    // The $WOC floor incentive: surfaced whenever the always-on floor applies, with a
+    // limited-time promo note appended when the service folded a promo into the total.
+    const incentive =
+      discount.floorBps > 0
+        ? `<p class="cl-discount-incentive" role="note">${esc(t('hudChrome.claudium.wocIncentive'))}` +
+          (discount.promoBps > 0 ? ` ${esc(t('hudChrome.claudium.wocPromoNote'))}` : '') +
+          `</p>`
+        : '';
+    return (
+      `<div class="cl-field cl-discount">` +
+      `<span class="cl-field-label">${esc(t('hudChrome.claudium.discountLabel'))}</span>` +
+      `<code class="cl-field-value cl-discount-value">${esc(value)}</code>` +
+      incentive +
       `</div>`
     );
   }
@@ -630,6 +702,396 @@ export class ClaudiumWindow {
     return `<section class="cl-section"><h3>${esc(t('hudChrome.claudium.storeTitle'))}</h3><div class="cl-item-list">${rows}</div></section>`;
   }
 
+  // ---- Gift-card tab ----------------------------------------------------------
+
+  private occasionLabel(o: ClaudiumGiftOccasion): string {
+    switch (o) {
+      case 'birthday':
+        return t('hudChrome.claudium.occasionBirthday');
+      case 'holiday':
+        return t('hudChrome.claudium.occasionHoliday');
+      case 'congrats':
+        return t('hudChrome.claudium.occasionCongrats');
+      case 'thankyou':
+        return t('hudChrome.claudium.occasionThankyou');
+      default:
+        return t('hudChrome.claudium.occasionGeneric');
+    }
+  }
+
+  private deliveryLabel(d: ClaudiumGiftDelivery): string {
+    return d === 'email'
+      ? t('hudChrome.claudium.deliveryEmail')
+      : d === 'link'
+        ? t('hudChrome.claudium.deliveryLink')
+        : t('hudChrome.claudium.deliveryReveal');
+  }
+
+  private giftTabHtml(): string {
+    const title = `<section class="cl-section"><h3>${esc(t('hudChrome.claudium.giftTitle'))}</h3>`;
+    switch (this.giftPhase) {
+      case 'review':
+        return title + this.giftReviewHtml() + this.giftTermsHtml() + `</section>`;
+      case 'pending':
+        return (
+          title +
+          `<p class="cl-rail-note cl-pending" role="status">${esc(t('hudChrome.claudium.giftPending'))}</p>` +
+          `</section>`
+        );
+      case 'success':
+        return title + this.giftSuccessHtml() + `</section>`;
+      case 'error':
+        return title + this.giftErrorHtml() + this.giftComposeHtml() + `</section>`;
+      default:
+        return title + this.giftComposeHtml() + this.giftTermsHtml() + `</section>`;
+    }
+  }
+
+  private giftComposeHtml(): string {
+    const d = this.giftDraft;
+    const rows = (this.lastView?.buyRows ?? [])
+      .map((row) => {
+        const selected = d.claudium === row.claudium;
+        const claudium = formatNumber(row.claudium, { maximumFractionDigits: 0 });
+        return (
+          `<button type="button" class="cl-sku" data-gift-denomination="${esc(String(row.claudium))}" ` +
+          `aria-pressed="${selected ? 'true' : 'false'}">` +
+          `<span class="cl-sku-claudium">${esc(t('hudChrome.claudium.storeCost', { amount: claudium }))}</span>` +
+          `<span class="cl-sku-usd">${esc(this.usdLabel(row.usd))}</span>` +
+          `</button>`
+        );
+      })
+      .join('');
+    const denomination =
+      (this.lastView?.buyRows.length ?? 0) > 0
+        ? `<div class="cl-amount-label">${esc(t('hudChrome.claudium.giftDenominationLabel'))}</div><div class="cl-sku-list">${rows}</div>`
+        : `<p class="cl-empty" role="status">${esc(t('hudChrome.claudium.buyUnavailable'))}</p>`;
+
+    // Rail picker: the three native rails (the card rail settles a different way and
+    // is out of scope for the gift-issue flow, which reuses the native quote path).
+    const railBtn = (id: ClaudiumNativeRailId, label: string): string =>
+      `<button type="button" class="cl-rail" data-gift-rail="${id}" ` +
+      `aria-pressed="${d.rail === id ? 'true' : 'false'}">${esc(label)}</button>`;
+    const rails =
+      `<div class="cl-amount-label">${esc(t('hudChrome.claudium.railLabel'))}</div>` +
+      `<div class="cl-rails" role="group" aria-label="${esc(t('hudChrome.claudium.railLabel'))}">` +
+      railBtn('sol', t('hudChrome.claudium.railSol')) +
+      railBtn('usdc', t('hudChrome.claudium.railUsdc')) +
+      railBtn('woc', t('hudChrome.claudium.railWoc')) +
+      `</div>`;
+
+    // Recipient: self or other; other + email delivery needs a valid email.
+    const recipient =
+      `<div class="cl-amount-label">${esc(t('hudChrome.claudium.giftRecipientLabel'))}</div>` +
+      `<div class="cl-rails" role="group" aria-label="${esc(t('hudChrome.claudium.giftRecipientLabel'))}">` +
+      `<button type="button" class="cl-rail" data-gift-toself="0" aria-pressed="${d.toSelf ? 'false' : 'true'}">${esc(t('hudChrome.claudium.giftToOther'))}</button>` +
+      `<button type="button" class="cl-rail" data-gift-toself="1" aria-pressed="${d.toSelf ? 'true' : 'false'}">${esc(t('hudChrome.claudium.giftToSelf'))}</button>` +
+      `</div>`;
+    const emailInvalid =
+      !d.toSelf &&
+      d.delivery === 'email' &&
+      d.recipientEmail.trim() !== '' &&
+      !isValidGiftEmail(d.recipientEmail);
+    const emailField =
+      !d.toSelf && d.delivery === 'email'
+        ? `<label class="cl-field-label" for="cl-gift-email">${esc(t('hudChrome.claudium.giftEmailLabel'))}</label>` +
+          `<input id="cl-gift-email" class="cl-sig-input" type="email" autocomplete="off" spellcheck="false" ` +
+          `inputmode="email" aria-invalid="${emailInvalid ? 'true' : 'false'}" ` +
+          `value="${esc(d.recipientEmail)}" placeholder="${esc(t('hudChrome.claudium.giftEmailPlaceholder'))}" />` +
+          (emailInvalid
+            ? `<p class="cl-item-short" role="status">${esc(t('hudChrome.claudium.giftEmailInvalid'))}</p>`
+            : '')
+        : '';
+
+    // Occasion picker (five templates).
+    const occ = CLAUDIUM_GIFT_OCCASIONS.map(
+      (o) =>
+        `<button type="button" class="cl-rail" data-gift-occasion="${o}" aria-pressed="${d.occasion === o ? 'true' : 'false'}">${esc(this.occasionLabel(o))}</button>`,
+    ).join('');
+    const occasion =
+      `<div class="cl-amount-label">${esc(t('hudChrome.claudium.giftOccasionLabel'))}</div>` +
+      `<div class="cl-rails cl-rails-wrap" role="group" aria-label="${esc(t('hudChrome.claudium.giftOccasionLabel'))}">${occ}</div>`;
+
+    // Personal message.
+    const message =
+      `<label class="cl-field-label" for="cl-gift-message">${esc(t('hudChrome.claudium.giftMessageLabel'))}</label>` +
+      `<textarea id="cl-gift-message" class="cl-sig-input cl-gift-message" rows="2" ` +
+      `placeholder="${esc(t('hudChrome.claudium.giftMessagePlaceholder'))}">${esc(d.message)}</textarea>`;
+
+    // Delivery method.
+    const del = CLAUDIUM_GIFT_DELIVERIES.map(
+      (m) =>
+        `<button type="button" class="cl-rail" data-gift-delivery="${m}" aria-pressed="${d.delivery === m ? 'true' : 'false'}">${esc(this.deliveryLabel(m))}</button>`,
+    ).join('');
+    const delivery =
+      `<div class="cl-amount-label">${esc(t('hudChrome.claudium.giftDeliveryLabel'))}</div>` +
+      `<div class="cl-rails cl-rails-wrap" role="group" aria-label="${esc(t('hudChrome.claudium.giftDeliveryLabel'))}">${del}</div>`;
+
+    // Optional scheduled delivery date.
+    const scheduleVal =
+      d.deliverAtMs !== null ? new Date(d.deliverAtMs).toISOString().slice(0, 10) : '';
+    const schedule =
+      `<label class="cl-field-label" for="cl-gift-date">${esc(t('hudChrome.claudium.giftScheduleLabel'))}</label>` +
+      `<input id="cl-gift-date" class="cl-sig-input" type="date" value="${esc(scheduleVal)}" />`;
+
+    const ready = giftDraftReadyToReview(d);
+    const actions =
+      `<div class="cl-pay-actions">` +
+      `<button type="button" class="cl-item-buy" data-gift-review${ready ? '' : ' disabled'}>${esc(t('hudChrome.claudium.giftReviewButton'))}</button>` +
+      `</div>`;
+
+    return (
+      denomination +
+      rails +
+      recipient +
+      emailField +
+      occasion +
+      message +
+      delivery +
+      schedule +
+      actions
+    );
+  }
+
+  private giftReviewHtml(): string {
+    const review = this.currentGiftReview();
+    if (!review) {
+      return `<p class="cl-rail-note" role="status">${esc(t('hudChrome.claudium.buyUnavailable'))}</p>`;
+    }
+    const railName = this.railName(review.rail === 'stripe' ? 'sol' : review.rail);
+    const claudiumText = formatNumber(review.claudium, { maximumFractionDigits: 0 });
+    const usd = t('hudChrome.claudium.usdAmount', {
+      usd: formatNumber(review.usd, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    });
+    const line = t('hudChrome.claudium.reviewLine', {
+      pay: review.payAmount,
+      rail: railName,
+      claudium: claudiumText,
+      usd,
+    });
+    const recipientLine = review.toSelf
+      ? t('hudChrome.claudium.giftReviewSelf')
+      : review.recipientEmail
+        ? t('hudChrome.claudium.giftReviewEmail', { email: review.recipientEmail })
+        : t('hudChrome.claudium.giftReviewShared');
+    const scheduled = review.scheduled
+      ? `<p class="cl-pay-note">${esc(t('hudChrome.claudium.giftReviewScheduled'))}</p>`
+      : '';
+    const destination = this.giftQuote?.destination ?? '';
+    const memo = this.giftQuote?.memo ?? '';
+    return (
+      `<div class="cl-pay">` +
+      this.field('hudChrome.claudium.reviewLabel', line) +
+      this.field('hudChrome.claudium.giftOccasionLabel', this.occasionLabel(review.occasion)) +
+      this.field('hudChrome.claudium.giftRecipientLabel', recipientLine) +
+      this.field('hudChrome.claudium.giftDeliveryLabel', this.deliveryLabel(review.delivery)) +
+      scheduled +
+      this.fieldWithCopy('hudChrome.claudium.addressLabel', destination) +
+      this.field('hudChrome.claudium.memoLabel', memo) +
+      `<p class="cl-pay-note">${esc(t('hudChrome.claudium.payNote'))}</p>` +
+      `<label class="cl-field-label" for="cl-gift-sig">${esc(t('hudChrome.claudium.signatureLabel'))}</label>` +
+      `<input id="cl-gift-sig" class="cl-sig-input" type="text" autocomplete="off" spellcheck="false" ` +
+      `placeholder="${esc(t('hudChrome.claudium.signaturePlaceholder'))}" />` +
+      `<div class="cl-pay-actions">` +
+      `<button type="button" class="cl-rail" data-gift-back>${esc(t('hudChrome.claudium.back'))}</button>` +
+      `<button type="button" class="cl-item-buy" data-gift-confirm>${esc(t('hudChrome.claudium.giftConfirmButton'))}</button>` +
+      `</div>` +
+      `</div>`
+    );
+  }
+
+  /** Project the current gift draft + quote into the review model at the current time. */
+  private currentGiftReview(): ClaudiumGiftReview | null {
+    if (!this.giftQuote || this.giftDraft.rail === null || this.giftDraft.rail === 'stripe') {
+      return null;
+    }
+    const rail = this.giftDraft.rail;
+    const decimals =
+      rail === 'sol'
+        ? NATIVE_RAIL_DECIMALS.sol
+        : rail === 'usdc'
+          ? NATIVE_RAIL_DECIMALS.usdc
+          : (this.giftQuote.wocDecimals ?? null);
+    const payAmount =
+      decimals === null ? '' : (scaleBaseUnits(this.giftQuote.amountBase, decimals) ?? '');
+    return buildGiftReview(this.giftDraft, payAmount, this.lastView?.usdPerClaudium ?? null);
+  }
+
+  private giftSuccessHtml(): string {
+    const code = this.giftConfirm?.giftCardCode ?? null;
+    const url = giftRedeemUrl(GIFT_REDEEM_ORIGIN, code);
+    if (!url) {
+      return `<p class="cl-rail-note" role="status">${esc(t('hudChrome.claudium.giftFailed'))}</p>`;
+    }
+    // The QR encodes the exact redeem URL; colors ride from a token-driven class so it
+    // reads in both themes. The buyer shares this link or has the recipient scan it.
+    const svg = qrToSvg(url, { moduleSize: 4 });
+    return (
+      `<p class="cl-rail-note cl-success" role="status">${esc(t('hudChrome.claudium.giftIssued'))}</p>` +
+      `<div class="cl-gift-qr" role="img" aria-label="${esc(t('hudChrome.claudium.giftQrAlt'))}">${svg}</div>` +
+      this.fieldWithCopy('hudChrome.claudium.giftLinkLabel', url) +
+      `<div class="cl-pay-actions">` +
+      `<button type="button" class="cl-rail" data-gift-new>${esc(t('hudChrome.claudium.giftAnotherButton'))}</button>` +
+      `</div>`
+    );
+  }
+
+  private giftErrorHtml(): string {
+    const kind = classifyGiftError(this.giftError);
+    const copy =
+      kind === 'expired'
+        ? t('hudChrome.claudium.confirmRequote')
+        : kind === 'oracle'
+          ? t('hudChrome.claudium.oracleUnavailable')
+          : kind === 'declined'
+            ? t('hudChrome.claudium.giftDeclined')
+            : t('hudChrome.claudium.giftFailed');
+    return `<p class="cl-rail-note" role="status">${esc(copy)}</p>`;
+  }
+
+  private giftTermsHtml(): string {
+    return `<p class="cl-disclosure">${esc(t('hudChrome.claudium.giftTerms'))}</p>`;
+  }
+
+  // ---- History tab ------------------------------------------------------------
+
+  private historyReasonLabel(reason: ClaudiumHistoryReason): string {
+    switch (reason) {
+      case 'purchase_stripe':
+        return t('hudChrome.claudium.reasonPurchaseStripe');
+      case 'purchase_sol':
+        return t('hudChrome.claudium.reasonPurchaseSol');
+      case 'purchase_usdc':
+        return t('hudChrome.claudium.reasonPurchaseUsdc');
+      case 'purchase_woc':
+        return t('hudChrome.claudium.reasonPurchaseWoc');
+      case 'giftcard_redeem':
+        return t('hudChrome.claudium.reasonGiftcardRedeem');
+      case 'spend':
+        return t('hudChrome.claudium.reasonSpend');
+      case 'refund_clawback':
+        return t('hudChrome.claudium.reasonRefund');
+      case 'chargeback_clawback':
+        return t('hudChrome.claudium.reasonChargeback');
+      default:
+        return t('hudChrome.claudium.reasonGiftcardVoid');
+    }
+  }
+
+  private historyTabHtml(): string {
+    const title = `<section class="cl-section"><h3>${esc(t('hudChrome.claudium.historyTitle'))}</h3>`;
+    if (this.historyError) {
+      return (
+        title +
+        `<p class="cl-rail-note" role="status">${esc(t('hudChrome.claudium.historyError'))}</p>` +
+        `<div class="cl-pay-actions"><button type="button" class="cl-rail" data-history-retry>${esc(t('hudChrome.claudium.retryButton'))}</button></div>` +
+        `</section>`
+      );
+    }
+    if (!this.historyLoaded && this.historyLoading) {
+      return (
+        title +
+        `<p class="cl-empty" role="status">${esc(t('hudChrome.claudium.historyLoading'))}</p></section>`
+      );
+    }
+    if (this.historyLoaded && this.historyEntries.length === 0) {
+      return (
+        title +
+        `<p class="cl-empty" role="status">${esc(t('hudChrome.claudium.historyEmpty'))}</p></section>`
+      );
+    }
+    const filtered =
+      this.historyFilter === 'all'
+        ? this.historyEntries
+        : this.historyEntries.filter((e) => e.reason === this.historyFilter);
+    const rows = filtered.map((e) => this.historyRowHtml(e)).join('');
+    const loadMore =
+      this.historyCursor !== null
+        ? `<div class="cl-pay-actions"><button type="button" class="cl-rail" data-history-more${this.historyLoading ? ' disabled' : ''}>${esc(t('hudChrome.claudium.historyLoadMore'))}</button></div>`
+        : '';
+    return (
+      title +
+      this.historyFilterHtml() +
+      `<div class="cl-item-list">${rows}</div>` +
+      loadMore +
+      `</section>`
+    );
+  }
+
+  private historyFilterHtml(): string {
+    const opt = (id: ClaudiumHistoryReason | 'all', label: string): string =>
+      `<option value="${id}"${this.historyFilter === id ? ' selected' : ''}>${esc(label)}</option>`;
+    return (
+      `<label class="cl-field-label" for="cl-history-filter">${esc(t('hudChrome.claudium.historyFilterLabel'))}</label>` +
+      `<select id="cl-history-filter" class="cl-sig-input" data-history-filter>` +
+      opt('all', t('hudChrome.claudium.historyFilterAll')) +
+      opt('purchase_stripe', this.historyReasonLabel('purchase_stripe')) +
+      opt('purchase_sol', this.historyReasonLabel('purchase_sol')) +
+      opt('purchase_usdc', this.historyReasonLabel('purchase_usdc')) +
+      opt('purchase_woc', this.historyReasonLabel('purchase_woc')) +
+      opt('giftcard_redeem', this.historyReasonLabel('giftcard_redeem')) +
+      opt('spend', this.historyReasonLabel('spend')) +
+      opt('refund_clawback', this.historyReasonLabel('refund_clawback')) +
+      opt('chargeback_clawback', this.historyReasonLabel('chargeback_clawback')) +
+      opt('giftcard_void_clawback', this.historyReasonLabel('giftcard_void_clawback')) +
+      `</select>`
+    );
+  }
+
+  private historyRowHtml(e: ClaudiumHistoryEntry): string {
+    const credit = e.delta >= 0;
+    // The signed amount comes straight from the ledger delta; the sign + magnitude are
+    // the entry's, never recomputed. The USD equivalent uses the view peg (display
+    // only). A negative delta shows its absolute value with a leading minus.
+    const magnitude = formatNumber(Math.abs(e.delta), { maximumFractionDigits: 0 });
+    const signed = credit
+      ? t('hudChrome.claudium.historyCredit', { amount: magnitude })
+      : t('hudChrome.claudium.historyDebit', { amount: magnitude });
+    const usd = this.usdEquiv(Math.abs(e.delta), this.lastView?.usdPerClaudium ?? null);
+    const drill = this.historyDrilldownHtml(e);
+    return (
+      `<div class="cl-history-row">` +
+      `<span class="cl-history-reason">${esc(this.historyReasonLabel(e.reason))}</span>` +
+      `<span class="cl-history-time">${esc(this.historyRelativeTime(e.atMs))}</span>` +
+      `<span class="cl-history-amount ${credit ? 'cl-history-credit' : 'cl-history-debit'}">${esc(signed)}</span>` +
+      `<span class="cl-history-usd">${esc(usd)}</span>` +
+      drill +
+      `</div>`
+    );
+  }
+
+  /** Per-entry drilldown: an explorer link for crypto reasons; a receipt note else. */
+  private historyDrilldownHtml(e: ClaudiumHistoryEntry): string {
+    const crypto =
+      e.reason === 'purchase_sol' || e.reason === 'purchase_usdc' || e.reason === 'purchase_woc';
+    if (crypto && e.ref) {
+      const href = `https://explorer.solana.com/tx/${encodeURIComponent(e.ref)}`;
+      return (
+        `<a class="cl-history-link" href="${esc(href)}" target="_blank" rel="noopener noreferrer">` +
+        `${esc(t('hudChrome.claudium.historyExplorer'))}</a>`
+      );
+    }
+    if (e.reason === 'purchase_stripe') {
+      return `<span class="cl-history-note">${esc(t('hudChrome.claudium.historyReceipt'))}</span>`;
+    }
+    if (e.reason === 'giftcard_redeem' || e.reason === 'giftcard_void_clawback') {
+      return `<span class="cl-history-note">${esc(t('hudChrome.claudium.historyGiftNote'))}</span>`;
+    }
+    return '';
+  }
+
+  /** A coarse relative time (just now / N min / N h / N d) from atMs to now. */
+  private historyRelativeTime(atMs: number): string {
+    const diff = Math.max(0, Date.now() - atMs);
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return t('hudChrome.claudium.timeJustNow');
+    if (min < 60) return t('hudChrome.claudium.timeMinutes', { n: formatNumber(min) });
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return t('hudChrome.claudium.timeHours', { n: formatNumber(hr) });
+    const day = Math.floor(hr / 24);
+    return t('hudChrome.claudium.timeDays', { n: formatNumber(day) });
+  }
+
   // ---- Redeem tab -------------------------------------------------------------
 
   private redeemTabHtml(view: ClaudiumView): string {
@@ -671,10 +1133,15 @@ export class ClaudiumWindow {
   private wire(body: HTMLElement, view: ClaudiumView): void {
     body.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const next: Tab = btn.dataset.tab === 'redeem' ? 'redeem' : 'buy';
+        const raw = btn.dataset.tab;
+        const next: Tab = raw === 'redeem' || raw === 'gift' || raw === 'history' ? raw : 'buy';
         if (next === this.tab) return;
         this.tab = next;
         this.paint(view);
+        // Lazily load the first history page the first time the tab is opened.
+        if (next === 'history' && !this.historyLoaded && !this.historyLoading) {
+          void this.loadHistory(view, false);
+        }
       });
     });
     body.querySelectorAll<HTMLButtonElement>('[data-rail]').forEach((btn) => {
@@ -742,6 +1209,197 @@ export class ClaudiumWindow {
       railsEl?.scrollIntoView({ block: 'nearest' });
       (railsEl?.querySelector('.cl-rail:not(:disabled)') as HTMLElement | null)?.focus();
     });
+    this.wireGift(body, view);
+    this.wireHistory(body, view);
+  }
+
+  private wireGift(body: HTMLElement, view: ClaudiumView): void {
+    const captureText = (): void => {
+      // Read the free-text fields off the DOM so a re-paint (a picker click) keeps them.
+      const email = body.querySelector<HTMLInputElement>('#cl-gift-email');
+      if (email) this.giftDraft.recipientEmail = email.value;
+      const msg = body.querySelector<HTMLTextAreaElement>('#cl-gift-message');
+      if (msg) this.giftDraft.message = msg.value;
+      const date = body.querySelector<HTMLInputElement>('#cl-gift-date');
+      if (date) {
+        const v = date.value.trim();
+        this.giftDraft.deliverAtMs = v === '' ? null : Date.parse(`${v}T00:00:00Z`) || null;
+      }
+    };
+    body.querySelectorAll<HTMLButtonElement>('[data-gift-denomination]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        captureText();
+        this.giftDraft.claudium = Number(btn.dataset.giftDenomination);
+        this.paint(view);
+      });
+    });
+    body.querySelectorAll<HTMLButtonElement>('[data-gift-rail]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        captureText();
+        this.giftDraft.rail = btn.dataset.giftRail as ClaudiumNativeRailId;
+        this.paint(view);
+      });
+    });
+    body.querySelectorAll<HTMLButtonElement>('[data-gift-toself]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        captureText();
+        this.giftDraft.toSelf = btn.dataset.giftToself === '1';
+        this.paint(view);
+      });
+    });
+    body.querySelectorAll<HTMLButtonElement>('[data-gift-occasion]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        captureText();
+        this.giftDraft.occasion = btn.dataset.giftOccasion as ClaudiumGiftOccasion;
+        this.paint(view);
+      });
+    });
+    body.querySelectorAll<HTMLButtonElement>('[data-gift-delivery]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        captureText();
+        this.giftDraft.delivery = btn.dataset.giftDelivery as ClaudiumGiftDelivery;
+        this.paint(view);
+      });
+    });
+    body.querySelector<HTMLButtonElement>('[data-gift-review]')?.addEventListener('click', () => {
+      captureText();
+      void this.startGiftReview(view);
+    });
+    body.querySelector<HTMLButtonElement>('[data-gift-back]')?.addEventListener('click', () => {
+      this.giftPhase = 'compose';
+      this.giftQuote = null;
+      this.paint(view);
+    });
+    body.querySelector<HTMLButtonElement>('[data-gift-confirm]')?.addEventListener('click', () => {
+      void this.confirmGift(view);
+    });
+    body.querySelector<HTMLButtonElement>('[data-gift-new]')?.addEventListener('click', () => {
+      this.resetGift();
+      this.paint(view);
+    });
+  }
+
+  private wireHistory(body: HTMLElement, view: ClaudiumView): void {
+    body.querySelector<HTMLButtonElement>('[data-history-retry]')?.addEventListener('click', () => {
+      void this.loadHistory(view, false);
+    });
+    body.querySelector<HTMLButtonElement>('[data-history-more]')?.addEventListener('click', () => {
+      void this.loadHistory(view, true);
+    });
+    body
+      .querySelector<HTMLSelectElement>('[data-history-filter]')
+      ?.addEventListener('change', (ev) => {
+        const value = (ev.target as HTMLSelectElement).value;
+        this.historyFilter = value as ClaudiumHistoryReason | 'all';
+        this.paint(view);
+      });
+  }
+
+  // ---- Gift async flow --------------------------------------------------------
+
+  /** Ask the service for a gift-card quote, then move to the review phase. */
+  private async startGiftReview(view: ClaudiumView): Promise<void> {
+    const input = buildGiftQuoteInput(this.giftDraft);
+    if (!input || !this.deps.giftcardQuote) return;
+    const seq = ++this.giftQuoteSeq;
+    let payload: ClaudiumQuotePayload;
+    try {
+      payload = await this.deps.giftcardQuote(input);
+    } catch {
+      payload = {
+        reference: null,
+        rail: input.rail,
+        claudium: input.claudium,
+        amountBase: null,
+        destination: null,
+        mint: null,
+        memo: null,
+        quoteExpiryMs: null,
+        split: null,
+        reason: 'unavailable',
+      };
+    }
+    if (!this.isOpen || seq !== this.giftQuoteSeq) return;
+    if (payload.reason || !payload.reference) {
+      this.giftError = payload.reason;
+      this.giftPhase = 'error';
+      this.paint(view);
+      return;
+    }
+    this.giftQuote = payload;
+    this.giftPhase = 'review';
+    this.paint(view);
+  }
+
+  /** Confirm the gift purchase. Reuses the pay panel's copy-and-confirm contract: the
+   * buyer pays from their wallet and the memo/address show on the review; here we take
+   * the signature from a prompt-free inline flow. For simplicity the review carries the
+   * pay fields; the signature is captured on the review's own input. */
+  private async confirmGift(view: ClaudiumView): Promise<void> {
+    const reference = this.giftQuote?.reference;
+    if (!reference || !this.deps.giftcardConfirm) return;
+    const sig =
+      this.deps.root().querySelector<HTMLInputElement>('#cl-gift-sig')?.value.trim() ?? '';
+    this.giftPhase = 'pending';
+    this.paint(view);
+    let result: ClaudiumGiftConfirmPayload;
+    try {
+      result = await this.deps.giftcardConfirm(reference, sig);
+    } catch {
+      result = { settled: false, reason: 'unavailable', giftCardCode: null, cardId: null };
+    }
+    if (!this.isOpen) return;
+    if (result.settled && result.giftCardCode) {
+      this.giftConfirm = result;
+      this.giftPhase = 'success';
+    } else {
+      this.giftError = result.reason;
+      this.giftPhase = 'error';
+    }
+    this.paint(view);
+  }
+
+  private resetGift(): void {
+    this.giftPhase = 'compose';
+    this.giftDraft = emptyGiftDraft();
+    this.giftQuote = null;
+    this.giftConfirm = null;
+    this.giftError = null;
+  }
+
+  // ---- History async flow -----------------------------------------------------
+
+  /** Load a page of history. `more` uses the current cursor and appends; else resets. */
+  private async loadHistory(view: ClaudiumView, more: boolean): Promise<void> {
+    if (!this.deps.historyPage || this.historyLoading) return;
+    this.historyLoading = true;
+    this.historyError = false;
+    if (!more) {
+      this.historyEntries = [];
+      this.historyCursor = null;
+      this.historyLoaded = false;
+    }
+    this.paint(view);
+    let page: ClaudiumHistoryPayload;
+    try {
+      page = await this.deps.historyPage(
+        HISTORY_PAGE_SIZE,
+        more ? (this.historyCursor ?? undefined) : undefined,
+      );
+    } catch {
+      page = { entries: [], nextCursor: null };
+      if (!this.isOpen) return;
+      this.historyLoading = false;
+      this.historyError = true;
+      this.paint(view);
+      return;
+    }
+    if (!this.isOpen) return;
+    this.historyEntries = more ? this.historyEntries.concat(page.entries) : page.entries;
+    this.historyCursor = page.nextCursor;
+    this.historyLoading = false;
+    this.historyLoaded = true;
+    this.paint(view);
   }
 
   private async requestQuote(claudium: number, view: ClaudiumView): Promise<void> {

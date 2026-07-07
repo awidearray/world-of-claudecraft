@@ -324,6 +324,23 @@ export interface ClaudiumNativeSplit {
 }
 
 /**
+ * The discount block the service returns on every native quote. "X% off the effective
+ * peg price": the buyer pays the full amount and receives MORE Claudium
+ * (claudiumCredited >= baseClaudium). Every value is service-computed; the game renders
+ * it verbatim and derives nothing. floorBps is the always-on $WOC floor (1500 for the
+ * woc rail, else 0); promoBps is the admin/limited-time part.
+ */
+export interface ClaudiumNativeDiscount {
+  rail: ClaudiumNativeRail;
+  baseClaudium: number;
+  discountBps: number;
+  claudiumCredited: number;
+  bonusClaudium: number;
+  breakdown: { floorBps: number; promoBps: number };
+  effectiveCentsPer100: number;
+}
+
+/**
  * A native-rail quote: the exact crypto amount to send (amountBase, a base-unit
  * string at the rail's decimals), the destination address, the memo/reference the
  * service verifies against, and the quote expiry. reason is set (and the quote is
@@ -340,6 +357,7 @@ export interface ClaudiumNativeQuoteResult {
   memo: string | null;
   quoteExpiryMs: number | null;
   split: ClaudiumNativeSplit | null;
+  discount: ClaudiumNativeDiscount | null;
   reason: string | null;
 }
 
@@ -386,6 +404,7 @@ export async function claudiumNativeQuote(input: {
     memo: string;
     quoteExpiryMs: number;
     split?: ClaudiumNativeSplit;
+    discount?: ClaudiumNativeDiscount;
     reason?: string;
   }>({ method: 'POST', path: 'native/quote', body: input });
   if (!data) {
@@ -399,6 +418,7 @@ export async function claudiumNativeQuote(input: {
       memo: null,
       quoteExpiryMs: null,
       split: null,
+      discount: null,
       reason: 'unavailable',
     };
   }
@@ -422,7 +442,42 @@ export async function claudiumNativeQuote(input: {
             treasury: data.split.treasury,
           }
         : null,
+    discount: parseNativeDiscount(data.discount),
     reason: typeof data.reason === 'string' ? data.reason : null,
+  };
+}
+
+/**
+ * Validate + carry through the service discount block. Every value is
+ * service-authoritative; this only shape-checks it (a malformed block drops to null so
+ * the game shows no discount row) and NEVER computes a discount.
+ */
+function parseNativeDiscount(value: unknown): ClaudiumNativeDiscount | null {
+  if (!value || typeof value !== 'object') return null;
+  const d = value as Record<string, unknown>;
+  const rail = parseNativeRail(d.rail);
+  const breakdown = d.breakdown as Record<string, unknown> | undefined;
+  if (
+    !rail ||
+    typeof d.baseClaudium !== 'number' ||
+    typeof d.discountBps !== 'number' ||
+    typeof d.claudiumCredited !== 'number' ||
+    typeof d.bonusClaudium !== 'number' ||
+    typeof d.effectiveCentsPer100 !== 'number' ||
+    !breakdown ||
+    typeof breakdown.floorBps !== 'number' ||
+    typeof breakdown.promoBps !== 'number'
+  ) {
+    return null;
+  }
+  return {
+    rail,
+    baseClaudium: d.baseClaudium,
+    discountBps: d.discountBps,
+    claudiumCredited: d.claudiumCredited,
+    bonusClaudium: d.bonusClaudium,
+    breakdown: { floorBps: breakdown.floorBps, promoBps: breakdown.promoBps },
+    effectiveCentsPer100: d.effectiveCentsPer100,
   };
 }
 

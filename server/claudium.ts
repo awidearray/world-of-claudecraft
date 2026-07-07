@@ -204,6 +204,7 @@ export async function handleClaudiumApi(
         memo: null,
         quoteExpiryMs: null,
         split: null,
+        discount: null,
         reason: 'invalid_request',
       });
     }

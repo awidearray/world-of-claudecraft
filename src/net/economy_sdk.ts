@@ -103,11 +103,30 @@ export interface ClaudiumNativeSplit {
 }
 
 /**
+ * The discount block the service now returns on every native quote. "X% off the
+ * effective peg price": the buyer pays the full amount and receives MORE Claudium
+ * (claudiumCredited >= baseClaudium). Every value is service-computed; the client
+ * renders them and derives nothing. floorBps is the always-on $WOC floor (1500 for
+ * the woc rail, else 0); promoBps is the admin/limited-time part; effectiveCentsPer100
+ * is the effective USD cents per 100 Claudium for display.
+ */
+export interface ClaudiumNativeDiscount {
+  rail: ClaudiumNativeRail;
+  baseClaudium: number;
+  discountBps: number;
+  claudiumCredited: number;
+  bonusClaudium: number;
+  breakdown: { floorBps: number; promoBps: number };
+  effectiveCentsPer100: number;
+}
+
+/**
  * A native-rail quote as the service returns it: the exact crypto amount to send
  * (amountBase, a base-unit string), the destination address, the memo/reference,
  * the quote expiry, and (woc only) the split line. reason is set (and the quote is
  * unusable) when the rail is disabled or the oracle is down; the UI then renders a
  * clean disabled state. The client renders these verbatim, computing nothing.
+ * discount is the service-computed discount block (null when the service omits it).
  */
 export interface ClaudiumNativeQuote {
   reference: string | null;
@@ -119,6 +138,7 @@ export interface ClaudiumNativeQuote {
   memo: string | null;
   quoteExpiryMs: number | null;
   split: ClaudiumNativeSplit | null;
+  discount: ClaudiumNativeDiscount | null;
   reason: string | null;
 }
 
@@ -219,6 +239,7 @@ const OFF_NATIVE_QUOTE: ClaudiumNativeQuote = {
   memo: null,
   quoteExpiryMs: null,
   split: null,
+  discount: null,
   reason: 'unavailable',
 };
 const OFF_NATIVE_CONFIRM: ClaudiumNativeConfirm = {

@@ -273,6 +273,77 @@ describe('buildClaudiumQuotePanel (WOC rail split line)', () => {
   });
 });
 
+describe('buildClaudiumQuotePanel discount projection (display only, no pricing)', () => {
+  it('projects the discount rows when the service reports a discount (bonus > 0)', () => {
+    const discounted: ClaudiumNativeQuoteInput = {
+      ...solQuote,
+      claudium: 1176,
+      discount: {
+        rail: 'sol',
+        baseClaudium: 1000,
+        discountBps: 1500,
+        claudiumCredited: 1176,
+        bonusClaudium: 176,
+        breakdown: { floorBps: 0, promoBps: 1500 },
+        effectiveCentsPer100: 85,
+      },
+    };
+    const panel = buildClaudiumQuotePanel('sol', discounted, 40_000, null);
+    expect(panel.discount).not.toBeNull();
+    expect(panel.discount?.discountBps).toBe(1500);
+    // percent is the sole arithmetic: a pure bps / 100 rescale of the service integer.
+    expect(panel.discount?.percent).toBe(15);
+    expect(panel.discount?.baseClaudium).toBe(1000);
+    expect(panel.discount?.claudiumCredited).toBe(1176);
+    expect(panel.discount?.bonusClaudium).toBe(176);
+    expect(panel.discount?.floorBps).toBe(0);
+    expect(panel.discount?.promoBps).toBe(1500);
+    // The credited amount rides in the top-level claudium field (service-set).
+    expect(panel.claudium).toBe(1176);
+  });
+
+  it('surfaces the $WOC floor incentive (floorBps > 0) even without a promo', () => {
+    const wocFloor: ClaudiumNativeQuoteInput = {
+      ...solQuote,
+      rail: 'woc',
+      discount: {
+        rail: 'woc',
+        baseClaudium: 1000,
+        discountBps: 1500,
+        claudiumCredited: 1176,
+        bonusClaudium: 176,
+        breakdown: { floorBps: 1500, promoBps: 0 },
+        effectiveCentsPer100: 85,
+      },
+    };
+    const panel = buildClaudiumQuotePanel('woc', wocFloor, 40_000, 6);
+    expect(panel.discount?.floorBps).toBe(1500);
+    expect(panel.discount?.promoBps).toBe(0);
+  });
+
+  it('shows no discount row when discountBps is 0', () => {
+    const noDiscount: ClaudiumNativeQuoteInput = {
+      ...solQuote,
+      discount: {
+        rail: 'sol',
+        baseClaudium: 1000,
+        discountBps: 0,
+        claudiumCredited: 1000,
+        bonusClaudium: 0,
+        breakdown: { floorBps: 0, promoBps: 0 },
+        effectiveCentsPer100: 100,
+      },
+    };
+    const panel = buildClaudiumQuotePanel('sol', noDiscount, 40_000, null);
+    expect(panel.discount).toBeNull();
+  });
+
+  it('shows no discount row when the service omits the discount block', () => {
+    const panel = buildClaudiumQuotePanel('sol', solQuote, 40_000, null);
+    expect(panel.discount).toBeNull();
+  });
+});
+
 describe('buildClaudiumQuotePanel disabled states (no crash)', () => {
   it('renders disabled for a rail_disabled reason', () => {
     const panel = buildClaudiumQuotePanel(
