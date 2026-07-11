@@ -253,24 +253,40 @@ export function resetActiveConfigForTests(): void {
   activeConfigCache = null;
 }
 
-import { getOrCreateAffiliateCode, affiliateRealmCount, listRealmsByAffiliate } from './affiliate_db';
-import { activeSeasonStatus, openSeason, closeSeason } from './flow_ledger_db';
+import {
+  affiliateRealmCount,
+  getOrCreateAffiliateCode,
+  listRealmsByAffiliate,
+} from './affiliate_db';
+import { activeSeasonStatus, closeSeason, openSeason } from './flow_ledger_db';
 import { withPayoutKeeperLock, withRealmBuybackKeeperLock } from './payout_db';
 import { buildPayoutKeeper } from './payout_keeper';
 import { mergeRealmDirectory, REALM_ORIGINS, resolveRealmType } from './realm';
-import { realmBuyInfo, prepareBuyQuote, confirmBuyQuote } from './realm_buy';
+import { confirmBuyQuote, prepareBuyQuote, realmBuyInfo } from './realm_buy';
 import { bondsForRealms } from './realm_buy_db';
 import { buildRealmBuybackKeepers } from './realm_buyback_keeper';
-import { listRealmsForDirectory, listRealmsForOwner } from './realm_db';
 import {
-  prepareProvisionQuote,
+  getRealmById,
+  listRealmsForDirectory,
+  listRealmsForOwner,
+  rolesForAccountOnRealm,
+} from './realm_db';
+import {
   confirmProvisionQuote,
-  requestRealmDecommission,
   finalizeRealmRelease,
-  reconcileRealmLifecycle,
+  prepareProvisionQuote,
   realmTiersInfo,
+  reconcileRealmLifecycle,
+  requestRealmDecommission,
 } from './realm_provision';
 import { escrowedWocForWallet } from './realm_stake_holdings';
+import {
+  mergeDirectoryCurrencies,
+  type RealmToken,
+  type RegisterDeps,
+  registerRealmToken,
+} from './realm_token';
+import { listRealmTokens, realmTokenDb } from './realm_token_db';
 import { referralRewardSummary } from './referral_db';
 import { rewardTierBpsFromEnv } from './reward_tiers';
 import { WOC_DECIMALS } from './woc_config';
@@ -1291,7 +1307,16 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       // realms (#475). Env entries stay canonical and come first; active
       // registry realms not pinned in env follow. Existing clients read
       // name/url/type; the extra realmId/status/owned/tier fields are additive.
-      const realms = mergeRealmDirectory(REALM_DIRECTORY, await listRealmsForDirectory(pool));
+      const merged = mergeRealmDirectory(REALM_DIRECTORY, await listRealmsForDirectory(pool));
+      // Launchpad phase 0: attach each realm's currency identity (its registered
+      // token, falling back to the $WOC display currency). Additive field, and
+      // FAIL-OPEN: a token-registry read failure must never take down the realm
+      // list, so on error every realm just keeps the $WOC display fallback.
+      const tokens = await listRealmTokens(
+        pool,
+        merged.map((r) => r.realmId).filter((id): id is number => id !== null),
+      ).catch(() => new Map<number, RealmToken>());
+      const realms = mergeDirectoryCurrencies(merged, tokens);
       return json(res, 200, { current: REALM, realms, characters });
     }
     // The signed-in account's own realms in every non-closed state, for the
@@ -1304,7 +1329,10 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       const owned = await listRealmsForOwner(pool, accountId);
       // Attach the $WOC bond status (buy path) so the dashboard can warn the owner
       // to top up before a lapse. Absent for staked realms.
-      const bonds = await bondsForRealms(pool, owned.map((r) => r.realmId));
+      const bonds = await bondsForRealms(
+        pool,
+        owned.map((r) => r.realmId),
+      );
       const realms = owned.map((r) => {
         const bond = bonds.get(r.realmId);
         return {
@@ -1391,13 +1419,21 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       // Bound the length before BigInt parse: a 78-digit cap dwarfs total $WOC
       // base-unit supply (~15 digits) yet blocks a pathological multi-KB digit
       // string forcing a slow BigInt parse.
-      if (!/^[0-9]+$/.test(amount) || amount.length > 78) return json(res, 400, { error: 'invalid_amount' });
+      if (!/^[0-9]+$/.test(amount) || amount.length > 78)
+        return json(res, 400, { error: 'invalid_amount' });
       // Optional affiliate code from the founder's ?aff= link. Bounded so an
       // unknown/oversized value can't be used to probe; resolution is best-effort
       // server-side (an unknown code simply attaches no affiliate).
       const affRaw = typeof body.affiliateCode === 'string' ? body.affiliateCode.trim() : '';
       const affiliateCode = affRaw.length > 0 && affRaw.length <= 64 ? affRaw : undefined;
-      const result = await prepareProvisionQuote(pool, { accountId, ownerWallet: wallet.pubkey, name, type, amountBase: BigInt(amount), affiliateCode });
+      const result = await prepareProvisionQuote(pool, {
+        accountId,
+        ownerWallet: wallet.pubkey,
+        name,
+        type,
+        amountBase: BigInt(amount),
+        affiliateCode,
+      });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, result);
     }
@@ -1464,11 +1500,68 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, result);
     }
+    // ── Realm token launchpad (phase 0): registry + identity ──────────────────
+    // All routes follow the branch's realm route pattern: bearer auth, typed
+    // `error` codes the client maps to launchpad.err.* keys, no chain writes on
+    // the server (verify-only), rate limits on anything that touches an RPC.
+    const launchpadDeps = () => ({
+      tokens: realmTokenDb(pool),
+      rolesForAccountOnRealm: (realmId: number, accountId: number) =>
+        rolesForAccountOnRealm(pool, realmId, accountId),
+      realmStatus: async (realmId: number) => {
+        const realm = await getRealmById(pool, realmId);
+        return realm ? realm.status : null;
+      },
+      isUniqueViolation,
+    });
+    const realmTokenMatch = /^\/api\/realms\/(\d+)\/token$/.exec(url);
+    if (req.method === 'GET' && realmTokenMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const deps = launchpadDeps();
+      const realmId = Number(realmTokenMatch[1]);
+      const token = await deps.tokens.getRealmToken(realmId);
+      if (!token) return json(res, 200, { token: null, vote: null, presale: null });
+      const roles = await rolesForAccountOnRealm(pool, realmId, accountId);
+      return json(res, 200, {
+        token: {
+          realmId: token.realmId,
+          symbol: token.symbol,
+          icon: token.icon,
+          status: token.status,
+          monetizationPolicy: token.monetizationPolicy,
+          mint: token.mint,
+          decimals: token.decimals,
+        },
+        vote: null,
+        presale: null,
+        isOwner: roles.includes('owner'),
+      });
+    }
+    const realmTokenRegisterMatch = /^\/api\/realms\/(\d+)\/token\/register$/.exec(url);
+    if (req.method === 'POST' && realmTokenRegisterMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const body = await readBody(req);
+      const result = await registerRealmToken(launchpadDeps() as RegisterDeps, {
+        accountId,
+        realmId: Number(realmTokenRegisterMatch[1]),
+        symbol: typeof body.symbol === 'string' ? body.symbol : '',
+        icon: typeof body.icon === 'string' ? body.icon : '',
+        monetizationPolicy:
+          typeof body.monetizationPolicy === 'string' ? body.monetizationPolicy : 'cosmetic',
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { status: result.token.status, symbol: result.token.symbol });
+    }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {
       const accountId = await bearerActiveAccount(req, res);
       if (accountId === null) return;
-      const result = await requestRealmDecommission(pool, { accountId, realmId: Number(realmDecommissionMatch[1]) });
+      const result = await requestRealmDecommission(pool, {
+        accountId,
+        realmId: Number(realmDecommissionMatch[1]),
+      });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, result);
     }
@@ -1478,7 +1571,10 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (accountId === null) return;
       // Release hits the external Solana RPC (PDA-closed check); rate-limit it.
       if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
-      const result = await finalizeRealmRelease(pool, { accountId, realmId: Number(realmReleaseMatch[1]) });
+      const result = await finalizeRealmRelease(pool, {
+        accountId,
+        realmId: Number(realmReleaseMatch[1]),
+      });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, result);
     }
@@ -2489,7 +2585,9 @@ export async function startServer(): Promise<http.Server> {
   // realms so neither deadlocks the per-account realm cap (#475).
   const reconciled = await reconcileRealmLifecycle(pool);
   if (reconciled.reclaimed > 0 || reconciled.finalized > 0 || reconciled.bondLapsed > 0)
-    console.log(`realm lifecycle: reclaimed ${reconciled.reclaimed} provisioning, finalized ${reconciled.finalized} decommissioning, lapsed ${reconciled.bondLapsed} on bond`);
+    console.log(
+      `realm lifecycle: reclaimed ${reconciled.reclaimed} provisioning, finalized ${reconciled.finalized} decommissioning, lapsed ${reconciled.bondLapsed} on bond`,
+    );
   await game.loadMarket();
   await game.loadMail();
   await game.loadChatFilter();
@@ -2605,7 +2703,9 @@ export async function startServer(): Promise<http.Server> {
     };
     void realmTick();
     setInterval(() => void realmTick(), PAYOUT_KEEPER_TICK_MS).unref();
-    console.log(`realm buyback keeper enabled (${realmBuybackKeepers.map((k) => k.label).join(', ')})`);
+    console.log(
+      `realm buyback keeper enabled (${realmBuybackKeepers.map((k) => k.label).join(', ')})`,
+    );
   }
   console.log('database ready');
 

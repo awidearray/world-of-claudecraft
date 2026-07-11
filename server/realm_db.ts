@@ -12,15 +12,15 @@
 
 import type { Pool, PoolClient } from 'pg';
 import {
+  type DbRealmSummary,
+  isRealmStatus,
   REALM,
   REALM_TYPE,
+  type RealmRole,
+  type RealmStatus,
+  type RealmType,
   resolveRealmType,
   worldSeedForRealm,
-  isRealmStatus,
-  type RealmType,
-  type RealmStatus,
-  type RealmRole,
-  type DbRealmSummary,
 } from './realm';
 
 // Anything we can run a query against — the shared pool or a checked-out client
@@ -170,7 +170,10 @@ export async function getRealmById(db: Queryable, realmId: number): Promise<Real
 // Realm ids in a given lifecycle status, oldest first. Used by the periodic
 // reconciler to find realms stuck in a transitional state.
 export async function listRealmIdsByStatus(db: Queryable, status: RealmStatus): Promise<number[]> {
-  const res = await db.query(`SELECT realm_id FROM realms WHERE status = $1 ORDER BY created_at ASC`, [status]);
+  const res = await db.query(
+    `SELECT realm_id FROM realms WHERE status = $1 ORDER BY created_at ASC`,
+    [status],
+  );
   return res.rows.map((r: Record<string, unknown>) => Number(r.realm_id));
 }
 
@@ -179,21 +182,63 @@ export async function listRealmIdsByStatus(db: Queryable, status: RealmStatus): 
 // schema would otherwise start silently and only fail at query time. Assert the
 // columns the realm code depends on exist, and fail fast at boot if not.
 const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
-  realms: ['realm_id', 'name', 'status', 'owner_account_id', 'tier', 'world_seed', 'release_eligible_at'],
+  realms: [
+    'realm_id',
+    'name',
+    'status',
+    'owner_account_id',
+    'tier',
+    'world_seed',
+    'release_eligible_at',
+  ],
   realm_stakes: ['stake_id', 'realm_id', 'amount_base', 'lock_tx_sig', 'status'],
   realm_quotes: ['quote_id', 'realm_id', 'amount_base', 'expires_at'],
-  realm_buy_quotes: ['quote_id', 'realm_id', 'currency', 'total_base', 'treasury_base', 'buyback_base', 'bond_base', 'expires_at'],
-  realm_purchases: ['purchase_id', 'realm_id', 'currency', 'total_base', 'treasury_base', 'buyback_base', 'pay_tx_sig'],
+  realm_buy_quotes: [
+    'quote_id',
+    'realm_id',
+    'currency',
+    'total_base',
+    'treasury_base',
+    'buyback_base',
+    'bond_base',
+    'expires_at',
+  ],
+  realm_purchases: [
+    'purchase_id',
+    'realm_id',
+    'currency',
+    'total_base',
+    'treasury_base',
+    'buyback_base',
+    'pay_tx_sig',
+  ],
   realm_bonds: ['realm_id', 'account_id', 'bond_base', 'grace_until'],
+  // Realm token launchpad (phase 0). Dropping any of these columns must fail
+  // at boot, not at first query: the registry identity + lifecycle are
+  // load-bearing for the directory merge and the later launch phases.
+  realm_tokens: [
+    'realm_id',
+    'mint',
+    'decimals',
+    'symbol',
+    'status',
+    'monetization_policy',
+    'launch_tx_sig',
+  ],
 };
 
 export async function assertRealmSchema(db: Queryable): Promise<void> {
   for (const [table, cols] of Object.entries(REQUIRED_REALM_COLUMNS)) {
-    const res = await db.query('SELECT column_name FROM information_schema.columns WHERE table_name = $1', [table]);
+    const res = await db.query(
+      'SELECT column_name FROM information_schema.columns WHERE table_name = $1',
+      [table],
+    );
     const have = new Set(res.rows.map((r: Record<string, unknown>) => String(r.column_name)));
     const missing = cols.filter((c) => !have.has(c));
     if (missing.length > 0) {
-      throw new Error(`realm schema drift: table "${table}" is missing column(s): ${missing.join(', ')}`);
+      throw new Error(
+        `realm schema drift: table "${table}" is missing column(s): ${missing.join(', ')}`,
+      );
     }
   }
 }
@@ -298,10 +343,11 @@ export async function removeRealmRole(
   accountId: number,
   role: RealmRole,
 ): Promise<void> {
-  await db.query(
-    `DELETE FROM realm_roles WHERE realm_id = $1 AND account_id = $2 AND role = $3`,
-    [realmId, accountId, role],
-  );
+  await db.query(`DELETE FROM realm_roles WHERE realm_id = $1 AND account_id = $2 AND role = $3`, [
+    realmId,
+    accountId,
+    role,
+  ]);
 }
 
 export async function listRealmRoles(db: Queryable, realmId: number): Promise<RealmRoleRow[]> {
