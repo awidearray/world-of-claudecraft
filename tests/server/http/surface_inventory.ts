@@ -634,6 +634,16 @@ export const SURFACE_INVENTORY: readonly SurfaceRoute[] = [
   {
     dispatcher: DISPATCH.mainApi,
     method: 'GET',
+    path: '/api/levy-fund',
+    handler: 'handleApi arm: /api/levy-fund',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.public,
+    limiter: 'rateLimited',
+    requireOwnedExpected: null,
+  },
+  {
+    dispatcher: DISPATCH.mainApi,
+    method: 'GET',
     path: '/api/woc/season',
     handler: 'handleApi arm: /api/woc/season',
     contentType: PROBLEM_JSON,

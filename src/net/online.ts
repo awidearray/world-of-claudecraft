@@ -770,6 +770,11 @@ export class Api {
     return this.post(`/api/realms/${realmId}/token/curve/graduation`, {});
   }
 
+  // The public, display-only Levy Street Fund portfolio snapshot (phase 6).
+  levyFund(): Promise<unknown> {
+    return this.get('/api/levy-fund');
+  }
+
   // The account's affiliate code + referred-realm count (code created on first call).
   affiliateInfo(): Promise<AffiliateInfo> {
     return this.get('/api/affiliate/me');

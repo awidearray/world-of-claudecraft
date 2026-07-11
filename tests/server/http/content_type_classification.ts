@@ -97,6 +97,7 @@ export const API_CONTENT_TYPE: Readonly<Record<string, ContentTypeClass>> = {
   '/api/realms/:id/token/curve/prepare': PROBLEM_JSON,
   '/api/realms/:id/token/curve/confirm': PROBLEM_JSON,
   '/api/realms/:id/token/curve/graduation': PROBLEM_JSON,
+  '/api/levy-fund': PROBLEM_JSON,
   '/api/affiliate/me': PROBLEM_JSON,
   '/api/affiliate/realms': PROBLEM_JSON,
   '/api/referral/summary': PROBLEM_JSON,

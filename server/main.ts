@@ -265,6 +265,14 @@ import {
   listRealmsByAffiliate,
 } from './affiliate_db';
 import { activeSeasonStatus, closeSeason, openSeason } from './flow_ledger_db';
+import { composePositions, portfolioView, refreshLevyFund } from './levy_fund';
+import { levyFundStore, readSnapshot as readLevyFundSnapshot } from './levy_fund_db';
+import {
+  crossPriceUsd,
+  jupiterPricesUsd,
+  pythSolUsd,
+  walletBalancesByMint,
+} from './levy_fund_sources';
 import {
   withPayoutKeeperLock,
   withRealmBuybackKeeperLock,
@@ -296,7 +304,7 @@ import {
   prepareCurve,
   realmLaunchpadHost,
 } from './realm_launchpad';
-import { liveDbcGateway, liveRealmFeeGateway } from './realm_launchpad_dbc';
+import { liveCurveQuoteOut, liveDbcGateway, liveRealmFeeGateway } from './realm_launchpad_dbc';
 import {
   configurePresale,
   confirmPresaleContribution,
@@ -324,6 +332,8 @@ import {
 } from './realm_token';
 import {
   listRealmTokens,
+  listTokensWithMint,
+  listVerifiedLevyLocks,
   realmTokenDb,
   realmTokenLaunchStore,
   recordCurveListed,
@@ -332,6 +342,7 @@ import {
 import {
   confirmMintCreate,
   launchStatus,
+  levyFundWallet,
   liveLaunchChainReader,
   type MintDeps,
   prepareMintCreate,
@@ -1878,6 +1889,19 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { status: result.status, poolAddress: result.poolAddress });
     }
+    // ── Levy Street Fund portfolio (phase 6): PUBLIC and display-only ─────────
+    // Serves the cached valuation snapshot (never the chain): AUM + one row
+    // per holding. STRICTLY display data: no buy, sell, or redeem surface
+    // exists anywhere on this API (PRD section 8, the securities bright line).
+    if (req.method === 'GET' && url === '/api/levy-fund') {
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const snapshot = portfolioView(await readLevyFundSnapshot(pool));
+      if (!snapshot) return json(res, 404, { error: 'fund_not_published' });
+      return json(res, 200, {
+        fund: snapshot,
+        policy: { lockScheduleMonths: { cliff: 12, linear: 48 }, disposal: 'governance-gated' },
+      });
+    }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {
       const accountId = await bearerActiveAccount(req, res);
@@ -3091,6 +3115,55 @@ export async function startServer(): Promise<http.Server> {
     void feeTick();
     setInterval(() => void feeTick(), PAYOUT_KEEPER_TICK_MS).unref();
     console.log('realm token fee keeper enabled');
+  }
+
+  // Levy Street Fund valuation keeper (launchpad phase 6): prices the fund's
+  // holdings on the tiered pipeline and caches the snapshot the PUBLIC
+  // display-only portfolio page reads. No keys, no writes beyond the cache;
+  // no-op until LEVY_FUND_WALLET is configured.
+  {
+    const fundWallet = levyFundWallet();
+    if (fundWallet) {
+      const refreshMs = Math.max(
+        15_000,
+        Number.parseInt(process.env.LEVY_FUND_REFRESH_MS ?? '', 10) || 60_000,
+      );
+      const fundDeps = {
+        sources: {
+          listPositions: async (wallet: string) => {
+            const balances = await walletBalancesByMint(wallet);
+            if (balances === null) return null;
+            const [tokens, levyLocks] = await Promise.all([
+              listTokensWithMint(pool),
+              listVerifiedLevyLocks(pool),
+            ]);
+            return composePositions({ balances, tokens, levyLocks });
+          },
+          curveQuoteOut: liveCurveQuoteOut,
+          jupiterPricesUsd,
+          crossPriceUsd,
+          pythSolUsd: () => pythSolUsd(),
+        },
+        store: levyFundStore(pool),
+        fundWallet,
+        medianWindow: 5,
+      };
+      let fundBusy = false;
+      const fundTick = async () => {
+        if (fundBusy) return;
+        fundBusy = true;
+        try {
+          await refreshLevyFund(fundDeps);
+        } catch (err) {
+          console.error('levy fund valuation cycle failed:', err);
+        } finally {
+          fundBusy = false;
+        }
+      };
+      void fundTick();
+      setInterval(() => void fundTick(), refreshMs).unref();
+      console.log('levy fund valuation keeper enabled');
+    }
   }
   console.log('database ready');
 

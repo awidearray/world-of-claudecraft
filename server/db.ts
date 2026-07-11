@@ -12,6 +12,7 @@ import { DISCORD_SCHEMA } from './discord_db';
 import { FLOW_LEDGER_SCHEMA } from './flow_ledger_db';
 import { GITHUB_SCHEMA } from './github_db';
 import { isUniqueViolation } from './http_util';
+import { LEVY_FUND_SCHEMA } from './levy_fund_db';
 import { MAPS_SCHEMA } from './maps_db';
 import {
   LEGACY_MARKET_KEY,
@@ -721,6 +722,7 @@ export async function ensureSchema(): Promise<void> {
     await client.query(REALM_VOTE_SCHEMA); // realm_votes launch-vote ledger (launchpad phase 1)
     await client.query(REALM_PRESALE_SCHEMA); // realm_presales + quotes + contributions (launchpad phase 2)
     await client.query(REALM_FEE_SCHEMA); // realm_fee_claims ledger (launchpad phase 5, references realms)
+    await client.query(LEVY_FUND_SCHEMA); // levy fund snapshot cache (launchpad phase 6, display-only)
     await client.query(AFFILIATE_SCHEMA); // affiliate_codes + realm_affiliates (references realms + accounts)
     await client.query(REFERRAL_REWARDS_SCHEMA); // referral_progress + referral_rewards (references characters + accounts)
     // Fail fast at boot on realm schema drift (CREATE IF NOT EXISTS is a no-op

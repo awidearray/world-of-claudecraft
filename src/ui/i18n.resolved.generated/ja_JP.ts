@@ -324,6 +324,34 @@ export const ja_JP: EnTranslations = {
       "verifyHint": "プール作成トランザクションが確定したら、検証してトークンを上場します。",
       "graduateBtn": "卒業を検証"
     },
+    "fund": {
+      "open": "Levy Street ファンド",
+      "title": "Levy Street ファンド",
+      "subtitle": "プラットフォームは、ここでローンチされた各レルムトークンのロック済み持分を保有し、ライブで公開しています。これは透明なトレジャリーであり、購入できるファンドではありません。このページのいかなるものも売買や償還はできません。",
+      "loading": "ポートフォリオを読み込んでいます...",
+      "notPublished": "ポートフォリオはまだ公開されていません。",
+      "empty": "ファンドはまだレルムトークンを保有していません。",
+      "aum": "総額: {amount} USD",
+      "updated": "更新 {time}",
+      "clampedNote": "一度の更新での大きな変動は、確認の更新を待って保留されています。",
+      "policyNote": "すべての保有分はキャップテーブルで最も厳しいスケジュール(クリフ 12 か月 + 線形 48 か月)でベスティングされ、処分はガバナンスの承認が必要です。プラットフォームはこの持分を投げ売りできません。",
+      "tableAria": "ファンド保有銘柄",
+      "colToken": "トークン",
+      "colAmount": "数量",
+      "colPrice": "価格 (USD)",
+      "colValue": "評価額 (USD)",
+      "colWeight": "比率",
+      "colStatus": "状態",
+      "badgeLocked": "ロック済み",
+      "badgeGraduated": "卒業済み",
+      "statusIlliquid": "流動性不足(総額から除外)",
+      "confidence": {
+        "high": "価格あり(クロスチェック済み)",
+        "medium": "価格あり",
+        "low": "価格あり(信頼度低)"
+      },
+      "illiquidNote": "信頼できる価格のない保有分: {count}。表示はされますが集計されません。"
+    },
     "flow": {
       "registering": "トークンを登録中...",
       "openingVote": "投票を開始中...",

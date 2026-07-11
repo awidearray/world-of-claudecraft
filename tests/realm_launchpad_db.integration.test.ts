@@ -36,7 +36,8 @@ run('launchpad tables against real Postgres', () => {
     presaleDb = await import('../server/realm_presale_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
-      `DROP TABLE IF EXISTS realm_presale_contributions, realm_presale_quotes, realm_presales,
+      `DROP TABLE IF EXISTS realm_fee_claims, levy_fund_holdings, levy_fund_marks, levy_fund_meta,
+         realm_presale_contributions, realm_presale_quotes, realm_presales,
          realm_votes, realm_token_launches, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
     );
     await db.ensureSchema();
@@ -452,6 +453,63 @@ run('launchpad tables against real Postgres', () => {
     // The live/graduated fee-target read follows realm_tokens state; this
     // realm's token is still pre-launch here, so no targets surface.
     expect(await feeDb.listFeeTargets(db.pool)).toEqual([]);
+  });
+
+  it('levy fund snapshot cache (phase 6): save/read round-trip + mark pruning', async () => {
+    const fundDb = await import('../server/levy_fund_db');
+    const store = fundDb.levyFundStore(db.pool);
+    expect(await store.readSnapshot()).toBeNull();
+    expect(await store.previousAumUsd()).toBeNull();
+
+    await store.saveSnapshot({
+      holdings: [
+        {
+          mint: 'FundMintA',
+          realmId,
+          symbol: 'MOON',
+          amountBase: 10n ** 19n,
+          decimals: 9,
+          locked: true,
+          graduated: false,
+          priceUsd: 1.5,
+          valueUsd: 15_000_000_000.5,
+          source: 'curve',
+          confidence: 'high',
+          illiquid: false,
+        },
+        {
+          mint: 'FundMintB',
+          realmId: null,
+          symbol: 'DEAD',
+          amountBase: 5n,
+          decimals: 9,
+          locked: false,
+          graduated: true,
+          priceUsd: null,
+          valueUsd: null,
+          source: 'none',
+          confidence: 'low',
+          illiquid: true,
+        },
+      ],
+      aumUsd: 15_000_000_000.5,
+      aumClamped: false,
+      solUsd: 150.25,
+    });
+    const snapshot = await store.readSnapshot();
+    expect(snapshot?.aumUsd).toBeCloseTo(15_000_000_000.5);
+    expect(snapshot?.solUsd).toBeCloseTo(150.25);
+    expect(snapshot?.holdings).toHaveLength(2);
+    const locked = snapshot?.holdings.find((h) => h.mint === 'FundMintA');
+    expect(locked).toMatchObject({ locked: true, amountBase: '10000000000000000000' });
+    expect(await store.previousAumUsd()).toBeCloseTo(15_000_000_000.5);
+
+    // Mark history: append past the keep limit and confirm pruning + order.
+    for (let i = 1; i <= 40; i++) await store.appendMark('FundMintA', i);
+    const recent = await store.recentMarks('FundMintA', 5);
+    expect(recent).toEqual([40, 39, 38, 37, 36]);
+    const all = await store.recentMarks('FundMintA', 100);
+    expect(all.length).toBeLessThanOrEqual(32);
   });
 
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {

@@ -326,6 +326,65 @@ export async function markLocksVerified(db: Queryable, realmId: number): Promise
   return (res.rowCount ?? 0) > 0;
 }
 
+// ── Levy fund registry reads (phase 6) ───────────────────────────────────────
+
+// Every realm token with a created mint, for joining fund wallet balances.
+export async function listTokensWithMint(db: Queryable): Promise<
+  Array<{
+    realmId: number;
+    mint: string;
+    symbol: string;
+    decimals: number;
+    status: string;
+    curveAddress: string | null;
+  }>
+> {
+  const res = await db.query(
+    `SELECT realm_id, mint, symbol, decimals, status, curve_address
+       FROM realm_tokens WHERE mint IS NOT NULL`,
+  );
+  return res.rows.map((r: Record<string, unknown>) => ({
+    realmId: Number(r.realm_id),
+    mint: String(r.mint),
+    symbol: String(r.symbol),
+    decimals: Number(r.decimals),
+    status: String(r.status),
+    curveAddress: r.curve_address == null ? null : String(r.curve_address),
+  }));
+}
+
+// The verified levy locks: each phase 3 launch whose locks passed on-chain
+// verification contributes its levy bucket (supply * levy bps, floored, the
+// exact splitSupplyBase share) as a LOCKED fund position.
+export async function listVerifiedLevyLocks(db: Queryable): Promise<
+  Array<{
+    realmId: number;
+    mint: string;
+    symbol: string;
+    decimals: number;
+    status: string;
+    curveAddress: string | null;
+    levyBase: bigint;
+  }>
+> {
+  const res = await db.query(
+    `SELECT t.realm_id, t.mint, t.symbol, t.decimals, t.status, t.curve_address,
+            div(l.supply_base * l.alloc_levy_bps, 10000) AS levy_base
+       FROM realm_token_launches l
+       JOIN realm_tokens t ON t.realm_id = l.realm_id
+      WHERE l.locks_verified_at IS NOT NULL AND t.mint IS NOT NULL`,
+  );
+  return res.rows.map((r: Record<string, unknown>) => ({
+    realmId: Number(r.realm_id),
+    mint: String(r.mint),
+    symbol: String(r.symbol),
+    decimals: Number(r.decimals),
+    status: String(r.status),
+    curveAddress: r.curve_address == null ? null : String(r.curve_address),
+    levyBase: BigInt(String(r.levy_base)),
+  }));
+}
+
 // ── Curve listing + graduation (phase 4) ─────────────────────────────────────
 
 // Bind the curve to the token at listing: sets the mint (when the host created

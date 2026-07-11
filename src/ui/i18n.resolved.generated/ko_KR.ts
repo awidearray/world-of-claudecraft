@@ -324,6 +324,34 @@ export const ko_KR: EnTranslations = {
       "verifyHint": "풀 생성 트랜잭션이 확정되면 검증하여 토큰을 상장하세요.",
       "graduateBtn": "졸업 검증"
     },
+    "fund": {
+      "open": "Levy Street 펀드",
+      "title": "Levy Street 펀드",
+      "subtitle": "플랫폼은 여기서 런치된 모든 렐름 토큰의 잠긴 지분을 보유하며 실시간으로 공개합니다. 이것은 투명한 트레저리이지 매수할 수 있는 펀드가 아닙니다. 이 페이지의 어떤 것도 사고팔거나 상환할 수 없습니다.",
+      "loading": "포트폴리오를 불러오는 중...",
+      "notPublished": "포트폴리오가 아직 게시되지 않았습니다.",
+      "empty": "펀드는 아직 렐름 토큰을 보유하지 않았습니다.",
+      "aum": "총 가치: {amount} USD",
+      "updated": "업데이트 {time}",
+      "clampedNote": "한 번의 갱신에서 발생한 큰 변동은 확인 갱신을 기다리며 보류 중입니다.",
+      "policyNote": "모든 보유분은 캡 테이블에서 가장 엄격한 일정(클리프 12개월 + 선형 48개월)으로 베스팅되며 처분은 거버넌스 승인이 필요합니다. 플랫폼은 이 지분을 투매할 수 없습니다.",
+      "tableAria": "펀드 보유 내역",
+      "colToken": "토큰",
+      "colAmount": "수량",
+      "colPrice": "가격 (USD)",
+      "colValue": "가치 (USD)",
+      "colWeight": "비중",
+      "colStatus": "상태",
+      "badgeLocked": "잠김",
+      "badgeGraduated": "졸업",
+      "statusIlliquid": "유동성 부족 (총액에서 제외)",
+      "confidence": {
+        "high": "가격 산정됨 (교차 검증)",
+        "medium": "가격 산정됨",
+        "low": "가격 산정됨 (신뢰도 낮음)"
+      },
+      "illiquidNote": "신뢰할 수 있는 가격이 없는 보유분: {count}. 표시되지만 집계되지 않습니다."
+    },
     "flow": {
       "registering": "토큰 등록 중...",
       "openingVote": "투표 여는 중...",

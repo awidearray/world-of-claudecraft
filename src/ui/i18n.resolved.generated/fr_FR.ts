@@ -324,6 +324,34 @@ export const fr_FR: EnTranslations = {
       "verifyHint": "Once your pool creation transaction finalizes, verify it to list the token.",
       "graduateBtn": "Verify Graduation"
     },
+    "fund": {
+      "open": "Levy Street Fund",
+      "title": "Levy Street Fund",
+      "subtitle": "The platform holds a locked slice of every realm token launched here, shown live. It is a transparent treasury, not a fund you can buy into: nothing on this page can be bought, sold, or redeemed.",
+      "loading": "Loading the portfolio...",
+      "notPublished": "The portfolio has not been published yet.",
+      "empty": "The fund holds no realm tokens yet.",
+      "aum": "Total value: {amount} USD",
+      "updated": "Updated {time}",
+      "clampedNote": "A large single-refresh change is being held pending a confirming refresh.",
+      "policyNote": "Every holding vests on the strictest schedule on the cap table (12 month cliff + 48 month linear) and disposal is governance gated. The platform cannot dump this bag.",
+      "tableAria": "Fund holdings",
+      "colToken": "Token",
+      "colAmount": "Amount",
+      "colPrice": "Price (USD)",
+      "colValue": "Value (USD)",
+      "colWeight": "Weight",
+      "colStatus": "Status",
+      "badgeLocked": "Locked",
+      "badgeGraduated": "Graduated",
+      "statusIlliquid": "Illiquid (excluded from total)",
+      "confidence": {
+        "high": "Priced (cross-checked)",
+        "medium": "Priced",
+        "low": "Priced (low confidence)"
+      },
+      "illiquidNote": "Holdings without a trustworthy price: {count}. Shown but never counted."
+    },
     "flow": {
       "registering": "Registering the token...",
       "openingVote": "Opening the vote...",

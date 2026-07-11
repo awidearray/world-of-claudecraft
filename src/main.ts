@@ -181,6 +181,7 @@ import {
 } from './ui/i18n';
 import { defaultIconPrewarmEntries, prewarmIconCache } from './ui/icon_prewarm';
 import { iconDataUrl } from './ui/icons';
+import { LevyFundPanel } from './ui/levy_fund';
 import { applyNativeDeviceLanguage } from './ui/native_language';
 import { scheduleNativeUpdateCheck } from './ui/native_update_prompt';
 import { createMetricsSampler } from './ui/perf_metrics_sampler';
@@ -6526,6 +6527,17 @@ function openRealmOperator(): void {
   void realmOperator.open();
 }
 
+// The public Levy Street Fund portfolio (phase 6): display-only; reachable
+// from the world list for any signed-in player.
+function openLevyFund(): void {
+  show('#levy-fund-panel');
+  const panel = new LevyFundPanel($('#levy-fund-body') as HTMLElement, {
+    api,
+    close: () => showRealmList(),
+  });
+  void panel.open();
+}
+
 let realmAffiliate: RealmAffiliate | null = null;
 function openRealmAffiliate(): void {
   show('#realm-affiliate-panel');
@@ -7273,6 +7285,8 @@ function wireStartScreens(): void {
   ($('#btn-realm-found') as HTMLElement).hidden = !WALLET_ENABLED;
   $('#btn-realm-found').addEventListener('click', () => openRealmOperator());
   $('#btn-realm-operator-back').addEventListener('click', () => showRealmList());
+  $('#btn-levy-fund').addEventListener('click', () => openLevyFund());
+  $('#btn-levy-fund-back').addEventListener('click', () => showRealmList());
   // Affiliate program: any account can grab a link + see referred realms. Needs
   // the wallet feature (founding, and the USDC payout, are on-chain).
   ($('#btn-realm-affiliate') as HTMLElement).hidden = !WALLET_ENABLED;

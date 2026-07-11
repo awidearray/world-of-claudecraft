@@ -12,7 +12,11 @@
 // token, and the founder co-signs and pays.
 
 import { CpAmm } from '@meteora-ag/cp-amm-sdk';
-import { DynamicBondingCurveClient } from '@meteora-ag/dynamic-bonding-curve-sdk';
+import {
+  DynamicBondingCurveClient,
+  getCurrentPoint,
+  swapQuote,
+} from '@meteora-ag/dynamic-bonding-curve-sdk';
 import {
   Connection,
   Keypair,
@@ -316,4 +320,44 @@ function createAtaIdempotentIx(
     ],
     data: Buffer.from([1]),
   });
+}
+
+// ── Live curve quote (phase 6 valuation) ─────────────────────────────────────
+
+// The size-aware pre-graduation mark: the realized quote-out of selling
+// `amountBase` of the token into its live DBC curve (never the instantaneous
+// spot, which a thin curve inflates). Pure SDK math over freshly fetched pool
+// + config state; null on anything unreadable so the holding marks illiquid.
+export async function liveCurveQuoteOut(
+  args: { poolAddress: string; amountBase: bigint },
+  rpcUrl: string = SOLANA_RPC_URL,
+): Promise<{ quoteOutBase: bigint; quoteIsSol: boolean; quoteDecimals: number } | null> {
+  try {
+    const connection = new Connection(rpcUrl, 'confirmed');
+    const dbc = new DynamicBondingCurveClient(connection, 'confirmed');
+    const pool = await dbc.state.getPool(args.poolAddress);
+    if (!pool) return null;
+    const config = await dbc.state.getPoolConfig(pool.poolState.config);
+    if (!config) return null;
+    const currentPoint = await getCurrentPoint(connection, Number(config.activationType));
+    const quote = swapQuote(
+      pool,
+      config,
+      true, // sell base for quote
+      new BN(args.amountBase.toString()),
+      0,
+      false,
+      currentPoint,
+      false,
+    );
+    const out = bn((quote as { outputAmount?: unknown }).outputAmount as never);
+    if (out <= 0n) return null;
+    const quoteMint = config.quoteMint.toBase58();
+    const quoteIsSol = quoteMint === NATIVE_SOL_MINT;
+    const decimals = quoteIsSol ? 9 : await quoteDecimals(quoteMint);
+    if (decimals === null) return null;
+    return { quoteOutBase: out, quoteIsSol, quoteDecimals: decimals };
+  } catch {
+    return null;
+  }
 }

@@ -324,6 +324,34 @@ export const zh_TW: EnTranslations = {
       "verifyHint": "池建立交易最終確認後,驗證它以使代幣上線。",
       "graduateBtn": "驗證畢業"
     },
+    "fund": {
+      "open": "Levy Street 基金",
+      "title": "Levy Street 基金",
+      "subtitle": "平台持有在此發射的每個伺服器代幣的鎖定份額,即時展示。這是一個透明的金庫,不是可以買入的基金:本頁面的任何內容都不可買賣或贖回。",
+      "loading": "正在載入投資組合...",
+      "notPublished": "投資組合尚未發佈。",
+      "empty": "基金尚未持有任何伺服器代幣。",
+      "aum": "總價值:{amount} USD",
+      "updated": "更新於 {time}",
+      "clampedNote": "單次重新整理出現的大幅變動正在等待確認重新整理。",
+      "policyNote": "每筆持倉都按股權表上最嚴格的時間表歸屬(12 個月懸崖期 + 48 個月線性),處置需經治理審批。平台無法拋售這些持倉。",
+      "tableAria": "基金持倉",
+      "colToken": "代幣",
+      "colAmount": "數量",
+      "colPrice": "價格(USD)",
+      "colValue": "價值(USD)",
+      "colWeight": "權重",
+      "colStatus": "狀態",
+      "badgeLocked": "已鎖定",
+      "badgeGraduated": "已畢業",
+      "statusIlliquid": "流動性不足(不計入總額)",
+      "confidence": {
+        "high": "已定價(交叉核驗)",
+        "medium": "已定價",
+        "low": "已定價(信賴度低)"
+      },
+      "illiquidNote": "沒有可信價格的持倉:{count}。僅展示,從不計入。"
+    },
     "flow": {
       "registering": "正在註冊代幣...",
       "openingVote": "正在開啟投票...",

@@ -1,12 +1,12 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 5 of
+Realm Token Launchpad, phases 0 to 6 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
 the bottom). Phases 3 (mint factory + locks), 4 (bonding curve + DAMM v2
-graduation), and 5 (fee keeper + revenue split) are recorded below the phase
-0 to 2 record.
+graduation), 5 (fee keeper + revenue split), and 6 (Levy Street Fund +
+valuation + portfolio) are recorded below the phase 0 to 2 record.
 
 ## Locked decisions honored
 
@@ -337,6 +337,59 @@ Phase 5 gate status: exercised end-to-end against the injected gateway/store
 fakes plus real Postgres; a devnet/mainnet drain of a real seeded pool rides
 the phase 4 dry-run gate (owner sign-off) since it needs a live DBC pool
 under the partner config.
+
+## Phase 6: Levy Street Fund + tiered valuation + display-only portfolio
+
+Files: `server/token_valuation.ts` (PURE tiered marks: pre-graduation value =
+the SIZE-AWARE realized quote-out of selling the fund's actual balance into
+the curve, never the instantaneous spot; post-graduation Jupiter Price v3
+primary CROSS-CHECKED against Birdeye/DEX Screener with divergence beyond
+2500 bps marking ILLIQUID; one Pyth SOL/USD pull with a confidence band that
+downgrades (never silently accepts) wide/stale reads; rolling median; AUM
+clamp holding a >1.5x single-refresh jump pending confirmation; illiquid
+holdings EXCLUDED from AUM, never zeroed, still shown), `server/levy_fund.ts`
+(the keeper: positions = fund wallet balances joined to the registry PLUS each
+verified levy lock as a first-class LOCKED row; per-tier pricing; median
+smoothing through the stored mark history; clamp; snapshot save; the
+display-only `portfolioView` with weights + illiquid-last ordering),
+`server/levy_fund_db.ts` (snapshot cache: holdings + pruned mark history +
+meta; a display cache, not a money ledger), `server/levy_fund_sources.ts`
+(raw-fetch sources: dual-program wallet enumeration, Jupiter v3 batched 50,
+Birdeye-or-DEXScreener cross spot, Pyth Hermes), `liveCurveQuoteOut` in the
+one SDK module (fresh pool+config state through the SDK's own swapQuote at the
+current point). Registry reads `listTokensWithMint` + `listVerifiedLevyLocks`
+(levy bucket = div(supply * levy bps, 10000), the exact splitSupplyBase
+share). Route: PUBLIC `GET /api/levy-fund` (rate-limited, serves the cache,
+never the chain). Keeper boot: no-op until LEVY_FUND_WALLET is set; cadence
+LEVY_FUND_REFRESH_MS (default 60s, floor 15s). UI: the public portfolio panel
+(`src/ui/levy_fund.ts` + pure `levy_fund_view.ts` in UI_PURE_CORES) reachable
+from the world list, with AUM header, per-row amount/price/value/weight,
+locked/graduated badges, source-confidence tags, Solscan links, the no-sell
+policy note, and BY DESIGN no buy/sell/redeem control; `launchpad.fund.*` i18n
++ five non-Latin M16 fills.
+
+THE ABSOLUTE LINE (PRD 8/14) is pinned by test: the module exports no
+buy/sell/redeem/swap/order/share operation and no field of the public payload
+can express one.
+
+Acceptance:
+- `tests/token_valuation.test.ts` (12): curve-tier size-aware marks, stable
+  quote at par, Pyth downgrade/exclusion, DEX-tier cross-check upgrade +
+  divergence exclusion + missing-primary exclusion, median parities, clamp
+  both directions, AUM excludes-never-zeroes.
+- `tests/levy_fund.test.ts` (8): composition (foreign mints ignored, locks
+  as locked rows), per-tier refresh with exact AUM, unreadable-chain no-op,
+  clamp against the stored previous, median smoothing, illiquid rows visible
+  with no value, weights + ordering, and the ABSOLUTE LINE guard.
+- Real Postgres: snapshot save/read round-trip + mark pruning (13 green).
+- tsc clean; architecture (UI_PURE_CORES registration) + S3 + M16 + i18n
+  freshness green; the surface inventory carries the public /api/levy-fund
+  row; biome clean.
+
+Phase 6 gate status: the counsel memo on Investment Company Act status is a
+PRECONDITION to enabling the page on mainnet (PRD section 10); the keeper is
+dark until LEVY_FUND_WALLET is configured, so nothing is published until ops
+turns it on.
 
 ## Invariant confirmations
 
