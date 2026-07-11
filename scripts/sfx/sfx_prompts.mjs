@@ -451,6 +451,25 @@ export const SFX = [
   { key: 'quest_accept', custom: true },
   { key: 'quest_ready', custom: true },
   { key: 'quest_complete', custom: true },
+
+  // --- Lockpick minigame (custom recordings, not ElevenLabs) ------------------
+  // custom: true means gen_sfx.mjs will never call the API for these, even with
+  // --force. Drop the MP3 into public/audio/sfx/ and add an entry here to register
+  // any future custom recording in the same way.
+  { key: 'lockpick_advanced_1', custom: true },
+  { key: 'lockpick_advanced_2', custom: true },
+  { key: 'lockpick_advanced_3', custom: true },
+  { key: 'lockpick_advanced_4', custom: true },
+  { key: 'lockpick_begin', custom: true },
+  { key: 'lockpick_bind', custom: true },
+  { key: 'lockpick_bonus', custom: true },
+  { key: 'lockpick_end', custom: true },
+  { key: 'lockpick_fail', custom: true },
+  { key: 'lockpick_page_cleared', custom: true },
+  { key: 'lockpick_retry', custom: true },
+  { key: 'lockpick_slip', custom: true },
+  { key: 'lockpick_success', custom: true },
+  { key: 'lockpick_trap', custom: true },
 ];
 
 // Family ids that have creature vocalizations (used by the integration layer to
