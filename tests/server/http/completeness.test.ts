@@ -510,9 +510,10 @@ describe('registry completeness: oauth + internal surfaces (server/oauth.ts, ser
   it('derives the expected non-empty ladders', () => {
     expect(oauthPostLadder.length).toBe(5);
     expect(oauthGetLadder.length).toBe(2);
-    // 15 = the handleInternalApi eleven (restart-countdown + the 10 Discord-bot routes)
-    // plus the ops family below (v0.20.0 added its paginated leaderboard read).
-    expect(internalLadder.length).toBe(15);
+    // 17 = the handleInternalApi thirteen (restart-countdown + the two
+    // /internal/woc/season ops arms + the 10 Discord-bot routes) plus the ops
+    // family below (v0.20.0 added its paginated leaderboard read).
+    expect(internalLadder.length).toBe(17);
     expect(opsFamilyRows.length).toBe(4);
   });
 

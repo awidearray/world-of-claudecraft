@@ -623,6 +623,33 @@ house pattern as the v0.23.0 base merge), not the rebase recipe below.
   container's proxy; installed with scripts skipped. No test or build
   path here depends on it.
 
+## Upstream CI posture at the PR tip
+
+The seven suites this document previously called "pre-existing base reds"
+were caused by the CHAIN, not by upstream, so upstream CI would have hit
+them. Five are fixed at the tip (em-dash copy in the buyback keeper
+comments; #woc-season-window parity in play.html + the mobile sheet rule;
+inventory rows for the /internal/woc/season arms under a new
+secret-woc-ops scope; the public realm directory failing OPEN on a
+registry read failure with the golden fixture re-pinned to the chain's
+additive fields; the schema_wiring pg mock answering assertRealmSchema
+from the exported REQUIRED_REALM_COLUMNS). Two remain, deliberately:
+
+- `tests/malware_scan.test.ts`: the scanner's web3-drain / key-exfil /
+  supply-chain signatures encode the pre-chain premise that NOTHING in the
+  tree assembles, signs, or broadcasts transactions. The chain makes
+  on-chain transactions a product surface (ops-key keepers, the mint
+  factory's transient partial-sign, non-custodial client builders), so the
+  gate needs a maintainer-owned allowlist decision: either pathSev-demote
+  the reviewed on-chain modules (the scanner's existing redact.ts pattern)
+  or re-scope the signatures. Loosening a security control to admit this
+  chain's own code is NOT a decision the contributing agent makes; the
+  finding list is exactly the sanctioned keeper/builder/test files plus
+  the three @solana dependencies.
+- `tests/ai_review.test.ts` (nested-checkout harness): environment-induced
+  timeout in the contribution container only (completes successfully at
+  ~73s through the egress proxy vs the 30s cap); expected green in CI.
+
 ## Upstream-PR recipe (when the #799/#475 chain lands)
 
 1. Rebase this branch onto the then-current `release/**` integration base

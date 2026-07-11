@@ -370,6 +370,21 @@ function useInternalRuntime(): InternalRuntime {
   return internalRuntime;
 }
 
+// Season ops for the ROUTER arm, injected at boot alongside the runtime above
+// (main.ts passes the same { openSeason, closeSeason } it hands the legacy
+// ladder). Null (not yet wired, e.g. a unit test or a build without season
+// ops) answers the same feature-off 404 as the legacy arm's !seasonOps check.
+let seasonOpsRuntime: SeasonOps | null = null;
+
+export function configureSeasonOps(ops: SeasonOps): void {
+  seasonOpsRuntime = ops;
+}
+
+/** Clear the injected season ops so a unit test can install its own fake. */
+export function resetSeasonOpsForTests(): void {
+  seasonOpsRuntime = null;
+}
+
 const INTERNAL_META: RouteMeta = { envelope: 'admin' };
 
 // One gate instance per (header, env var) pair, shared across the routes that
@@ -382,6 +397,18 @@ const discordGate = requireInternalSecret({
   header: DISCORD_SECRET_HEADER,
   envVar: DISCORD_SECRET_ENV,
 });
+const wocOpsGate = requireInternalSecret({
+  header: 'x-woc-ops-secret',
+  envVar: 'WOC_OPS_SECRET',
+});
+
+// Legacy-order parity: the ladder checks season-ops wiring BEFORE the secret
+// (an op nobody wired is indistinguishable from one that does not exist), so
+// this middleware runs ahead of wocOpsGate in the season routes below.
+const seasonOpsWired: typeof wocOpsGate = async (ctx, next) => {
+  if (!seasonOpsRuntime) return fail(ctx.res, 404, 'unknown endpoint');
+  await next();
+};
 
 export const routes: RouteDef[] = [
   {
@@ -396,6 +423,39 @@ export const routes: RouteDef[] = [
         return fail(ctx.res, 409, 'restart countdown already active', status);
       }
       return ok(ctx.res, status);
+    },
+  },
+  {
+    method: 'POST',
+    path: '/internal/woc/season/open',
+    surface: 'internal',
+    meta: INTERNAL_META,
+    middleware: [seasonOpsWired, wocOpsGate],
+    handler: async (ctx) => {
+      const body = await readBody(ctx.req);
+      const seasonId = Number(body?.seasonId);
+      if (!Number.isInteger(seasonId)) return fail(ctx.res, 400, 'seasonId must be an integer');
+      const label = typeof body?.label === 'string' ? body.label.slice(0, 120) : '';
+      const endsAt = normalizeEndsAt(body?.endsAt);
+      if (!endsAt.ok) return fail(ctx.res, 400, 'endsAt must be an ISO timestamp or omitted');
+      // biome-ignore lint/style/noNonNullAssertion: seasonOpsWired 404s on null above
+      await seasonOpsRuntime!.openSeason({ seasonId, label, endsAt: endsAt.value });
+      return ok(ctx.res, { seasonId, label, endsAt: endsAt.value });
+    },
+  },
+  {
+    method: 'POST',
+    path: '/internal/woc/season/close',
+    surface: 'internal',
+    meta: INTERNAL_META,
+    middleware: [seasonOpsWired, wocOpsGate],
+    handler: async (ctx) => {
+      const body = await readBody(ctx.req);
+      const seasonId = Number(body?.seasonId);
+      if (!Number.isInteger(seasonId)) return fail(ctx.res, 400, 'seasonId must be an integer');
+      // biome-ignore lint/style/noNonNullAssertion: seasonOpsWired 404s on null above
+      await seasonOpsRuntime!.closeSeason(seasonId);
+      return ok(ctx.res, { seasonId, closed: true });
     },
   },
   {

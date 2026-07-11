@@ -165,7 +165,7 @@ import {
   moderationErrorBody,
   readBody,
 } from './http_util';
-import { configureInternalRuntime, handleInternalApi } from './internal';
+import { configureInternalRuntime, configureSeasonOps, handleInternalApi } from './internal';
 import { isConnectionRefused } from './ip_block';
 import { pruneExpiredBlockedIps } from './ip_block_db';
 import { configureLeaderboardRuntime, type ReleaseEntry } from './leaderboard';
@@ -3060,6 +3060,9 @@ export async function startServer(): Promise<http.Server> {
   // paths (and are the corresponding dispatchers' delegates).
   configureAdminRuntime(game);
   configureInternalRuntime(game);
+  // The router arm of the /internal/woc/season ops (server/internal.ts routes)
+  // receives the SAME season ops the legacy ladder delegate is handed below.
+  configureSeasonOps({ openSeason, closeSeason });
   // Bot detector: replay this realm's saved config overrides onto the fresh
   // detector. Boot applies what it can; a stale entry (schema drift after a
   // deploy) is skipped and logged, never allowed to drop the whole document.
