@@ -175,8 +175,9 @@ S3 guard (`tests/localization_fixes.test.ts`) green; M16
   detached worktrees).
 - Biome on changed files: clean (warnings only, per CI policy).
 - New suites: 89 unit tests green + 9 real-Postgres integration tests green.
-- Full `npm test`: 23 failures BEFORE the docs/i18n commits, of which 19 are
-  PRE-EXISTING at the base merge 2bb4d5084 (verified by stash-and-run):
+- Full `npm test` at the branch tip: 11570 passed, 17 failed, ALL 17 inside
+  7 suites that already fail at the base merge 2bb4d5084 (verified by
+  stash-and-run; the base fails 19 tests, so this branch is net -2):
   `schema_wiring` (11: its ensureSchema mock never served
   `information_schema` for the branch's own `assertRealmSchema`),
   `malware_scan` (branch keeper files + `@solana/web3.js`, the known
