@@ -213,9 +213,10 @@ const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
     'pay_tx_sig',
   ],
   realm_bonds: ['realm_id', 'account_id', 'bond_base', 'grace_until'],
-  // Realm token launchpad (phases 0 to 1). Dropping any of these columns must
-  // fail at boot, not at first query: the registry identity + lifecycle and the
-  // vote ledger's per-wallet guard + snapshotted weight are all load-bearing.
+  // Realm token launchpad (phases 0 to 2). Dropping any of these columns must
+  // fail at boot, not at first query: the registry identity + lifecycle, the
+  // vote ledger's per-wallet guard + snapshotted weight, and the presale money
+  // tables' UNIQUE(tx_sig) replay guards are all load-bearing.
   realm_tokens: [
     'realm_id',
     'mint',
@@ -226,6 +227,32 @@ const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
     'launch_tx_sig',
   ],
   realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
+  realm_presales: [
+    'realm_id',
+    'escrow_wallet',
+    'sol_soft_cap_base',
+    'usdc_soft_cap_base',
+    'woc_soft_cap_base',
+  ],
+  realm_presale_quotes: [
+    'quote_id',
+    'realm_id',
+    'account_id',
+    'wallet',
+    'currency',
+    'amount_base',
+    'expires_at',
+  ],
+  realm_presale_contributions: [
+    'contribution_id',
+    'realm_id',
+    'account_id',
+    'wallet',
+    'currency',
+    'amount_base',
+    'pay_tx_sig',
+    'refund_tx_sig',
+  ],
 };
 
 export async function assertRealmSchema(db: Queryable): Promise<void> {

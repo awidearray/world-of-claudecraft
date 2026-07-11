@@ -277,6 +277,16 @@ import {
   rolesForAccountOnRealm,
 } from './realm_db';
 import {
+  configurePresale,
+  confirmPresaleContribution,
+  confirmPresaleRefund,
+  finalizePresale,
+  type PresaleDeps,
+  preparePresaleQuote,
+  presaleInfo,
+} from './realm_presale';
+import { realmPresaleStore } from './realm_presale_db';
+import {
   confirmProvisionQuote,
   finalizeRealmRelease,
   prepareProvisionQuote,
@@ -1507,13 +1517,14 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, result);
     }
-    // ── Realm token launchpad (phases 0 to 1): registry + launch vote ─────────
+    // ── Realm token launchpad (phases 0 to 2): registry + vote + presale ──────
     // All routes follow the branch's realm route pattern: bearer auth, typed
     // `error` codes the client maps to launchpad.err.* keys, no chain writes on
     // the server (verify-only), rate limits on anything that touches an RPC.
     const launchpadDeps = () => ({
       tokens: realmTokenDb(pool),
       votes: realmVoteDb(pool),
+      store: realmPresaleStore(pool),
       walletForAccount: async (accountId: number) => {
         const w = await walletForAccount(accountId);
         return w ? { pubkey: w.pubkey } : null;
@@ -1536,6 +1547,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       const token = await deps.tokens.getRealmToken(realmId);
       if (!token) return json(res, 200, { token: null, vote: null, presale: null });
       const vote = await voteStatus(deps as VoteDeps, { realmId, accountId });
+      const presale = await presaleInfo(deps as PresaleDeps, { realmId, accountId });
       const roles = await rolesForAccountOnRealm(pool, realmId, accountId);
       return json(res, 200, {
         token: {
@@ -1548,7 +1560,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
           decimals: token.decimals,
         },
         vote: vote.ok ? vote.vote : null,
-        presale: null,
+        presale: presale.ok ? presale.presale : null,
         isOwner: roles.includes('owner'),
       });
     }
@@ -1603,6 +1615,84 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { vote: result.vote });
+    }
+    const presaleConfigMatch = /^\/api\/realms\/(\d+)\/token\/presale\/config$/.exec(url);
+    if (req.method === 'POST' && presaleConfigMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const body = await readBody(req);
+      const result = await configurePresale(launchpadDeps() as PresaleDeps, {
+        accountId,
+        realmId: Number(presaleConfigMatch[1]),
+        escrowWallet: typeof body.escrowWallet === 'string' ? body.escrowWallet.trim() : '',
+        rails:
+          body.rails && typeof body.rails === 'object'
+            ? (body.rails as Record<string, unknown>)
+            : {},
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { configured: true });
+    }
+    const presaleQuoteMatch = /^\/api\/realms\/(\d+)\/token\/presale\/quote$/.exec(url);
+    if (req.method === 'POST' && presaleQuoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await preparePresaleQuote(launchpadDeps() as PresaleDeps, {
+        accountId,
+        realmId: Number(presaleQuoteMatch[1]),
+        currency: typeof body.currency === 'string' ? body.currency : '',
+        amountBase: typeof body.amountBase === 'string' ? body.amountBase : '',
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, result.quote);
+    }
+    const presaleConfirmMatch = /^\/api\/realms\/(\d+)\/token\/presale\/confirm$/.exec(url);
+    if (req.method === 'POST' && presaleConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const body = await readBody(req);
+      const quoteId = typeof body.quoteId === 'string' ? body.quoteId : '';
+      const paySig = typeof body.paySig === 'string' ? body.paySig : '';
+      if (!quoteId || !paySig) return json(res, 400, { error: 'missing_quoteId_or_paySig' });
+      const result = await confirmPresaleContribution(launchpadDeps() as PresaleDeps, {
+        accountId,
+        quoteId,
+        paySig,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { ok: true });
+    }
+    const presaleFinalizeMatch = /^\/api\/realms\/(\d+)\/token\/presale\/finalize$/.exec(url);
+    if (req.method === 'POST' && presaleFinalizeMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const result = await finalizePresale(launchpadDeps() as PresaleDeps, {
+        accountId,
+        realmId: Number(presaleFinalizeMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { status: result.status });
+    }
+    const presaleRefundMatch = /^\/api\/realms\/(\d+)\/token\/presale\/refund$/.exec(url);
+    if (req.method === 'POST' && presaleRefundMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      // Refund confirm fetches a finalized tx from the RPC; rate-limit it.
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const payTxSig = typeof body.payTxSig === 'string' ? body.payTxSig : '';
+      const refundSig = typeof body.refundSig === 'string' ? body.refundSig : '';
+      if (!payTxSig || !refundSig)
+        return json(res, 400, { error: 'missing_payTxSig_or_refundSig' });
+      const result = await confirmPresaleRefund(launchpadDeps() as PresaleDeps, {
+        realmId: Number(presaleRefundMatch[1]),
+        payTxSig,
+        refundSig,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { refunded: true, unrefundedCount: result.unrefundedCount });
     }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {

@@ -327,6 +327,32 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
       'launch_tx_sig',
     ],
     realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
+    realm_presales: [
+      'realm_id',
+      'escrow_wallet',
+      'sol_soft_cap_base',
+      'usdc_soft_cap_base',
+      'woc_soft_cap_base',
+    ],
+    realm_presale_quotes: [
+      'quote_id',
+      'realm_id',
+      'account_id',
+      'wallet',
+      'currency',
+      'amount_base',
+      'expires_at',
+    ],
+    realm_presale_contributions: [
+      'contribution_id',
+      'realm_id',
+      'account_id',
+      'wallet',
+      'currency',
+      'amount_base',
+      'pay_tx_sig',
+      'refund_tx_sig',
+    ],
   };
   function stubDb(drop?: { table: string; column: string }) {
     return {
@@ -348,5 +374,16 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
     await expect(
       assertRealmSchema(stubDb({ table: 'realm_tokens', column: 'monetization_policy' }) as never),
     ).rejects.toThrow(/realm_tokens.*monetization_policy/);
+  });
+
+  it('fails at boot when a money-table replay-guard column is dropped', async () => {
+    await expect(
+      assertRealmSchema(
+        stubDb({ table: 'realm_presale_contributions', column: 'pay_tx_sig' }) as never,
+      ),
+    ).rejects.toThrow(/realm_presale_contributions.*pay_tx_sig/);
+    await expect(
+      assertRealmSchema(stubDb({ table: 'realm_votes', column: 'weight_woc' }) as never),
+    ).rejects.toThrow(/realm_votes.*weight_woc/);
   });
 });

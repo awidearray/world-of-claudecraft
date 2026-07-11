@@ -22,6 +22,7 @@ run('launchpad tables against real Postgres', () => {
   let realmDb: typeof import('../server/realm_db');
   let tokenDb: typeof import('../server/realm_token_db');
   let voteDb: typeof import('../server/realm_vote_db');
+  let presaleDb: typeof import('../server/realm_presale_db');
   let httpUtil: typeof import('../server/http_util');
   let ownerId: number;
   let voterId: number;
@@ -32,6 +33,7 @@ run('launchpad tables against real Postgres', () => {
     realmDb = await import('../server/realm_db');
     tokenDb = await import('../server/realm_token_db');
     voteDb = await import('../server/realm_vote_db');
+    presaleDb = await import('../server/realm_presale_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
       `DROP TABLE IF EXISTS realm_presale_contributions, realm_presale_quotes, realm_presales,
@@ -167,6 +169,135 @@ run('launchpad tables against real Postgres', () => {
       choice: 'yes',
       weightWoc: 1_000_000n,
     });
+  });
+
+  it('persists the presale config rails and round-trips quotes', async () => {
+    const store = presaleDb.realmPresaleStore(db.pool);
+    await store.createPresale({
+      realmId,
+      escrowWallet: 'So11111111111111111111111111111111111111112',
+      rails: {
+        SOL: {
+          softCapBase: 1_000_000_000n,
+          raiseCapBase: 2_000_000_000n,
+          walletCapBase: 500_000_000n,
+        },
+        USDC: { softCapBase: 5_000_000n, raiseCapBase: 10_000_000n, walletCapBase: 1_000_000n },
+      },
+    });
+    const config = await store.getPresale(realmId);
+    expect(config?.escrowWallet).toBe('So11111111111111111111111111111111111111112');
+    expect(config?.rails.SOL?.raiseCapBase).toBe(2_000_000_000n);
+    expect(config?.rails.WOC).toBeUndefined(); // disabled rail stays off
+
+    const expiresAt = new Date(Date.now() + 60_000);
+    await store.createQuote({
+      quoteId: 'q-int-1',
+      realmId,
+      accountId: voterId,
+      wallet: 'CONTRIBWALLET',
+      currency: 'SOL',
+      amountBase: 123_456_789n,
+      escrowAddr: config!.escrowWallet,
+      expiresAt,
+    });
+    const quote = await store.getQuote('q-int-1');
+    expect(quote).toMatchObject({
+      currency: 'SOL',
+      amountBase: 123_456_789n,
+      wallet: 'CONTRIBWALLET',
+    });
+    await store.deleteQuote('q-int-1');
+    expect(await store.getQuote('q-int-1')).toBeNull();
+  });
+
+  it('contribution ledger: UNIQUE(pay_tx_sig) replay guard + per-rail sums', async () => {
+    const store = presaleDb.realmPresaleStore(db.pool);
+    await store.insertContribution({
+      realmId,
+      accountId: voterId,
+      wallet: 'CONTRIBWALLET',
+      currency: 'SOL',
+      amountBase: 100_000_000n,
+      payTxSig: 'paysig_int_1',
+    });
+    let dup: unknown;
+    await store
+      .insertContribution({
+        realmId,
+        accountId: voterId,
+        wallet: 'CONTRIBWALLET',
+        currency: 'SOL',
+        amountBase: 100_000_000n,
+        payTxSig: 'paysig_int_1',
+      })
+      .catch((e) => {
+        dup = e;
+      });
+    expect(httpUtil.isUniqueViolation(dup)).toBe(true);
+
+    await store.insertContribution({
+      realmId,
+      accountId: voterId,
+      wallet: 'CONTRIBWALLET',
+      currency: 'USDC',
+      amountBase: 250_000n,
+      payTxSig: 'paysig_int_2',
+    });
+    const raised = await store.raisedByCurrency(realmId);
+    expect(raised.get('SOL')).toBe(100_000_000n);
+    expect(raised.get('USDC')).toBe(250_000n);
+    expect(await store.contributedByWallet(realmId, 'CONTRIBWALLET', 'SOL')).toBe(100_000_000n);
+    expect(await store.contributedByWallet(realmId, 'NOBODY', 'SOL')).toBe(0n);
+  });
+
+  it('refund marking: unrefunded-only, UNIQUE(refund_tx_sig), and the counter', async () => {
+    const store = presaleDb.realmPresaleStore(db.pool);
+    expect(await store.countUnrefunded(realmId)).toBe(2);
+    const c = await store.getContributionByPaySig('paysig_int_1');
+    expect(c).not.toBeNull();
+    expect(await store.markRefunded(c!.contributionId, 'refundsig_int_1')).toBe(true);
+    // Idempotence: a second mark on the same row matches nothing.
+    expect(await store.markRefunded(c!.contributionId, 'refundsig_int_other')).toBe(false);
+    // One refund tx cannot cover a second contribution.
+    const c2 = await store.getContributionByPaySig('paysig_int_2');
+    let reuse: unknown;
+    await store.markRefunded(c2!.contributionId, 'refundsig_int_1').catch((e) => {
+      reuse = e;
+    });
+    expect(httpUtil.isUniqueViolation(reuse)).toBe(true);
+    expect(await store.countUnrefunded(realmId)).toBe(1);
+  });
+
+  it('withPresaleLock serializes: the callback commits atomically', async () => {
+    const store = presaleDb.realmPresaleStore(db.pool);
+    // A throwing callback rolls its insert back.
+    await store
+      .withPresaleLock(realmId, async (locked) => {
+        await locked.insertContribution({
+          realmId,
+          accountId: voterId,
+          wallet: 'CONTRIBWALLET',
+          currency: 'SOL',
+          amountBase: 1n,
+          payTxSig: 'paysig_rollback',
+        });
+        throw new Error('boom');
+      })
+      .catch(() => {});
+    expect(await store.getContributionByPaySig('paysig_rollback')).toBeNull();
+    // A clean callback commits.
+    await store.withPresaleLock(realmId, async (locked) => {
+      await locked.insertContribution({
+        realmId,
+        accountId: voterId,
+        wallet: 'CONTRIBWALLET',
+        currency: 'SOL',
+        amountBase: 1n,
+        payTxSig: 'paysig_commit',
+      });
+    });
+    expect(await store.getContributionByPaySig('paysig_commit')).not.toBeNull();
   });
 
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {
