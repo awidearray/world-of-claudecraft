@@ -174,6 +174,7 @@ export const zh_CN: EnTranslations = {
     "back": "返回",
     "loading": "正在加载代币状态...",
     "symbolBadge": "{symbol} 代币",
+    "termsNote": "World of ClaudeCraft 是非托管撮合方:代币在钱包之间直接转移,本服务器从不保管资金。发射台功能在受制裁或受限地区不可用,且不含任何收益承诺。",
     "status": {
       "none": "未注册代币",
       "prelaunch": "发射前",
@@ -483,6 +484,9 @@ export const zh_CN: EnTranslations = {
       "character_not_found": "请选择您在此服务器的角色。",
       "sink_short": "转账未达到报价数量。",
       "credit_already_recorded": "该交易已发放过。",
+      "region_blocked": "此功能在您所在的地区不可用。",
+      "wallet_sanctioned": "该钱包无法使用发射台。",
+      "sanctions_unavailable": "合规筛查暂时不可用。请稍后再试。",
       "rate_limited": "请求过多。请放慢速度后再试。",
       "wallet_mismatch": "请连接您账户所关联的钱包。",
       "generic": "出了点问题。请重试。"

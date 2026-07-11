@@ -472,6 +472,11 @@ describe('ERR_KEYS server-code coverage', () => {
     'character_not_found',
     'sink_short',
     'credit_already_recorded',
+    // compliance (phase 8, server/compliance_gate.ts + server/sanctions.ts +
+    // the main.ts middleware/catch mappings)
+    'region_blocked',
+    'wallet_sanctioned',
+    'sanctions_unavailable',
     // route-level rate limit literal
     'too many requests, slow down',
   ];

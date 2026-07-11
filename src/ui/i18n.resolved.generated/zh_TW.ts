@@ -174,6 +174,7 @@ export const zh_TW: EnTranslations = {
     "back": "返回",
     "loading": "正在載入代幣狀態...",
     "symbolBadge": "{symbol} 代幣",
+    "termsNote": "World of ClaudeCraft 是非託管撮合方:代幣在錢包之間直接轉移,本伺服器從不保管資金。發射台功能在受制裁或受限地區不可用,且不含任何收益承諾。",
     "status": {
       "none": "未註冊代幣",
       "prelaunch": "發射前",
@@ -483,6 +484,9 @@ export const zh_TW: EnTranslations = {
       "character_not_found": "請選擇您在此世界的角色。",
       "sink_short": "轉帳未達到報價數量。",
       "credit_already_recorded": "該交易已發放過。",
+      "region_blocked": "此功能在您所在的地區不可用。",
+      "wallet_sanctioned": "該錢包無法使用發射台。",
+      "sanctions_unavailable": "合規篩查暫時不可用。請稍後再試。",
       "rate_limited": "請求過多。請放慢速度後再試。",
       "wallet_mismatch": "請連接您帳戶所關聯的錢包。",
       "generic": "出了點問題。請重試。"

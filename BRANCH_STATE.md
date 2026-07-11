@@ -453,6 +453,71 @@ by policy; conversion sits in the same high-reg-risk band as the wager
 features and stays off until the phase 8 counsel + geo gate clears it. The
 canonical realm registers no `power` policy, so it can never convert.
 
+## Phase 8: regulatory hardening + the mainnet gate
+
+Files: `server/compliance_gate.ts` (the IP geo gate: OFAC comprehensive-
+embargo floor CU/IR/KP/SY that env can EXTEND but never shrink; country from
+the edge header, Cloudflare `CF-IPCountry` by default and configurable for
+other edges; FAIL-CLOSED while enabled on a missing/malformed header,
+Cloudflare's XX unknown, and T1 Tor exits, because "cannot place the request"
+must never mean "allowed"; and the mainnet enablement gate below),
+`server/sanctions.ts` (the OFAC SDN wallet screen: loads the treasury.gov
+flat file, extracts every "Digital Currency Address" across asset tags,
+refreshes daily keeping the last good list on a failed refresh, and FAILS
+CLOSED via SanctionsUnavailableError while enabled but never loaded),
+`docs/legal/launchpad-facilitator-terms.md` (the non-custodial-facilitator
+ToS draft for counsel: platform-is-not-issuer posture, structural
+protections, restricted regions, pay-to-win labeling, the counsel gate),
+plus the `launchpad.termsNote` disclosure rendered on every launchpad page.
+
+Middleware wiring (main.ts): one guard covers EVERY launchpad money route
+(any POST under /api/realms/:id/token/, i.e. register, vote, presale, mint,
+launch verify, curve, power) answering 451 `region_blocked` before the
+handler runs; the SDN screen rides the shared `walletForAccount` resolver so
+every wallet-touching operation screens the linked wallet (451
+`wallet_sanctioned`, 503 `sanctions_unavailable` via the handler catch).
+
+The mainnet gate (the counsel sign-off, RECORDED): at boot,
+`enforceMainnetComplianceGate` forces `REALM_LAUNCHPAD_ENABLED` and
+`REALM_POWER_CREDIT_ENABLED` back to '0' on any /mainnet/i RPC unless ALL
+THREE hold: `REALM_COUNSEL_SIGNOFF` carries the written sign-off reference,
+the geo gate is enabled, and the OFAC screen is enabled. Devnet dry-runs are
+untouched. This is the "counsel sign-off recorded before any mainnet
+enablement" acceptance implemented as code rather than process.
+
+Acceptance:
+- `tests/compliance_gate.test.ts` (18): default-off everywhere; every
+  embargo jurisdiction 451s; fail-closed on missing/unknown/Tor origins; env
+  extension without shrink; configurable header; SDN parse across asset tags
+  with dedupe; screen fail-closed before first load and exact after; stale
+  list survives a failed refresh; mainnet flag force-off with each
+  precondition individually load-bearing; devnet untouched; pay-to-win
+  labeling pinned (power banner always renders on a power realm, cosmetic is
+  the default and power an explicit opt-in, the facilitator disclosure on
+  every page).
+- `tests/rug_scanner_profile.test.ts` (15): THE RugCheck/Birdeye clean-score
+  acceptance. The canonical launch profile scores clean end-to-end through
+  the real verifiers, then every scanner red flag is re-introduced by
+  mutation and fails its specific check: retained mint authority, freeze
+  authority, transfer fee/hook/permanent delegate/pausable extensions,
+  mutable metadata, hidden supply, cancelable/re-targetable vesting,
+  unfunded locks, backdated cliffs, partial LP locks, no-migration configs,
+  and insider-heavy allocations (public floor holds under maxed env knobs).
+- tsc clean; S3 + M16 + launchpad-view SERVER_CODES (region_blocked,
+  wallet_sanctioned, sanctions_unavailable) green; the surface inventory is
+  unchanged (middleware, not routes); biome error-free on changed files.
+
+Phase 8 gate status, THE HUMAN GATES (cannot be coded around):
+- The counsel memo/sign-off itself: `REALM_COUNSEL_SIGNOFF` stays UNSET
+  until counsel signs the facilitator terms, the securities posture, and the
+  Investment Company Act memo for the fund page. The code path is ready and
+  refuses mainnet without it.
+- The edge must stamp the country header (Cloudflare does by default);
+  self-hosted deployments without an edge must front one before enabling the
+  geo gate, or every request fails closed (which is the safe direction).
+- The jurisdiction list beyond the embargo floor (retail-restricted regions)
+  is a counsel decision recorded via REALM_GEO_BLOCKED_COUNTRIES.
+
 ## Invariant confirmations
 
 - `src/sim/` purity: NOTHING was added to `src/sim/` (no mint, RPC, decimals,

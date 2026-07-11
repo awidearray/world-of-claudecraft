@@ -264,6 +264,7 @@ import {
   getRealmAffiliate,
   listRealmsByAffiliate,
 } from './affiliate_db';
+import { enforceMainnetComplianceGate, geoCheck } from './compliance_gate';
 import { activeSeasonStatus, closeSeason, openSeason } from './flow_ledger_db';
 import { composePositions, portfolioView, refreshLevyFund } from './levy_fund';
 import { levyFundStore, readSnapshot as readLevyFundSnapshot } from './levy_fund_db';
@@ -356,7 +357,14 @@ import { castVote, openVote, type VoteDeps, voteStatus } from './realm_vote';
 import { realmVoteDb } from './realm_vote_db';
 import { referralRewardSummary } from './referral_db';
 import { rewardTierBpsFromEnv } from './reward_tiers';
-import { fetchFinalizedTransaction } from './solana_rpc';
+import {
+  SanctionedWalletError,
+  SanctionsUnavailableError,
+  SdnList,
+  sdnListUrl,
+  sdnScreenEnabled,
+} from './sanctions';
+import { fetchFinalizedTransaction, SOLANA_RPC_URL } from './solana_rpc';
 import { WOC_DECIMALS } from './woc_config';
 import { SeasonBodyCache } from './woc_season_api';
 
@@ -877,6 +885,11 @@ function publicCors(res: http.ServerResponse): void {
 // request (a recognised Origin header), so only the web client can obtain a token.
 // Resolved once on the boot Config (activeConfig().requireWebLogin), which mirrors
 // web_login_guard.ts webLoginEnforced, replacing the former module-scope const.
+
+// The OFAC SDN wallet screen (phase 8). Null while REALM_OFAC_SCREEN_ENABLED
+// is down; constructed + started at boot otherwise. Every launchpad money
+// route screens the linked wallet it resolves through launchpadDeps below.
+let sdnScreen: SdnList | null = null;
 
 async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
   const url = (req.url ?? '').split('?')[0];
@@ -1572,13 +1585,27 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
     // All routes follow the branch's realm route pattern: bearer auth, typed
     // `error` codes the client maps to launchpad.err.* keys, no chain writes on
     // the server (verify-only), rate limits on anything that touches an RPC.
+    // Phase 8 geo middleware: every launchpad money route (any POST under
+    // /api/realms/:id/token/) answers 451 for a blocked or unplaceable region
+    // before its handler runs. Reads are not gated; the wallet-level OFAC
+    // screen rides walletForAccount below, so both screens cover every write
+    // that can move value.
+    if (req.method === 'POST' && /^\/api\/realms\/\d+\/token\//.test(url)) {
+      const geo = geoCheck(req.headers);
+      if (!geo.ok) return json(res, geo.status, { error: geo.error });
+    }
     const launchpadDeps = () => ({
       tokens: realmTokenDb(pool),
       votes: realmVoteDb(pool),
       store: realmPresaleStore(pool),
       walletForAccount: async (accountId: number) => {
         const w = await walletForAccount(accountId);
-        return w ? { pubkey: w.pubkey } : null;
+        if (!w) return null;
+        // OFAC SDN screen (phase 8): a listed wallet may not touch any money
+        // route; while screening is enabled but the list has never loaded,
+        // wallet-touching operations fail CLOSED (503 via the handler catch).
+        sdnScreen?.assertClear(w.pubkey);
+        return { pubkey: w.pubkey };
       },
       wocBalance: (pubkey: string) => cachedWocBalance(pubkey),
       rolesForAccountOnRealm: (realmId: number, accountId: number) =>
@@ -2561,6 +2588,11 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
     }
     json(res, 404, { error: 'unknown endpoint' });
   } catch (err: any) {
+    // Phase 8 screening verdicts thrown from the wallet resolver: a listed
+    // wallet is a legal block (451), an unloaded list fails closed (503).
+    if (err instanceof SanctionedWalletError) return json(res, 451, { error: 'wallet_sanctioned' });
+    if (err instanceof SanctionsUnavailableError)
+      return json(res, 503, { error: 'sanctions_unavailable' });
     logger.error({ err }, 'api error');
     json(res, 500, { error: 'internal error' });
   }
@@ -2929,6 +2961,26 @@ export async function startServer(): Promise<http.Server> {
     githubRepo: config.githubRepo,
     githubToken: config.githubToken,
   });
+
+  // Phase 8 mainnet enablement gate: on a mainnet RPC, the tradeable-token and
+  // power-conversion flags are forced OFF unless the counsel sign-off is
+  // recorded AND both screens (geo + OFAC) are enabled. Runs before any env
+  // read that could light those surfaces. Devnet dry-runs are untouched.
+  const compliance = enforceMainnetComplianceGate(process.env, SOLANA_RPC_URL);
+  for (const flag of compliance.disabled) {
+    console.error(
+      `COMPLIANCE GATE: ${flag} forced off on a mainnet RPC (missing: ${compliance.issues.join(', ')})`,
+    );
+  }
+  if (sdnScreenEnabled()) {
+    const url = sdnListUrl();
+    sdnScreen = new SdnList(async () => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`SDN list fetch failed: ${res.status}`);
+      return res.text();
+    });
+    sdnScreen.start((msg) => console.error(msg));
+  }
 
   // wait for the database (it may still be starting in docker)
   for (let attempt = 1; ; attempt++) {

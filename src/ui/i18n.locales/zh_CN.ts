@@ -6569,4 +6569,9 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.character_not_found': '请选择您在此服务器的角色。',
   'launchpad.err.sink_short': '转账未达到报价数量。',
   'launchpad.err.credit_already_recorded': '该交易已发放过。',
+  'launchpad.termsNote':
+    'World of ClaudeCraft 是非托管撮合方:代币在钱包之间直接转移,本服务器从不保管资金。发射台功能在受制裁或受限地区不可用,且不含任何收益承诺。',
+  'launchpad.err.region_blocked': '此功能在您所在的地区不可用。',
+  'launchpad.err.wallet_sanctioned': '该钱包无法使用发射台。',
+  'launchpad.err.sanctions_unavailable': '合规筛查暂时不可用。请稍后再试。',
 };

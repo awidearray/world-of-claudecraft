@@ -6568,4 +6568,9 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.character_not_found': '請選擇您在此世界的角色。',
   'launchpad.err.sink_short': '轉帳未達到報價數量。',
   'launchpad.err.credit_already_recorded': '該交易已發放過。',
+  'launchpad.termsNote':
+    'World of ClaudeCraft 是非託管撮合方:代幣在錢包之間直接轉移,本伺服器從不保管資金。發射台功能在受制裁或受限地區不可用,且不含任何收益承諾。',
+  'launchpad.err.region_blocked': '此功能在您所在的地區不可用。',
+  'launchpad.err.wallet_sanctioned': '該錢包無法使用發射台。',
+  'launchpad.err.sanctions_unavailable': '合規篩查暫時不可用。請稍後再試。',
 };

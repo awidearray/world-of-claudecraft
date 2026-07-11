@@ -174,6 +174,7 @@ export const cs_CZ: EnTranslations = {
     "back": "Back",
     "loading": "Loading token status...",
     "symbolBadge": "{symbol} token",
+    "termsNote": "World of ClaudeCraft is a non-custodial facilitator: tokens move wallet to wallet and this server never holds funds. Launchpad features are unavailable in sanctioned or restricted regions and carry no promise of profit.",
     "status": {
       "none": "No token registered",
       "prelaunch": "Prelaunch",
@@ -483,6 +484,9 @@ export const cs_CZ: EnTranslations = {
       "character_not_found": "Pick one of your characters on this realm.",
       "sink_short": "The transfer does not cover the quoted amount.",
       "credit_already_recorded": "That transaction was already credited.",
+      "region_blocked": "This feature is not available in your region.",
+      "wallet_sanctioned": "This wallet cannot use the launchpad.",
+      "sanctions_unavailable": "Compliance screening is temporarily unavailable. Try again later.",
       "rate_limited": "Too many requests. Slow down and try again.",
       "wallet_mismatch": "Connect the wallet you linked to your account.",
       "generic": "Something went wrong. Try again."

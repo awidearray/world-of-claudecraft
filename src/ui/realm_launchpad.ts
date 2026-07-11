@@ -213,6 +213,10 @@ export const ERR_KEYS = {
   character_not_found: 'launchpad.err.character_not_found',
   sink_short: 'launchpad.err.sink_short',
   credit_already_recorded: 'launchpad.err.credit_already_recorded',
+  // compliance (phase 8): geo + OFAC screening on money routes
+  region_blocked: 'launchpad.err.region_blocked',
+  wallet_sanctioned: 'launchpad.err.wallet_sanctioned',
+  sanctions_unavailable: 'launchpad.err.sanctions_unavailable',
   'too many requests, slow down': 'launchpad.err.rate_limited',
 } satisfies Record<string, TranslationKey>;
 
@@ -322,6 +326,11 @@ export class RealmLaunchpad {
       if (this.curve) sections.push(this.curveHtml(curveView(this.curve), status));
       if (this.characters) sections.push(this.powerHtml());
     }
+    // The facilitator disclosure (phase 8): non-custodial posture + region
+    // restrictions, on every launchpad page. The full terms live in
+    // docs/legal/launchpad-facilitator-terms.md (counsel-reviewed before
+    // mainnet).
+    sections.push(`<p class="ro-hint ro-hint-muted lp-terms">${esc(t('launchpad.termsNote'))}</p>`);
     sections.push(
       `<button id="lp-back" class="btn btn-secondary" type="button">${esc(t('launchpad.back'))}</button>`,
     );

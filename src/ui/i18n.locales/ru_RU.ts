@@ -7077,4 +7077,10 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.character_not_found': 'Выберите одного из ваших персонажей в этом мире.',
   'launchpad.err.sink_short': 'Перевод не покрывает указанное в расчете количество.',
   'launchpad.err.credit_already_recorded': 'Эта транзакция уже зачислена.',
+  'launchpad.termsNote':
+    'World of ClaudeCraft выступает некастодиальным посредником: токены переходят из кошелька в кошелек, и этот сервер никогда не хранит средства. Функции лаунчпада недоступны в подсанкционных и ограниченных регионах и не содержат обещаний прибыли.',
+  'launchpad.err.region_blocked': 'Эта функция недоступна в вашем регионе.',
+  'launchpad.err.wallet_sanctioned': 'Этот кошелек не может использовать лаунчпад.',
+  'launchpad.err.sanctions_unavailable':
+    'Проверка соответствия временно недоступна. Повторите попытку позже.',
 };

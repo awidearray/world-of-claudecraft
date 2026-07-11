@@ -174,6 +174,7 @@ export const ko_KR: EnTranslations = {
     "back": "뒤로",
     "loading": "토큰 상태 불러오는 중...",
     "symbolBadge": "{symbol} 토큰",
+    "termsNote": "World of ClaudeCraft는 비수탁 중개자입니다. 토큰은 지갑 간에 직접 이동하며 이 서버는 자금을 보관하지 않습니다. 런치패드 기능은 제재 대상 또는 제한 지역에서 사용할 수 없으며 수익을 약속하지 않습니다.",
     "status": {
       "none": "등록된 토큰 없음",
       "prelaunch": "출시 전",
@@ -483,6 +484,9 @@ export const ko_KR: EnTranslations = {
       "character_not_found": "이 월드에 있는 본인 캐릭터를 선택하세요.",
       "sink_short": "전송 금액이 견적 수량에 미치지 못합니다.",
       "credit_already_recorded": "해당 트랜잭션은 이미 지급 처리되었습니다.",
+      "region_blocked": "이 기능은 현재 지역에서 사용할 수 없습니다.",
+      "wallet_sanctioned": "이 지갑은 런치패드를 사용할 수 없습니다.",
+      "sanctions_unavailable": "컴플라이언스 심사를 일시적으로 사용할 수 없습니다. 나중에 다시 시도하세요.",
       "rate_limited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
       "wallet_mismatch": "계정에 연결한 지갑을 연결하세요.",
       "generic": "문제가 발생했습니다. 다시 시도하세요."

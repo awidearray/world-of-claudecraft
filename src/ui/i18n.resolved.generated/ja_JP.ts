@@ -174,6 +174,7 @@ export const ja_JP: EnTranslations = {
     "back": "戻る",
     "loading": "トークン状態を読み込み中...",
     "symbolBadge": "{symbol} トークン",
+    "termsNote": "World of ClaudeCraft は非カストディの仲介者です。トークンはウォレット間で直接移動し、このサーバーが資金を預かることはありません。ローンチパッド機能は制裁対象または制限地域では利用できず、利益を約束するものではありません。",
     "status": {
       "none": "トークン未登録",
       "prelaunch": "プレローンチ",
@@ -483,6 +484,9 @@ export const ja_JP: EnTranslations = {
       "character_not_found": "このワールドのあなたのキャラクターを選んでください。",
       "sink_short": "送金が見積もり数量に達していません。",
       "credit_already_recorded": "そのトランザクションはすでに付与済みです。",
+      "region_blocked": "この機能はお住まいの地域ではご利用いただけません。",
+      "wallet_sanctioned": "このウォレットはローンチパッドを利用できません。",
+      "sanctions_unavailable": "コンプライアンス審査は一時的に利用できません。後でもう一度お試しください。",
       "rate_limited": "リクエストが多すぎます。少し待ってからもう一度お試しください。",
       "wallet_mismatch": "アカウントにリンクしたウォレットを接続してください。",
       "generic": "問題が発生しました。もう一度お試しください。"
