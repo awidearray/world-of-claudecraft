@@ -1,6 +1,6 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 6 of
+Realm Token Launchpad, phases 0 to 7 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
@@ -30,7 +30,8 @@ the bottom).
 | 2ae0ef47c | 1+2 UI | `feat(ui)`: launchpad panel + view-core + i18n domain + wiring |
 | 224d03e87 | 3 | `feat(realm-mint)`: Token-2022 mint factory, allocation locks, listing gate |
 | ffdc994e3 | 4+5 | `feat(realm-curve)`: Meteora DBC launch + DAMM v2 graduation + fee keeper |
-| (HEAD) | 6 | `feat(levy-fund)`: display-only Levy Street Fund portfolio + tiered valuation |
+| a344499b3 | 6 | `feat(levy-fund)`: display-only Levy Street Fund portfolio + tiered valuation |
+| (HEAD) | 7 | `feat(realm-currency)`: IWorld currency re-skin + power-realm token-to-copper |
 
 ## Phase 0: registry + identity
 
@@ -380,6 +381,58 @@ Entry-point follow-up: the panel + Api method (`Api.levyFund`) are complete and
 tested; a HUD host hook to open the panel from the realm directory is a UI
 follow-up (needs a running dev server to verify), mirroring the phases-0-to-2
 "player entry point" follow-up.
+
+## Phase 7: in-world currency re-skin + power-realm copper credit
+
+Files: `src/world_api/inventory.ts` (the `CurrencyIdentity` type +
+`CLASSIC_CURRENCY` + the `currencyIdentity` data member added to
+`IWorldInventory`, alongside `copper`), `src/sim/sim.ts` (a constant classic
+default, inlined so the sim keeps its TYPE-ONLY edge to the seam),
+`src/net/online.ts` (the `ClientWorld` field set from the `hello` currency),
+`server/game.ts` (`realmCurrency` field sent in both `hello` messages + the
+`creditCopperToAccount` grant), `server/main.ts` (`resolveRealmCurrency` at
+boot from the realm_tokens registry), `src/ui/hud.ts` (`moneyHtml` re-skin),
+`server/realm_power_credit.ts` + `realm_power_credit_db.ts` (the power path).
+
+The re-skin (the display half): the sim keeps an OPAQUE numeric `copper`
+balance and stable string keys exactly as before; the currency IDENTITY
+(symbol/icon/realmToken) is pure display data resolved server-side and surfaced
+on IWorld. No mint / decimals / RPC / price ever enters src/sim/ (the sim's
+`currencyIdentity` is a plain literal, type-imported only), so
+`tests/architecture.test.ts` stays green. The offline Sim is always classic
+coins; the online ClientWorld re-skins from the server's `hello` (resolved from
+the realm_tokens registry, only for a live/graduated token). The HUD's
+`moneyHtml` shows the flat "{amount} {symbol}" for a realm token, the classic
+gold/silver/copper otherwise.
+
+The power credit (the pay-to-win half, PRD section 6): a verified,
+policy-gated, FLAG-DEFAULT-OFF path (`REALM_POWER_CREDIT_ENABLED`, the phase-8
+mainnet gate). `creditTokenToCopper` credits copper ONLY after checking the
+realm's monetization_policy is `power` (a cosmetic realm rejects it outright),
+verifying a FINALIZED Token-2022 transfer of the realm token into the power
+sink via the phase-3 scoped verifier, and a ledger-first UNIQUE(pay_tx_sig)
+replay guard. The copper is applied through the sim's server-only `grantBonus`,
+so the sim sees only opaque copper credited through its normal API and never
+learns the source was a token.
+
+Acceptance:
+- `tests/world_api_parity.test.ts` (updated to 205 / 55 / 150) green: the new
+  `currencyIdentity` data member is present + readable on BOTH Sim and
+  ClientWorld.
+- `tests/architecture.test.ts` green: nothing chain-shaped entered src/sim/.
+- `tests/realm_currency_reskin.test.ts` (10 tests): the identity on both worlds
+  (offline always classic, ClientWorld from a hello, malformed/absent hello
+  keeps the default), the exact token-to-copper conversion, and the power
+  credit with the monetization_policy gate, the flag gate, every verify
+  rejection (wrong payer / no sink credit / foreign program / reverted / bad
+  sig), the sub-copper rejection, and the ledger replay guard.
+- Real-DB integration (in `realm_launchpad_db.integration.test.ts`, now 17
+  tests): the power-credit UNIQUE(pay_tx_sig) replay guard.
+- i18n: 9 new `launchpad.err.*` power codes mapped + English catalog + M16 fills
+  + ERR_KEYS coverage extended.
+
+GATE: the power path is the same high-reg-risk band as the wager features; it
+stays flag-default-off until the phase-8 counsel sign-off + geo screening.
 
 ## UI (panel for phases 0 to 2)
 

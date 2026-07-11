@@ -92,6 +92,7 @@ export const IWORLD_MEMBERS = [
   { name: 'equipment', kind: 'data' },
   { name: 'accountCosmetics', kind: 'data' },
   { name: 'copper', kind: 'data' },
+  { name: 'currencyIdentity', kind: 'data' },
   { name: 'xp', kind: 'data' },
   { name: 'lifetimeXp', kind: 'data' },
   { name: 'prestigeRank', kind: 'data' },
@@ -396,8 +397,8 @@ beforeAll(() => {
 
 describe('IWORLD_MEMBERS is the pinned IWorld contract (anti-loosening)', () => {
   it('pins total / data / method counts', () => {
-    expect(IWORLD_MEMBERS.length).toBe(204);
-    expect(DATA_MEMBERS.length).toBe(54);
+    expect(IWORLD_MEMBERS.length).toBe(205);
+    expect(DATA_MEMBERS.length).toBe(55);
     expect(METHOD_MEMBERS.length).toBe(150);
   });
   it('has no duplicate member names', () => {
@@ -460,6 +461,7 @@ describe('IWORLD_MEMBERS is the pinned IWorld contract (anti-loosening)', () => 
       'craftItem',
       'craftSkills',
       'cupInfo',
+      'currencyIdentity',
       'dailyRewardHistory',
       'dailyRewardLeaderboard',
       'dailyRewards',
@@ -635,6 +637,7 @@ describe('IWORLD_MEMBERS is the pinned IWorld contract (anti-loosening)', () => 
       'copper',
       'craftSkills',
       'cupInfo',
+      'currencyIdentity',
       'delveDaily',
       'delveMarks',
       'delveRun',
@@ -947,6 +950,7 @@ const FACET_INVENTORY = [
   'vendorBuyback',
   'equipment',
   'copper',
+  'currencyIdentity',
   'equipItem',
   'unequipItem',
   'useItem',
@@ -1264,8 +1268,8 @@ describe('W1: aggregate IWorld member set equals the disjoint union of the 25 fa
 
   it('the union of the 25 facets equals the pinned 204-member IWORLD_MEMBERS set', () => {
     const union = Object.values(FACET_MEMBER_ARRAYS).flatMap((arr) => [...arr]);
-    expect(union.length, 'union size before dedup (catches a duplicated member)').toBe(204);
-    expect(new Set(union).size, 'union size after dedup (catches a duplicated member)').toBe(204);
+    expect(union.length, 'union size before dedup (catches a duplicated member)').toBe(205);
+    expect(new Set(union).size, 'union size after dedup (catches a duplicated member)').toBe(205);
     const sortedUnion = [...union].sort();
     const pinned = IWORLD_MEMBERS.map((m) => m.name).sort();
     expect(sortedUnion).toEqual(pinned);

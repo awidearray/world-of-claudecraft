@@ -56,9 +56,11 @@ import {
   type ArenaInfo,
   type BankInfo,
   type CharacterSearchResult,
+  CLASSIC_CURRENCY,
   type ClientCommand,
   type CraftResultView,
   type CupInfo,
+  type CurrencyIdentity,
   type DailyRewardHistory,
   type DailyRewardLeaderboardPage,
   type DailyRewardSpinResult,
@@ -1344,6 +1346,10 @@ export class ClientWorld implements IWorld {
   // --- IWorldCosmetics: account cosmetics (completed-quest + mech-chroma ids),
   // mirrored from snapshot self. ---
   accountCosmetics: AccountCosmetics = { completedQuestIds: [], mechChromaIds: [] };
+  // --- IWorldInventory (phase 7): the realm's currency display identity, from
+  // the server's hello. Defaults to the classic coin display until hello lands.
+  // Display-only: nothing here is a mint / decimals / RPC / price. ---
+  currencyIdentity: CurrencyIdentity = CLASSIC_CURRENCY;
   // --- IWorldProgressionXp: XP + post-cap progression scalars + unlocked
   // milestones, mirrored from snapshot self. ---
   xp = 0;
@@ -1748,6 +1754,15 @@ export class ClientWorld implements IWorld {
       this.ownPlayerId = msg.pid;
       this.cfg.seed = msg.seed;
       if (typeof msg.realm === 'string') this.realm = msg.realm;
+      // The realm's currency display identity (phase 7). Display-only re-skin of
+      // the money HUD; the mirrored `copper` stays an opaque number.
+      if (msg.currency && typeof msg.currency === 'object') {
+        const c = msg.currency as { symbol?: unknown; icon?: unknown; realmToken?: unknown };
+        this.currencyIdentity =
+          typeof c.symbol === 'string' && typeof c.icon === 'string'
+            ? { symbol: c.symbol, icon: c.icon, realmToken: c.realmToken === true }
+            : CLASSIC_CURRENCY;
+      }
       if (Array.isArray(msg.softWords)) {
         this.profanityWords = msg.softWords.filter(
           (w: unknown): w is string => typeof w === 'string',

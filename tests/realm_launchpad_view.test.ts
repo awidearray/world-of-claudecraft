@@ -248,6 +248,16 @@ describe('ERR_KEYS server-code coverage', () => {
     'curve_not_launched',
     'curve_mismatch',
     'not_migrated',
+    // phase 7 power-realm token-to-copper credit (server/realm_power_credit.ts)
+    'power_credit_disabled',
+    'power_sink_unconfigured',
+    'not_power_realm',
+    'token_2022_mismatch',
+    'sink_not_credited',
+    'amount_too_small',
+    'credit_already_recorded',
+    'no_character_to_credit',
+    'missing_payTxSig',
     // route-level rate limit literal
     'too many requests, slow down',
   ];

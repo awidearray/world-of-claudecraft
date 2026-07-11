@@ -89,6 +89,7 @@ export const API_CONTENT_TYPE: Readonly<Record<string, ContentTypeClass>> = {
   '/api/realms/:id/token/presale/confirm': PROBLEM_JSON,
   '/api/realms/:id/token/presale/finalize': PROBLEM_JSON,
   '/api/realms/:id/token/presale/refund': PROBLEM_JSON,
+  '/api/realms/:id/token/power-credit': PROBLEM_JSON,
   '/api/realms/:id/token/launch': PROBLEM_JSON,
   '/api/realms/:id/token/mint/quote': PROBLEM_JSON,
   '/api/realms/:id/token/mint/confirm': PROBLEM_JSON,

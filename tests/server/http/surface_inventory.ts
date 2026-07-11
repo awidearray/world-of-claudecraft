@@ -545,6 +545,17 @@ export const SURFACE_INVENTORY: readonly SurfaceRoute[] = [
   },
   {
     dispatcher: DISPATCH.mainApi,
+    method: 'POST',
+    path: '/api/realms/:id/token/power-credit',
+    handler: 'powerCreditMatch',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.full,
+    limiter: 'rateLimited',
+    requireOwnedExpected: null,
+    match: /^\/api\/realms\/(\d+)\/token\/power-credit$/,
+  },
+  {
+    dispatcher: DISPATCH.mainApi,
     method: 'GET',
     path: '/api/realms/:id/token/launch',
     handler: 'launchStatusMatch',

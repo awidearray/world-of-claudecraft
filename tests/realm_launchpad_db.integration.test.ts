@@ -36,8 +36,8 @@ run('launchpad tables against real Postgres', () => {
     presaleDb = await import('../server/realm_presale_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
-      `DROP TABLE IF EXISTS levy_fund_holdings, levy_fund_snapshots, levy_fund_marks,
-         realm_fee_distributions, realm_fee_accruals, realm_launch_quotes,
+      `DROP TABLE IF EXISTS realm_power_credits, levy_fund_holdings, levy_fund_snapshots,
+         levy_fund_marks, realm_fee_distributions, realm_fee_accruals, realm_launch_quotes,
          realm_presale_contributions, realm_presale_quotes, realm_presales,
          realm_votes, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
     );
@@ -682,6 +682,42 @@ run('launchpad tables against real Postgres', () => {
       valueUsd: 800_000,
       illiquid: false,
     });
+  });
+
+  it('phase 7 power-credit ledger: UNIQUE(pay_tx_sig) replay guard', async () => {
+    const pcDb = await import('../server/realm_power_credit_db');
+    expect(
+      await pcDb.recordPowerCredit(db.pool, {
+        realmId,
+        accountId: voterId,
+        wallet: 'PowerWallet',
+        tokenBase: 5_000_000n,
+        copper: 5,
+        payTxSig: 'powersig_1',
+      }),
+    ).toBe(true);
+    // The same signature can never credit twice (the ledger replay guard).
+    expect(
+      await pcDb.recordPowerCredit(db.pool, {
+        realmId,
+        accountId: voterId,
+        wallet: 'PowerWallet',
+        tokenBase: 5_000_000n,
+        copper: 5,
+        payTxSig: 'powersig_1',
+      }),
+    ).toBe(false);
+    // A distinct signature records.
+    expect(
+      await pcDb.recordPowerCredit(db.pool, {
+        realmId,
+        accountId: voterId,
+        wallet: 'PowerWallet',
+        tokenBase: 3_000_000n,
+        copper: 3,
+        payTxSig: 'powersig_2',
+      }),
+    ).toBe(true);
   });
 
   it('assertRealmSchema fails at boot when a phase-3 launch column is dropped', async () => {

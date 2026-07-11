@@ -129,6 +129,16 @@ export const ERR_KEYS = {
   curve_not_launched: 'launchpad.err.curve_not_launched',
   curve_mismatch: 'launchpad.err.curve_mismatch',
   not_migrated: 'launchpad.err.not_migrated',
+  // Phase 7 power-realm token-to-copper credit.
+  power_credit_disabled: 'launchpad.err.power_credit_disabled',
+  power_sink_unconfigured: 'launchpad.err.power_sink_unconfigured',
+  not_power_realm: 'launchpad.err.not_power_realm',
+  token_2022_mismatch: 'launchpad.err.token_2022_mismatch',
+  sink_not_credited: 'launchpad.err.sink_not_credited',
+  amount_too_small: 'launchpad.err.amount_too_small',
+  credit_already_recorded: 'launchpad.err.credit_already_recorded',
+  no_character_to_credit: 'launchpad.err.no_character_to_credit',
+  missing_payTxSig: 'launchpad.err.missing_payTxSig',
   'too many requests, slow down': 'launchpad.err.rate_limited',
 } satisfies Record<string, TranslationKey>;
 

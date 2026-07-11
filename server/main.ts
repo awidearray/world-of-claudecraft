@@ -275,6 +275,7 @@ import { confirmBuyQuote, prepareBuyQuote, realmBuyInfo } from './realm_buy';
 import { bondsForRealms } from './realm_buy_db';
 import { buildRealmBuybackKeepers } from './realm_buyback_keeper';
 import {
+  getLiveRealmByName,
   getRealmById,
   listRealmsForDirectory,
   listRealmsForOwner,
@@ -290,6 +291,8 @@ import {
 } from './realm_fee_keeper';
 import { type LaunchVenue, launchpadVenueName, StubLaunchVenue } from './realm_launchpad';
 import { MeteoraDbcVenue } from './realm_launchpad_dbc';
+import { creditTokenToCopper } from './realm_power_credit';
+import { realmPowerCreditStore } from './realm_power_credit_db';
 import {
   configurePresale,
   confirmPresaleContribution,
@@ -313,6 +316,7 @@ import {
   mergeDirectoryCurrencies,
   type RealmToken,
   type RegisterDeps,
+  realmTokenConfig,
   registerRealmToken,
 } from './realm_token';
 import {
@@ -429,6 +433,22 @@ let gameInstance: GameServer | null = null;
 function liveGame(): GameServer {
   gameInstance ??= new GameServer();
   return gameInstance;
+}
+
+// Launchpad phase 7: resolve this realm's currency display identity from the
+// realm_tokens registry and set it on the game server (sent in `hello`). A
+// realm with a live/graduated token that is not closed re-skins the money HUD
+// to its symbol; everything else keeps the classic coins. Display-only.
+async function resolveRealmCurrency(game: GameServer): Promise<void> {
+  const realm = await getLiveRealmByName(pool, REALM);
+  if (!realm) return;
+  const tokens = await listRealmTokens(pool, [realm.realmId]);
+  const config = realmTokenConfig(realm.realmId, tokens);
+  // Only a listed (live/graduated) realm token re-skins; a pre-launch or closed
+  // token keeps the classic display so the HUD never shows a not-yet-real token.
+  if (config.realmToken && (config.status === 'live' || config.status === 'graduated')) {
+    game.realmCurrency = { symbol: config.symbol, icon: config.icon, realmToken: true };
+  }
 }
 
 function initialCharacterState(
@@ -1939,6 +1959,34 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { distributed: true });
     }
+    // ── Power-realm token-to-copper credit (launchpad phase 7) ────────────────
+    // FLAG-GATED default-off (REALM_POWER_CREDIT_ENABLED) until the phase-8
+    // counsel + geo gate; runs only for a `power` realm; verifies a finalized
+    // Token-2022 transfer to the power sink and credits copper exactly once.
+    const powerCreditMatch = /^\/api\/realms\/(\d+)\/token\/power-credit$/.exec(url);
+    if (req.method === 'POST' && powerCreditMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const payTxSig = typeof body.payTxSig === 'string' ? body.payTxSig : '';
+      if (!payTxSig) return json(res, 400, { error: 'missing_payTxSig' });
+      const result = await creditTokenToCopper(
+        {
+          tokens: realmTokenDb(pool),
+          store: realmPowerCreditStore(),
+          walletForAccount: async (acc: number) => {
+            const w = await walletForAccount(acc);
+            return w ? { pubkey: w.pubkey } : null;
+          },
+          creditCopperToAccount: async (acc: number, copper: number) =>
+            liveGame().creditCopperToAccount(acc, copper),
+        },
+        { accountId, realmId: Number(powerCreditMatch[1]), payTxSig },
+      );
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { copper: result.copper });
+    }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {
       const accountId = await bearerActiveAccount(req, res);
@@ -2966,6 +3014,11 @@ export async function startServer(): Promise<http.Server> {
   // paths (and are the corresponding dispatchers' delegates).
   configureAdminRuntime(game);
   configureInternalRuntime(game);
+  // Launchpad phase 7: resolve THIS realm's currency display identity from the
+  // realm_tokens registry and hand it to the game server, which sends it in
+  // `hello` so the client re-skins the money HUD. Display-only: the sim balance
+  // stays opaque copper; a resolution failure just keeps the classic coins.
+  await resolveRealmCurrency(game);
   // Bot detector: replay this realm's saved config overrides onto the fresh
   // detector. Boot applies what it can; a stale entry (schema drift after a
   // deploy) is skipped and logged, never allowed to drop the whole document.
