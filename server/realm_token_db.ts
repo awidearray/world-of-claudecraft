@@ -40,19 +40,42 @@ CREATE TABLE IF NOT EXISTS realm_tokens (
   lp_lock_address TEXT,
   fee_claimer_pda TEXT,
   launch_tx_sig TEXT UNIQUE,
+  distribute_tx_sig TEXT UNIQUE,
+  supply_base NUMERIC(30, 0),
+  founder_alloc_base NUMERIC(30, 0),
+  levy_alloc_base NUMERIC(30, 0),
+  treasury_alloc_base NUMERIC(30, 0),
+  founder_lock_address TEXT,
+  levy_lock_address TEXT,
+  treasury_lock_address TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS realm_tokens_status ON realm_tokens(status);
+-- Phase-3 launch columns, added for databases created on the phase-0 shape
+-- (CREATE TABLE IF NOT EXISTS never grows an existing table; assertRealmSchema
+-- fails the boot if any of these went missing after this ran).
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS distribute_tx_sig TEXT UNIQUE;
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS supply_base NUMERIC(30, 0);
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS founder_alloc_base NUMERIC(30, 0);
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS levy_alloc_base NUMERIC(30, 0);
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS treasury_alloc_base NUMERIC(30, 0);
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS founder_lock_address TEXT;
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS levy_lock_address TEXT;
+ALTER TABLE realm_tokens ADD COLUMN IF NOT EXISTS treasury_lock_address TEXT;
 `;
 
 const TOKEN_COLS = `realm_id, mint, decimals, symbol, icon, status, monetization_policy,
   curve_address, pool_address, lp_lock_address, fee_claimer_pda, launch_tx_sig,
+  distribute_tx_sig, supply_base, founder_alloc_base, levy_alloc_base, treasury_alloc_base,
+  founder_lock_address, levy_lock_address, treasury_lock_address,
   created_at, updated_at`;
 
 function rowToToken(r: Record<string, unknown>): RealmToken {
   const status = String(r.status);
   const policy = String(r.monetization_policy);
+  // NUMERIC comes back as a string; read as bigint, never a JS number.
+  const big = (v: unknown): bigint | null => (v == null ? null : BigInt(String(v)));
   return {
     realmId: Number(r.realm_id),
     mint: r.mint == null ? null : String(r.mint),
@@ -66,6 +89,14 @@ function rowToToken(r: Record<string, unknown>): RealmToken {
     lpLockAddress: r.lp_lock_address == null ? null : String(r.lp_lock_address),
     feeClaimerPda: r.fee_claimer_pda == null ? null : String(r.fee_claimer_pda),
     launchTxSig: r.launch_tx_sig == null ? null : String(r.launch_tx_sig),
+    distributeTxSig: r.distribute_tx_sig == null ? null : String(r.distribute_tx_sig),
+    supplyBase: big(r.supply_base),
+    founderAllocBase: big(r.founder_alloc_base),
+    levyAllocBase: big(r.levy_alloc_base),
+    treasuryAllocBase: big(r.treasury_alloc_base),
+    founderLockAddress: r.founder_lock_address == null ? null : String(r.founder_lock_address),
+    levyLockAddress: r.levy_lock_address == null ? null : String(r.levy_lock_address),
+    treasuryLockAddress: r.treasury_lock_address == null ? null : String(r.treasury_lock_address),
     createdAt: r.created_at as Date,
     updatedAt: r.updated_at as Date,
   };
@@ -127,6 +158,83 @@ export async function setRealmTokenStatus(
   return res.rows[0] ? rowToToken(res.rows[0]) : null;
 }
 
+// ── Phase-3 launch writes (each a guarded CAS on its own null column) ─────────
+
+// Record the verified mint creation. Guarded on mint IS NULL AND status
+// 'funded' (the only state a mint may be created from); launch_tx_sig UNIQUE
+// makes a cross-realm signature replay a unique violation for the caller.
+export async function recordMintCreated(
+  db: Queryable,
+  realmId: number,
+  mint: string,
+  launchTxSig: string,
+): Promise<RealmToken | null> {
+  const res = await db.query(
+    `UPDATE realm_tokens SET mint = $2, launch_tx_sig = $3, updated_at = now()
+      WHERE realm_id = $1 AND mint IS NULL AND status = 'funded'
+      RETURNING ${TOKEN_COLS}`,
+    [realmId, mint, launchTxSig],
+  );
+  return res.rows[0] ? rowToToken(res.rows[0]) : null;
+}
+
+// Record the verified distribute-and-renounce transaction plus the exact
+// bucket amounts it minted (pinned so the later lock verification can never
+// drift from what was actually distributed, even across an env change).
+export async function recordDistribution(
+  db: Queryable,
+  realmId: number,
+  d: {
+    distributeTxSig: string;
+    supplyBase: bigint;
+    founderAllocBase: bigint;
+    levyAllocBase: bigint;
+    treasuryAllocBase: bigint;
+  },
+): Promise<RealmToken | null> {
+  const res = await db.query(
+    `UPDATE realm_tokens
+        SET distribute_tx_sig = $2, supply_base = $3, founder_alloc_base = $4,
+            levy_alloc_base = $5, treasury_alloc_base = $6, updated_at = now()
+      WHERE realm_id = $1 AND distribute_tx_sig IS NULL AND mint IS NOT NULL
+      RETURNING ${TOKEN_COLS}`,
+    [
+      realmId,
+      d.distributeTxSig,
+      d.supplyBase.toString(),
+      d.founderAllocBase.toString(),
+      d.levyAllocBase.toString(),
+      d.treasuryAllocBase.toString(),
+    ],
+  );
+  return res.rows[0] ? rowToToken(res.rows[0]) : null;
+}
+
+// The three lock-address columns, written once each after on-chain
+// verification. The column is resolved from a closed map, never interpolated
+// from input.
+const LOCK_COLUMNS = {
+  founder: 'founder_lock_address',
+  levy: 'levy_lock_address',
+  treasury: 'treasury_lock_address',
+} as const;
+
+export async function recordLockAddress(
+  db: Queryable,
+  realmId: number,
+  bucket: keyof typeof LOCK_COLUMNS,
+  address: string,
+): Promise<RealmToken | null> {
+  const col = LOCK_COLUMNS[bucket];
+  const res = await db.query(
+    `UPDATE realm_tokens SET ${col} = $2, updated_at = now()
+      WHERE realm_id = $1 AND ${col} IS NULL AND distribute_tx_sig IS NOT NULL
+      RETURNING ${TOKEN_COLS}`,
+    [realmId, address],
+  );
+  return res.rows[0] ? rowToToken(res.rows[0]) : null;
+}
+
 // The pool-bound RealmTokenDb the routes use; tests substitute an in-memory fake
 // implementing the same interface from realm_token.ts.
 export function realmTokenDb(pool: Queryable): RealmTokenDb {
@@ -135,5 +243,10 @@ export function realmTokenDb(pool: Queryable): RealmTokenDb {
     insertRealmToken: (t) => insertRealmToken(pool, t),
     listRealmTokens: (realmIds) => listRealmTokens(pool, realmIds),
     setRealmTokenStatus: (realmId, from, to) => setRealmTokenStatus(pool, realmId, from, to),
+    recordMintCreated: (realmId, mint, launchTxSig) =>
+      recordMintCreated(pool, realmId, mint, launchTxSig),
+    recordDistribution: (realmId, d) => recordDistribution(pool, realmId, d),
+    recordLockAddress: (realmId, bucket, address) =>
+      recordLockAddress(pool, realmId, bucket, address),
   };
 }

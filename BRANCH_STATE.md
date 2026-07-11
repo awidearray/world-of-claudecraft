@@ -1,6 +1,6 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 2 of
+Realm Token Launchpad, phases 0 to 3 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
@@ -28,6 +28,7 @@ the bottom).
 | e5c481a25 | 1 | `feat(realm-vote)`: weighted off-chain launch vote |
 | 1c0c24b5d | 2 | `feat(realm-presale)`: asset-only non-custodial presale + surface-inventory registration |
 | 2ae0ef47c | 1+2 UI | `feat(ui)`: launchpad panel + view-core + i18n domain + wiring |
+| (HEAD) | 3 | `feat(realm-mint)`: Token-2022 mint factory, allocation locks, listing gate |
 
 ## Phase 0: registry + identity
 
@@ -117,6 +118,105 @@ Acceptance (`tests/realm_presale.test.ts`, 32 tests, green):
 - Real-DB: config rails round-trip, ledger UNIQUEs, refund marking,
   `withPresaleLock` commit/rollback atomicity.
 
+## Phase 3: Token-2022 mint factory + allocation locks
+
+Files: `server/realm_token_alloc.ts` (pure allocation math: 60/10/12/8/10
+default bps with hard caps founder 15 / levy 10 / treasury 15 and a 50 percent
+public-curve floor; exact bigint split with the division dust in the public
+bucket so the five buckets sum to EXACTLY the supply; vesting schedules with
+env that can only LENGTHEN, founder 12mo cliff + 36mo linear, levy 12 + 48 the
+strictest on the cap table, treasury 12 + 36; the `canListRealmToken` listing
+gate), `server/solana_token2022.ts` (the SCOPED Token-2022 verifier: pure
+`parseToken2022Movement` delta parser that flags a legacy-program look-alike,
+jsonParsed mint narrowing, and the RugCheck-style `mintRugSummary` checklist
+with the boring-extension whitelist), `server/jup_lock.ts` (Jupiter Lock
+`create_vesting_escrow_v2` instruction builder + 296-byte bytemuck
+`VestingEscrow` decoder + `verifyLockedEscrow` immutability verdict,
+transcribed from the DEPLOYED program's on-chain Anchor IDL v0.4.0 and
+byte-validated against a live devnet escrow before writing),
+`server/realm_token_mint.ts` (the three-step non-custodial launch
+orchestration), `server/realm_token_mint_db.ts` (`realm_launch_quotes` JSONB
+quote pins). Deps: `@solana/spl-token` + `@solana/spl-token-metadata` added
+(the alternative is hand-encoding Token-2022 init).
+
+The launch flow (all founder-signed, server verify-only):
+1. CREATE (`POST .../token/mint/quote` + `/confirm`): server builds one
+   create-mint tx (metadata-only Token-2022, 9dp, freeze NEVER set, immutable
+   metadata pointer to itself, memo == quoteId), partial-signs with a TRANSIENT
+   mint keypair (never persisted, never returned), founder co-signs and pays
+   rent. Confirm verifies the finalized tx (memo, fee payer) AND the on-chain
+   mint state (program, decimals, zero supply, founder mint authority, null
+   freeze, symbol, no forbidden extensions), then records mint +
+   `launch_tx_sig` (UNIQUE) under a mint-IS-NULL + status-funded CAS.
+2. DISTRIBUTE + RENOUNCE (`POST .../token/distribute/quote` + `/confirm`): ONE
+   atomic tx mints public-curve + liquidity to the presale escrow wallet (the
+   phase-4 curve seed), founder + levy + treasury to the founder's ATA for
+   immediate locking, then renounces the mint authority AND the metadata
+   update authority in the same tx. Confirm verifies exact per-owner
+   Token-2022 deltas (merged when escrow == founder), memo, fee payer, final
+   supply == pinned supply, and a fully CLEAN rug summary, then records
+   `distribute_tx_sig` (UNIQUE) + the pinned bucket amounts
+   (NUMERIC(30,0) as bigint).
+3. LOCK x3 (`POST .../token/lock/quote` + `/confirm`): per bucket, an
+   immutable Jupiter Lock escrow (update_recipient_mode == 0 AND
+   cancel_mode == 0: nobody can redirect or cancel), recipient founder /
+   REALM_TOKEN_LEVY_WALLET / founder(treasury), exact pinned vesting params,
+   the escrow ATA created in the same tx (the deployed program does not init
+   it). Confirm decodes the ON-CHAIN escrow account and requires exact mint /
+   recipient / immutability / param match plus a fully funded escrow ATA, then
+   records the address once (null-column CAS).
+
+Listing gate: `markTokenLive` is the only door to `live` and requires founder
++ levy + LP locks all recorded (PRD section 7); with no LP lock until phase 4,
+every token stays unlisted. `GET .../token/launch` serves the checklist.
+
+Acceptance:
+- `tests/realm_token_alloc.test.ts` (13 tests): split sums to 100 percent for
+  adversarial supplies, caps + curve-floor fallback, env can only lengthen
+  schedules, levy-strictest pin, lock math reconstructs the bucket amount
+  exactly, listing-gate matrix.
+- `tests/realm_token_mint.test.ts` (28 tests): every tampered dimension of all
+  three confirms rejected (memo/payer/decimals/freeze/premine/symbol/forbidden
+  extension/authority; short bucket/unrenounced/extra recipient/supply drift;
+  mutable/underfunded/missing escrow), cross-realm launch-sig replay, jup-lock
+  ix encoding byte-exact + account order per the deployed IDL, escrow decode
+  round-trip, and the non-custodial pin (source scan: no secretKey /
+  fromSecretKey / file IO in the factory; no Keypair at all in jup_lock.ts;
+  quote payloads carry no 64-byte arrays).
+- Real-DB integration (`tests/realm_launchpad_db.integration.test.ts`, now 12
+  tests green): guarded launch writes (status CAS, once-only columns), UNIQUE
+  launch/distribute sigs across realms, NUMERIC(30,0) bigint round-trip past
+  2^63, JSONB quote round-trip + expiry pruning, boot-fail on a dropped
+  `distribute_tx_sig`.
+- DEVNET DRY-RUN GREEN (`tests/realm_token_mint.devnet.test.ts`, gated
+  WOC_DEVNET_TEST=1, run 2026-07-11 against api.devnet.solana.com with the
+  funded deployer as founder): the full flow through the production builders +
+  verifiers. On-chain artifacts (devnet):
+  - mint `6LE9UCRyZxMyjELkdaQdYZqV7uaTjXJML4XAfHaTGWoL`: supply exactly
+    1e18 base (1B tokens at 9dp), mintAuthority null, freezeAuthority null,
+    metadata symbol DRYRUN with updateAuthority null, metadataPointer -> self
+    with authority null, extensions only {metadataPointer, tokenMetadata}
+    (RugCheck-clean by construction, asserted via mintRugSummary).
+  - create tx `344HfQkZfeko4L5Ter6fB2bfrLva36cTBB7id64nR9uayE4oDfW69NP9ESDQqng6y7SaB9NUwc3J5MWywNJy9Kke`,
+    distribute+renounce tx `3rkNo5KuaEu2ZFeKd2YP3JJVPoQdeiudMNKrToW25PkdBpAySrPQ7CataeJUx7DgDFsgGRQyrWPuRzy5Xtk5CkLK`.
+  - immutable Jupiter Lock escrows: founder
+    `3im1K5gykdNEcwin7gLLnvzawEVAATRQ1WFjxKuQeGeX`, levy
+    `EqSd3YBvnEkJJgQpNAhTMsAHWDtkSCCJwRdvkCZdZQyz`, treasury
+    `HCsAAvQAUQn7dqnQUzkYW3JYaAGJ2P4i484gmNvZWQSS` (each verified on-chain:
+    modes 0/0, exact params, fully funded escrow ATA).
+  - the LEGACY parser rejects the new mint on the REAL distribute tx
+    (`parseSplitPayment(...).usesToken2022ForMint === true`), re-pinning the
+    stake/buy/presale Token-2022 rejection against a live Token-2022 transfer.
+  - devnet learning encoded in the builder: the deployed lock program expects
+    the escrow ATA to already exist, so the lock tx creates it idempotently.
+- Routes inventoried: all 7 new routes registered in
+  `tests/server/http/surface_inventory.ts` + `content_type_classification.ts`
+  (the only remaining inventory diff is the pre-existing
+  `/internal/woc/season/*` pair).
+- i18n: 17 new `launchpad.err.*` codes mapped in ERR_KEYS, English catalog
+  entries + the five non-Latin M16 fills each (zh_CN/zh_TW/ja_JP/ko_KR/ru_RU),
+  ERR_KEYS coverage test extended; artifacts + hash baseline regenerated.
+
 ## UI (panel for phases 0 to 2)
 
 `src/ui/realm_launchpad_view.ts`: pure view-core (registered in
@@ -150,6 +250,17 @@ S3 guard (`tests/localization_fixes.test.ts`) green; M16
 
 ## Invariant confirmations
 
+- Phase 3 non-custodial: the server holds NO settlement credentials. The
+  transient mint keypair signs only the account creation (powerless after the
+  tx: authorities rest with the founder, then nobody); the transient lock base
+  keypair only namespaces the escrow PDA. Neither is persisted, returned, or
+  loggable (test-pinned source scan). The founder signs and pays everything.
+- Phase 3 scoped verifier: solana_token2022.ts is used ONLY by the launch
+  flow; the legacy parsers (solana_rpc.ts / solana_tx.ts) are untouched and
+  still hard-reject Token-2022 (re-pinned against a REAL devnet Token-2022
+  transfer in the dry-run).
+- Phase 3 ledger-first: launch_tx_sig and distribute_tx_sig are UNIQUE; every
+  launch write is a null-column CAS so replays and races record exactly once.
 - `src/sim/` purity: NOTHING was added to `src/sim/` (no mint, RPC, decimals,
   or price anywhere near it); `tests/architecture.test.ts` green.
 - Server authoritative: every on-chain claim is accepted only after

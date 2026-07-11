@@ -225,7 +225,19 @@ const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
     'status',
     'monetization_policy',
     'launch_tx_sig',
+    // Phase 3: the distribute-and-renounce replay guard, the pinned bucket
+    // amounts the lock verifier compares against, and the verified lock
+    // addresses the listing gate reads. All load-bearing.
+    'distribute_tx_sig',
+    'supply_base',
+    'founder_alloc_base',
+    'levy_alloc_base',
+    'treasury_alloc_base',
+    'founder_lock_address',
+    'levy_lock_address',
+    'treasury_lock_address',
   ],
+  realm_launch_quotes: ['quote_id', 'realm_id', 'account_id', 'kind', 'payload', 'expires_at'],
   realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
   realm_presales: [
     'realm_id',

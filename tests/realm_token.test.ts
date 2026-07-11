@@ -36,6 +36,14 @@ function token(realmId: number, over: Partial<RealmToken> = {}): RealmToken {
     lpLockAddress: null,
     feeClaimerPda: null,
     launchTxSig: null,
+    distributeTxSig: null,
+    supplyBase: null,
+    founderAllocBase: null,
+    levyAllocBase: null,
+    treasuryAllocBase: null,
+    founderLockAddress: null,
+    levyLockAddress: null,
+    treasuryLockAddress: null,
     createdAt: new Date('2026-07-01T00:00:00Z'),
     updatedAt: new Date('2026-07-01T00:00:00Z'),
     ...over,
@@ -44,7 +52,7 @@ function token(realmId: number, over: Partial<RealmToken> = {}): RealmToken {
 
 // In-memory RealmTokenDb fake implementing the interface the logic talks to.
 class UniqueViolation extends Error {}
-export class FakeRealmTokenDb implements RealmTokenDb {
+class FakeRealmTokenDb implements RealmTokenDb {
   rows = new Map<number, RealmToken>();
   async getRealmToken(realmId: number): Promise<RealmToken | null> {
     return this.rows.get(realmId) ?? null;
@@ -83,9 +91,64 @@ export class FakeRealmTokenDb implements RealmTokenDb {
     this.rows.set(realmId, next);
     return next;
   }
+  // Phase-3 launch writes, mirroring the SQL guards (null-column CAS + the
+  // UNIQUE tx-sig behavior surfaced as a UniqueViolation).
+  async recordMintCreated(
+    realmId: number,
+    mint: string,
+    launchTxSig: string,
+  ): Promise<RealmToken | null> {
+    const row = this.rows.get(realmId);
+    if (!row || row.mint !== null || row.status !== 'funded') return null;
+    for (const r of this.rows.values()) {
+      if (r.launchTxSig === launchTxSig || r.distributeTxSig === launchTxSig)
+        throw new UniqueViolation('launch_tx_sig');
+    }
+    const next = { ...row, mint, launchTxSig, updatedAt: new Date() };
+    this.rows.set(realmId, next);
+    return next;
+  }
+  async recordDistribution(
+    realmId: number,
+    d: {
+      distributeTxSig: string;
+      supplyBase: bigint;
+      founderAllocBase: bigint;
+      levyAllocBase: bigint;
+      treasuryAllocBase: bigint;
+    },
+  ): Promise<RealmToken | null> {
+    const row = this.rows.get(realmId);
+    if (!row || row.distributeTxSig !== null || row.mint === null) return null;
+    for (const r of this.rows.values()) {
+      if (r.distributeTxSig === d.distributeTxSig || r.launchTxSig === d.distributeTxSig)
+        throw new UniqueViolation('distribute_tx_sig');
+    }
+    const next = { ...row, ...d, updatedAt: new Date() };
+    this.rows.set(realmId, next);
+    return next;
+  }
+  async recordLockAddress(
+    realmId: number,
+    bucket: 'founder' | 'levy' | 'treasury',
+    address: string,
+  ): Promise<RealmToken | null> {
+    const row = this.rows.get(realmId);
+    if (!row || row.distributeTxSig === null) return null;
+    const key =
+      bucket === 'founder'
+        ? ('founderLockAddress' as const)
+        : bucket === 'levy'
+          ? ('levyLockAddress' as const)
+          : ('treasuryLockAddress' as const);
+    if (row[key] !== null) return null;
+    const next = { ...row, [key]: address, updatedAt: new Date() };
+    this.rows.set(realmId, next);
+    return next;
+  }
 }
 
-export const isFakeUnique = (err: unknown): boolean => err instanceof UniqueViolation;
+const isFakeUnique = (err: unknown): boolean => err instanceof UniqueViolation;
 
 describe('identity validation', () => {
   it('accepts ticker-style symbols and rejects the rest', () => {
@@ -325,7 +388,16 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
       'status',
       'monetization_policy',
       'launch_tx_sig',
+      'distribute_tx_sig',
+      'supply_base',
+      'founder_alloc_base',
+      'levy_alloc_base',
+      'treasury_alloc_base',
+      'founder_lock_address',
+      'levy_lock_address',
+      'treasury_lock_address',
     ],
+    realm_launch_quotes: ['quote_id', 'realm_id', 'account_id', 'kind', 'payload', 'expires_at'],
     realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
     realm_presales: [
       'realm_id',

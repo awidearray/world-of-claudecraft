@@ -302,6 +302,18 @@ import {
   registerRealmToken,
 } from './realm_token';
 import { listRealmTokens, realmTokenDb } from './realm_token_db';
+import {
+  confirmDistribution,
+  confirmLock,
+  confirmMintCreated,
+  type LaunchDeps,
+  launchStatus,
+  prepareDistributionQuote,
+  prepareLockQuote,
+  prepareMintQuote,
+  realLaunchChain,
+} from './realm_token_mint';
+import { launchQuoteStore } from './realm_token_mint_db';
 import { castVote, openVote, type VoteDeps, voteStatus } from './realm_vote';
 import { realmVoteDb } from './realm_vote_db';
 import { referralRewardSummary } from './referral_db';
@@ -1693,6 +1705,107 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { refunded: true, unrefundedCount: result.unrefundedCount });
+    }
+    // ── Realm token launchpad (phase 3): mint factory + allocation locks ──────
+    // Same route pattern as phases 0 to 2. Every quote builds a transaction
+    // against the RPC (blockhash / rent) and every confirm fetches finalized
+    // chain state, so all of them are rate-limited.
+    const launchDeps = (): LaunchDeps => ({
+      tokens: realmTokenDb(pool),
+      quotes: launchQuoteStore(pool),
+      presales: realmPresaleStore(pool),
+      chain: realLaunchChain(),
+      walletForAccount: async (accountId: number) => {
+        const w = await walletForAccount(accountId);
+        return w ? { pubkey: w.pubkey } : null;
+      },
+      rolesForAccountOnRealm: (realmId: number, accountId: number) =>
+        rolesForAccountOnRealm(pool, realmId, accountId),
+      isUniqueViolation,
+    });
+    const launchStatusMatch = /^\/api\/realms\/(\d+)\/token\/launch$/.exec(url);
+    if (req.method === 'GET' && launchStatusMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const result = await launchStatus(launchDeps(), Number(launchStatusMatch[1]));
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { launch: result.launch });
+    }
+    const mintQuoteMatch = /^\/api\/realms\/(\d+)\/token\/mint\/quote$/.exec(url);
+    if (req.method === 'POST' && mintQuoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await prepareMintQuote(launchDeps(), {
+        accountId,
+        realmId: Number(mintQuoteMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, result.quote);
+    }
+    const mintConfirmMatch = /^\/api\/realms\/(\d+)\/token\/mint\/confirm$/.exec(url);
+    if (req.method === 'POST' && mintConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const quoteId = typeof body.quoteId === 'string' ? body.quoteId : '';
+      const signature = typeof body.signature === 'string' ? body.signature : '';
+      if (!quoteId || !signature) return json(res, 400, { error: 'missing_quoteId_or_signature' });
+      const result = await confirmMintCreated(launchDeps(), { accountId, quoteId, signature });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { mint: result.mint });
+    }
+    const distributeQuoteMatch = /^\/api\/realms\/(\d+)\/token\/distribute\/quote$/.exec(url);
+    if (req.method === 'POST' && distributeQuoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await prepareDistributionQuote(launchDeps(), {
+        accountId,
+        realmId: Number(distributeQuoteMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, result.quote);
+    }
+    const distributeConfirmMatch = /^\/api\/realms\/(\d+)\/token\/distribute\/confirm$/.exec(url);
+    if (req.method === 'POST' && distributeConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const quoteId = typeof body.quoteId === 'string' ? body.quoteId : '';
+      const signature = typeof body.signature === 'string' ? body.signature : '';
+      if (!quoteId || !signature) return json(res, 400, { error: 'missing_quoteId_or_signature' });
+      const result = await confirmDistribution(launchDeps(), { accountId, quoteId, signature });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { distributed: true });
+    }
+    const lockQuoteMatch = /^\/api\/realms\/(\d+)\/token\/lock\/quote$/.exec(url);
+    if (req.method === 'POST' && lockQuoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await prepareLockQuote(launchDeps(), {
+        accountId,
+        realmId: Number(lockQuoteMatch[1]),
+        bucket: typeof body.bucket === 'string' ? body.bucket : '',
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, result.quote);
+    }
+    const lockConfirmMatch = /^\/api\/realms\/(\d+)\/token\/lock\/confirm$/.exec(url);
+    if (req.method === 'POST' && lockConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const quoteId = typeof body.quoteId === 'string' ? body.quoteId : '';
+      if (!quoteId) return json(res, 400, { error: 'missing_quoteId_or_signature' });
+      const result = await confirmLock(launchDeps(), { accountId, quoteId });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { bucket: result.bucket, escrow: result.escrow });
     }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {

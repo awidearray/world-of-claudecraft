@@ -40,6 +40,14 @@ function token(realmId: number, status: RealmTokenStatus): RealmToken {
     lpLockAddress: null,
     feeClaimerPda: null,
     launchTxSig: null,
+    distributeTxSig: null,
+    supplyBase: null,
+    founderAllocBase: null,
+    levyAllocBase: null,
+    treasuryAllocBase: null,
+    founderLockAddress: null,
+    levyLockAddress: null,
+    treasuryLockAddress: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -73,6 +81,17 @@ class FakeTokens implements RealmTokenDb {
     const next = { ...row, status: to };
     this.rows.set(realmId, next);
     return next;
+  }
+  // Launch writes (phase 3) are not exercised by this suite; a call here is a
+  // wiring bug, so fail loudly rather than fake success.
+  async recordMintCreated(): Promise<RealmToken | null> {
+    throw new Error('recordMintCreated is not exercised by this suite');
+  }
+  async recordDistribution(): Promise<RealmToken | null> {
+    throw new Error('recordDistribution is not exercised by this suite');
+  }
+  async recordLockAddress(): Promise<RealmToken | null> {
+    throw new Error('recordLockAddress is not exercised by this suite');
   }
 }
 

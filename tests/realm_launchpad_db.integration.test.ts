@@ -36,7 +36,8 @@ run('launchpad tables against real Postgres', () => {
     presaleDb = await import('../server/realm_presale_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
-      `DROP TABLE IF EXISTS realm_presale_contributions, realm_presale_quotes, realm_presales,
+      `DROP TABLE IF EXISTS realm_launch_quotes, realm_presale_contributions,
+         realm_presale_quotes, realm_presales,
          realm_votes, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
     );
     await db.ensureSchema();
@@ -298,6 +299,115 @@ run('launchpad tables against real Postgres', () => {
       });
     });
     expect(await store.getContributionByPaySig('paysig_commit')).not.toBeNull();
+  });
+
+  it('phase 3 launch writes: guarded CAS columns + UNIQUE launch sigs + NUMERIC round-trip', async () => {
+    // recordMintCreated is guarded on status 'funded' and mint IS NULL.
+    expect(
+      await tokenDb.recordMintCreated(db.pool, realmId, 'MintPub111', 'launchsig_1'),
+    ).toBeNull();
+    await tokenDb.setRealmTokenStatus(db.pool, realmId, ['voting'], 'funded');
+    const minted = await tokenDb.recordMintCreated(db.pool, realmId, 'MintPub111', 'launchsig_1');
+    expect(minted?.mint).toBe('MintPub111');
+    expect(minted?.launchTxSig).toBe('launchsig_1');
+    // Once written, the guard never matches again.
+    expect(
+      await tokenDb.recordMintCreated(db.pool, realmId, 'MintPub222', 'launchsig_2'),
+    ).toBeNull();
+
+    // recordDistribution: NUMERIC(30,0) round-trips past 2^63 as exact bigint.
+    const big = 9_223_372_036_854_775_808n * 100n;
+    const distributed = await tokenDb.recordDistribution(db.pool, realmId, {
+      distributeTxSig: 'distsig_1',
+      supplyBase: big,
+      founderAllocBase: (big * 12n) / 100n,
+      levyAllocBase: (big * 8n) / 100n,
+      treasuryAllocBase: (big * 10n) / 100n,
+    });
+    expect(distributed?.supplyBase).toBe(big);
+    expect(distributed?.founderAllocBase).toBe((big * 12n) / 100n);
+    expect(
+      await tokenDb.recordDistribution(db.pool, realmId, {
+        distributeTxSig: 'distsig_2',
+        supplyBase: 1n,
+        founderAllocBase: 1n,
+        levyAllocBase: 1n,
+        treasuryAllocBase: 1n,
+      }),
+    ).toBeNull();
+
+    // Each lock address records exactly once.
+    const locked = await tokenDb.recordLockAddress(db.pool, realmId, 'levy', 'EscrowLevy1');
+    expect(locked?.levyLockAddress).toBe('EscrowLevy1');
+    expect(await tokenDb.recordLockAddress(db.pool, realmId, 'levy', 'EscrowLevy2')).toBeNull();
+
+    // launch_tx_sig / distribute_tx_sig are UNIQUE across realms.
+    const realm2 = await realmDb.createProvisioningRealm(db.pool, {
+      name: 'Launchpad Realm Two',
+      type: 'Normal',
+      ownerAccountId: ownerId,
+      tier: 1,
+    });
+    await realmDb.activateRealm(db.pool, realm2.realmId);
+    await tokenDb.insertRealmToken(db.pool, {
+      realmId: realm2.realmId,
+      symbol: 'MOONB',
+      icon: '',
+      monetizationPolicy: 'cosmetic',
+    });
+    await tokenDb.setRealmTokenStatus(db.pool, realm2.realmId, ['prelaunch'], 'funded');
+    let dupSig: unknown;
+    await tokenDb
+      .recordMintCreated(db.pool, realm2.realmId, 'MintPub333', 'launchsig_1')
+      .catch((e) => {
+        dupSig = e;
+      });
+    expect(httpUtil.isUniqueViolation(dupSig)).toBe(true);
+  });
+
+  it('phase 3 launch quotes: JSONB payload round-trip + expiry pruning', async () => {
+    const mintDb = await import('../server/realm_token_mint_db');
+    const store = mintDb.launchQuoteStore(db.pool);
+    await store.createQuote({
+      quoteId: 'lq-int-1',
+      realmId,
+      accountId: voterId,
+      kind: 'lock',
+      payload: { bucket: 'levy', escrow: 'EscrowLevy1', amountBase: '123456789012345678901' },
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const back = await store.getQuote('lq-int-1');
+    expect(back?.kind).toBe('lock');
+    expect(back?.payload).toEqual({
+      bucket: 'levy',
+      escrow: 'EscrowLevy1',
+      amountBase: '123456789012345678901',
+    });
+    // An expired row is pruned by the next create.
+    await db.pool.query(
+      `UPDATE realm_launch_quotes SET expires_at = now() - interval '1 minute'
+        WHERE quote_id = 'lq-int-1'`,
+    );
+    await store.createQuote({
+      quoteId: 'lq-int-2',
+      realmId,
+      accountId: voterId,
+      kind: 'mint',
+      payload: { mint: 'MintPub111' },
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    expect(await store.getQuote('lq-int-1')).toBeNull();
+    await store.deleteQuote('lq-int-2');
+    expect(await store.getQuote('lq-int-2')).toBeNull();
+  });
+
+  it('assertRealmSchema fails at boot when a phase-3 launch column is dropped', async () => {
+    await db.pool.query('ALTER TABLE realm_tokens DROP COLUMN distribute_tx_sig');
+    await expect(realmDb.assertRealmSchema(db.pool)).rejects.toThrow(
+      /realm_tokens.*distribute_tx_sig/,
+    );
+    await db.pool.query('ALTER TABLE realm_tokens ADD COLUMN distribute_tx_sig TEXT UNIQUE');
+    await expect(realmDb.assertRealmSchema(db.pool)).resolves.toBeUndefined();
   });
 
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {

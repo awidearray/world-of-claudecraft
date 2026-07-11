@@ -71,8 +71,20 @@ export interface RealmToken {
   poolAddress: string | null;
   lpLockAddress: string | null;
   feeClaimerPda: string | null;
-  // UNIQUE replay guard for the (phase 3) launch transaction.
+  // UNIQUE replay guard for the phase-3 mint-creation transaction.
   launchTxSig: string | null;
+  // Phase 3 launch bookkeeping: the verified distribute-and-renounce
+  // transaction (UNIQUE), the fixed supply, the locked buckets' exact base
+  // amounts as pinned at distribution, and the verified Jupiter Lock escrow
+  // addresses. All null until the corresponding step is verified on-chain.
+  distributeTxSig: string | null;
+  supplyBase: bigint | null;
+  founderAllocBase: bigint | null;
+  levyAllocBase: bigint | null;
+  treasuryAllocBase: bigint | null;
+  founderLockAddress: string | null;
+  levyLockAddress: string | null;
+  treasuryLockAddress: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -93,6 +105,26 @@ export interface RealmTokenDb {
     realmId: number,
     from: readonly RealmTokenStatus[],
     to: RealmTokenStatus,
+  ): Promise<RealmToken | null>;
+  // Phase 3 launch writes, each a guarded CAS on its own null column so a
+  // replay or a raced double-submit can never overwrite a verified value.
+  // recordMintCreated additionally requires status 'funded' (the only state a
+  // mint may be created from). Null = the guard did not match.
+  recordMintCreated(realmId: number, mint: string, launchTxSig: string): Promise<RealmToken | null>;
+  recordDistribution(
+    realmId: number,
+    d: {
+      distributeTxSig: string;
+      supplyBase: bigint;
+      founderAllocBase: bigint;
+      levyAllocBase: bigint;
+      treasuryAllocBase: bigint;
+    },
+  ): Promise<RealmToken | null>;
+  recordLockAddress(
+    realmId: number,
+    bucket: 'founder' | 'levy' | 'treasury',
+    address: string,
   ): Promise<RealmToken | null>;
 }
 
