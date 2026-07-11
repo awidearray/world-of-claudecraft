@@ -98,11 +98,12 @@ Two suites are expected red, deliberately:
    timeout in the contribution container only (the harness completes at
    ~73s through an egress proxy vs the 30s cap); expected green in CI.
 
-Five other suites this chain used to redden were fixed in
-`fix(launchpad): make the chain's own CI gates green` (em-dash copy,
-woc-season window parity + mobile sheet, season-arm inventory rows, the
-realm-directory fail-open + fixture re-pin, the schema_wiring drift-guard
-mock).
+Six other suites this chain used to redden were fixed on the branch
+(em-dash copy, woc-season window parity + mobile sheet, the
+/internal/woc/season arms registered as RouteDefs with inventory rows and
+a WOC_OPS_SECRET gate, the realm-directory fail-open + fixture re-pin, and
+the schema_wiring drift-guard mock). Final full suite at the tip: 12,660
+passed, with only the two expected reds above.
 
 ### Screenshots / recordings
 

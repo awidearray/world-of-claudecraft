@@ -604,6 +604,14 @@ function gatePairFor(route: RouteDef): {
       unsetBody: INTERNAL_FEATURE_OFF,
     };
   }
+  if (route.path.startsWith('/internal/woc/season/')) {
+    return {
+      header: 'x-woc-ops-secret',
+      envVar: 'WOC_OPS_SECRET',
+      unsetStatus: 404,
+      unsetBody: INTERNAL_FEATURE_OFF,
+    };
+  }
   if (route.path.startsWith('/internal/daily-rewards/')) {
     return {
       header: DAILY_REWARD_SECRET_HEADER,
@@ -620,7 +628,12 @@ function gatePairFor(route: RouteDef): {
   };
 }
 
-const SWEPT_SECRET_ENVS = [DEPLOY_SECRET_ENV, DISCORD_SECRET_ENV, DAILY_REWARD_SECRET_ENV] as const;
+const SWEPT_SECRET_ENVS = [
+  DEPLOY_SECRET_ENV,
+  DISCORD_SECRET_ENV,
+  DAILY_REWARD_SECRET_ENV,
+  'WOC_OPS_SECRET',
+] as const;
 
 describe('internal secret-gate mounting sweep: every /internal route is gated', () => {
   const savedSecrets = new Map<string, string | undefined>();
@@ -649,10 +662,11 @@ describe('internal secret-gate mounting sweep: every /internal route is gated', 
     vi.restoreAllMocks();
   });
 
-  it('selects the full 15-route internal surface (the handleInternalApi 11 + the 4 ops routes)', () => {
+  it('selects the full 17-route internal surface (the handleInternalApi 13 + the 4 ops routes)', () => {
     // The ops family is 4 since v0.20.0 added its paginated leaderboard read to
-    // the 3 late-arrival rows.
-    expect(internalSurfaceRoutes.length).toBe(15);
+    // the 3 late-arrival rows; the ladder is 13 since the two /internal/woc/season
+    // arms joined the table.
+    expect(internalSurfaceRoutes.length).toBe(17);
   });
 
   for (const route of internalSurfaceRoutes) {

@@ -402,9 +402,12 @@ const wocOpsGate = requireInternalSecret({
   envVar: 'WOC_OPS_SECRET',
 });
 
-// Legacy-order parity: the ladder checks season-ops wiring BEFORE the secret
-// (an op nobody wired is indistinguishable from one that does not exist), so
-// this middleware runs ahead of wocOpsGate in the season routes below.
+// The secret gate runs FIRST (the internal surface's uniform property: a
+// wrong secret is always a 401 before anything else, pinned by the
+// ownership-coverage sweep); an authenticated call against unwired season ops
+// then answers the ladder's feature-off 404. The one divergence from the
+// ladder's check order (unwired ops + wrong secret: 401 here, 404 there) can
+// only occur in a build that never wired season ops, which main.ts always does.
 const seasonOpsWired: typeof wocOpsGate = async (ctx, next) => {
   if (!seasonOpsRuntime) return fail(ctx.res, 404, 'unknown endpoint');
   await next();
@@ -430,7 +433,7 @@ export const routes: RouteDef[] = [
     path: '/internal/woc/season/open',
     surface: 'internal',
     meta: INTERNAL_META,
-    middleware: [seasonOpsWired, wocOpsGate],
+    middleware: [wocOpsGate, seasonOpsWired],
     handler: async (ctx) => {
       const body = await readBody(ctx.req);
       const seasonId = Number(body?.seasonId);
@@ -448,7 +451,7 @@ export const routes: RouteDef[] = [
     path: '/internal/woc/season/close',
     surface: 'internal',
     meta: INTERNAL_META,
-    middleware: [seasonOpsWired, wocOpsGate],
+    middleware: [wocOpsGate, seasonOpsWired],
     handler: async (ctx) => {
       const body = await readBody(ctx.req);
       const seasonId = Number(body?.seasonId);

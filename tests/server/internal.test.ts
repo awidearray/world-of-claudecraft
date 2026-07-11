@@ -92,9 +92,11 @@ const DISCORD_SECRET = 'discord-secret';
 const DEPLOY_HEADERS = { 'x-woc-deploy-secret': DEPLOY_SECRET };
 const DISCORD_HEADERS = { 'x-woc-discord-secret': DISCORD_SECRET };
 
-// The 11 routes as [method, path], the legacy handleInternalApi ladder order.
+// The 13 routes as [method, path], the legacy handleInternalApi ladder order.
 const EXPECTED_ROUTES: ReadonlyArray<readonly [Method, string]> = [
   ['POST', '/internal/restart-countdown'],
+  ['POST', '/internal/woc/season/open'],
+  ['POST', '/internal/woc/season/close'],
   ['GET', '/internal/discord/flex'],
   ['GET', '/internal/discord/roles'],
   ['POST', '/internal/discord/presence'],
@@ -236,8 +238,8 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('internal route registration', () => {
-  it('registers exactly 11 routes matching the legacy method+path ladder', () => {
-    expect(routes).toHaveLength(11);
+  it('registers exactly 13 routes matching the legacy method+path ladder', () => {
+    expect(routes).toHaveLength(13);
     const actual = routes.map((r) => `${r.method} ${r.path}`).sort();
     const expected = EXPECTED_ROUTES.map(([m, p]) => `${m} ${p}`).sort();
     expect(actual).toEqual(expected);

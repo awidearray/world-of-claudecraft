@@ -627,10 +627,14 @@ house pattern as the v0.23.0 base merge), not the rebase recipe below.
 
 The seven suites this document previously called "pre-existing base reds"
 were caused by the CHAIN, not by upstream, so upstream CI would have hit
-them. Five are fixed at the tip (em-dash copy in the buyback keeper
+them. Six are fixed at the tip (em-dash copy in the buyback keeper
 comments; #woc-season-window parity in play.html + the mobile sheet rule;
 inventory rows for the /internal/woc/season arms under a new
-secret-woc-ops scope; the public realm directory failing OPEN on a
+secret-woc-ops scope, which woke the registry-completeness gate and led to
+the real fix: both arms are now RouteDefs in server/internal.ts behind a
+WOC_OPS_SECRET gate (secret-first, per the ownership-coverage sweep's
+uniform 401 property) with season ops injected at boot and the ladder
+retained as the delegate twin; the public realm directory failing OPEN on a
 registry read failure with the golden fixture re-pinned to the chain's
 additive fields; the schema_wiring pg mock answering assertRealmSchema
 from the exported REQUIRED_REALM_COLUMNS). Two remain, deliberately:
