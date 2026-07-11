@@ -4,28 +4,30 @@
 //
 // Lives in src/net/ and is never imported by src/sim/: the deterministic core
 // stays free of network/wallet dependencies.
+
+import { isSolanaChain } from '@solana/wallet-standard-chains';
+import {
+  SolanaSignAndSendTransaction,
+  type SolanaSignAndSendTransactionFeature,
+  SolanaSignMessage,
+  type SolanaSignMessageFeature,
+} from '@solana/wallet-standard-features';
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import { getWallets, type Wallets } from '@wallet-standard/app';
 import type { Wallet, WalletAccount, WalletIcon } from '@wallet-standard/base';
 import {
   StandardConnect,
-  StandardDisconnect,
-  StandardEvents,
   type StandardConnectFeature,
+  StandardDisconnect,
   type StandardDisconnectFeature,
+  StandardEvents,
   type StandardEventsChangeProperties,
   type StandardEventsFeature,
 } from '@wallet-standard/features';
-import { isSolanaChain } from '@solana/wallet-standard-chains';
-import {
-  SolanaSignMessage,
-  SolanaSignAndSendTransaction,
-  type SolanaSignMessageFeature,
-  type SolanaSignAndSendTransactionFeature,
-} from '@solana/wallet-standard-features';
-import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { buildRealmLockIx, ownerTokenAccount } from './realm_escrow';
 import { buildRealmPurchaseInstructions } from './realm_buy';
+import { buildRealmLockIx, ownerTokenAccount } from './realm_escrow';
+import { buildPresaleContributionInstructions } from './realm_presale';
 
 export interface WalletState {
   address: string | null;
@@ -40,7 +42,10 @@ export interface WalletOption {
 }
 
 type CompatibleWallet = Wallet & StandardConnectFeature & SolanaSignMessageFeature;
-type WalletPicker = (wallets: readonly WalletOption[], selectedId: string | null) => Promise<string | null>;
+type WalletPicker = (
+  wallets: readonly WalletOption[],
+  selectedId: string | null,
+) => Promise<string | null>;
 type ConnectApi = StandardConnectFeature[typeof StandardConnect];
 type DisconnectApi = StandardDisconnectFeature[typeof StandardDisconnect];
 type EventsApi = StandardEventsFeature[typeof StandardEvents];
@@ -117,11 +122,13 @@ function connectFeature(wallet: CompatibleWallet): ConnectApi {
 }
 
 function disconnectFeature(wallet: Wallet): DisconnectApi | null {
-  return hasDisconnectFeature(wallet) ? wallet.features[StandardDisconnect] as DisconnectApi : null;
+  return hasDisconnectFeature(wallet)
+    ? (wallet.features[StandardDisconnect] as DisconnectApi)
+    : null;
 }
 
 function eventsFeature(wallet: Wallet): EventsApi | null {
-  return hasEventsFeature(wallet) ? wallet.features[StandardEvents] as EventsApi : null;
+  return hasEventsFeature(wallet) ? (wallet.features[StandardEvents] as EventsApi) : null;
 }
 
 function signMessageFeature(wallet: CompatibleWallet): SignMessageApi {
@@ -140,7 +147,10 @@ function accountSupportsSolanaSignMessage(account: WalletAccount): boolean {
 }
 
 function walletSupportsSolana(wallet: Wallet): boolean {
-  return wallet.chains.some(isSolanaChain) || wallet.accounts.some((account) => account.chains.some(isSolanaChain));
+  return (
+    wallet.chains.some(isSolanaChain) ||
+    wallet.accounts.some((account) => account.chains.some(isSolanaChain))
+  );
 }
 
 function isCompatibleWallet(wallet: Wallet): wallet is CompatibleWallet {
@@ -152,7 +162,10 @@ function compatibleWallets(): CompatibleWallet[] {
   return registry?.get().filter(isCompatibleWallet) ?? [];
 }
 
-function chooseAccount(wallet: CompatibleWallet, accounts: readonly WalletAccount[] = wallet.accounts): WalletAccount | null {
+function chooseAccount(
+  wallet: CompatibleWallet,
+  accounts: readonly WalletAccount[] = wallet.accounts,
+): WalletAccount | null {
   return accounts.find(accountSupportsSolanaSignMessage) ?? null;
 }
 
@@ -172,7 +185,11 @@ function setPickerOpen(open: boolean): void {
   for (const cb of modalListeners) cb(open);
 }
 
-function setSelected(wallet: CompatibleWallet | null, account: WalletAccount | null, persist: boolean): void {
+function setSelected(
+  wallet: CompatibleWallet | null,
+  account: WalletAccount | null,
+  persist: boolean,
+): void {
   const previousAddress = selectedAccount?.address ?? null;
   selectedWallet = wallet;
   selectedAccount = account;
@@ -217,8 +234,11 @@ function findWallet(id: string): CompatibleWallet | null {
 function selectAuthorizedWallet(): boolean {
   const storedName = readStoredWalletName();
   const wallets = compatibleWallets();
-  const storedWallet = storedName ? wallets.find((wallet) => wallet.name === storedName) ?? null : null;
-  const walletWithAccount = storedWallet ?? wallets.find((wallet) => chooseAccount(wallet) !== null) ?? null;
+  const storedWallet = storedName
+    ? (wallets.find((wallet) => wallet.name === storedName) ?? null)
+    : null;
+  const walletWithAccount =
+    storedWallet ?? wallets.find((wallet) => chooseAccount(wallet) !== null) ?? null;
   if (!walletWithAccount) return false;
   const account = chooseAccount(walletWithAccount);
   attachSelectedWalletEvents(walletWithAccount);
@@ -241,7 +261,8 @@ function trySilentReconnect(): void {
     return;
   }
   selectedWallet = wallet;
-  connectFeature(wallet).connect({ silent: true })
+  connectFeature(wallet)
+    .connect({ silent: true })
     .then((result) => {
       if (selectedWallet !== wallet) return;
       setSelected(wallet, chooseAccount(wallet, result.accounts), true);
@@ -255,7 +276,10 @@ function attachRegistryEvents(): void {
   if (!registry || registryOff || registryUnregisterOff) return;
   registryOff = registry.on('register', (...wallets) => {
     const currentId = selectedWallet ? walletId(selectedWallet) : null;
-    if (currentId && wallets.some((wallet) => wallet.name === currentId && isCompatibleWallet(wallet))) {
+    if (
+      currentId &&
+      wallets.some((wallet) => wallet.name === currentId && isCompatibleWallet(wallet))
+    ) {
       trySilentReconnect();
     } else if (!selectedAccount) {
       selectAuthorizedWallet();
@@ -371,8 +395,10 @@ export async function signMessageBase58(message: string): Promise<string> {
   const messageBytes = new TextEncoder().encode(message);
   const results = await signMessageFeature(wallet).signMessage({ account, message: messageBytes });
   const result = results[0];
-  if (!result || !(result.signature instanceof Uint8Array)) throw new Error('wallet returned an invalid signature');
-  if (!bytesEqual(result.signedMessage, messageBytes)) throw new Error('wallet modified the message before signing');
+  if (!result || !(result.signature instanceof Uint8Array))
+    throw new Error('wallet returned an invalid signature');
+  if (!bytesEqual(result.signedMessage, messageBytes))
+    throw new Error('wallet modified the message before signing');
   return bs58.encode(result.signature);
 }
 
@@ -382,8 +408,12 @@ export async function signMessageBase58(message: string): Promise<string> {
 // targets a testnet; set VITE_REALM_RPC_URL + VITE_REALM_CHAIN for devnet
 // testing. RPC and chain MUST be the same cluster (a blockhash from one is
 // invalid on another).
-const REALM_RPC_URL = (import.meta.env.VITE_REALM_RPC_URL ?? 'https://api.mainnet-beta.solana.com').trim();
-const REALM_CHAIN = (import.meta.env.VITE_REALM_CHAIN ?? 'solana:mainnet').trim() as `solana:${string}`;
+const REALM_RPC_URL = (
+  import.meta.env.VITE_REALM_RPC_URL ?? 'https://api.mainnet-beta.solana.com'
+).trim();
+const REALM_CHAIN = (
+  import.meta.env.VITE_REALM_CHAIN ?? 'solana:mainnet'
+).trim() as `solana:${string}`;
 
 export interface RealmLockQuote {
   programId: string;
@@ -428,7 +458,8 @@ export async function signAndSendRealmLock(quote: RealmLockQuote): Promise<strin
     chain: REALM_CHAIN,
     transaction: new Uint8Array(wire),
   });
-  if (!result || !(result.signature instanceof Uint8Array)) throw new Error('wallet returned an invalid signature');
+  if (!result || !(result.signature instanceof Uint8Array))
+    throw new Error('wallet returned an invalid signature');
   return bs58.encode(result.signature);
 }
 
@@ -483,7 +514,66 @@ export async function signAndSendRealmPurchase(quote: RealmBuyQuote): Promise<st
     chain: REALM_CHAIN,
     transaction: new Uint8Array(wire),
   });
-  if (!result || !(result.signature instanceof Uint8Array)) throw new Error('wallet returned an invalid signature');
+  if (!result || !(result.signature instanceof Uint8Array))
+    throw new Error('wallet returned an invalid signature');
+  return bs58.encode(result.signature);
+}
+
+// ── Realm token presale: pay a contribution (launchpad phase 2) ─────────────
+// The server-quoted contribution: one leg into the founder escrow, tagged with
+// the quoteId memo. Amounts are base-unit decimal strings.
+export interface PresaleContributionQuote {
+  native: boolean; // SOL (System transfer) vs USDC / $WOC (SPL transfer)
+  currencyMint: string;
+  currencyDecimals: number;
+  escrowWallet: string;
+  amountBase: string;
+  memo: string; // == quoteId
+}
+
+// Sign + send a presale contribution, returning the signature for
+// POST /api/realms/:id/token/presale/confirm. The instruction set is built by
+// the shared pure builder (src/net/realm_presale.ts); this only attaches a
+// recent blockhash + fee payer, exactly like signAndSendRealmPurchase.
+export async function signAndSendPresaleContribution(
+  quote: PresaleContributionQuote,
+): Promise<string> {
+  const wallet = selectedWallet;
+  const account = selectedAccount;
+  if (!wallet || !account) throw new Error('connect a wallet first');
+  const feature = signAndSendFeature(wallet);
+  if (!feature) throw new Error('this wallet cannot sign and send transactions');
+
+  const contributor = new PublicKey(account.address);
+  const ixs = buildPresaleContributionInstructions({
+    contributor,
+    native: quote.native,
+    // The builder ignores the mint on the native rail; feed it a valid key
+    // (the system program id) so PublicKey never parses an empty string.
+    currencyMint: new PublicKey(
+      quote.native ? '11111111111111111111111111111111' : quote.currencyMint,
+    ),
+    currencyDecimals: quote.currencyDecimals,
+    escrow: new PublicKey(quote.escrowWallet),
+    amountBase: BigInt(quote.amountBase),
+    memo: quote.memo,
+  });
+
+  const connection = new Connection(REALM_RPC_URL, 'confirmed');
+  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  const tx = new Transaction();
+  tx.feePayer = contributor;
+  tx.recentBlockhash = blockhash;
+  for (const ix of ixs) tx.add(ix);
+  const wire = tx.serialize({ requireAllSignatures: false, verifySignatures: false });
+
+  const [result] = await feature.signAndSendTransaction({
+    account,
+    chain: REALM_CHAIN,
+    transaction: new Uint8Array(wire),
+  });
+  if (!result || !(result.signature instanceof Uint8Array))
+    throw new Error('wallet returned an invalid signature');
   return bs58.encode(result.signature);
 }
 

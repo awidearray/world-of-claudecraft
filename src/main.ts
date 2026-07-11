@@ -5,9 +5,6 @@ import './styles/index.css';
 import { syncAppViewport as syncAppViewportShared } from './game/app_viewport';
 import { audio } from './game/audio';
 import { AutoLoot } from './game/autoloot';
-import { RealmAffiliate } from './ui/realm_affiliate';
-import { RealmOperator } from './ui/realm_operator';
-import { setWocSeason, setWocSeasonUiEnabled } from './ui/woc_season';
 import {
   BROWSER_BODY_CLASSES,
   browserBodyClasses,
@@ -93,6 +90,7 @@ import {
   type OwnedRealm,
   type ProvisionQuote,
   type RealmBuyQuoteResponse,
+  type RealmPresaleQuote,
   type ReleaseEntry,
 } from './net/online';
 // The wallet module is loaded lazily via dynamic import() in the wallet
@@ -196,6 +194,9 @@ import {
   setStandingProvider,
 } from './ui/player_card_share';
 import { hydratePortraits, portraitChipHtml } from './ui/portrait_chip';
+import { RealmAffiliate } from './ui/realm_affiliate';
+import { RealmLaunchpad } from './ui/realm_launchpad';
+import { RealmOperator } from './ui/realm_operator';
 import { hideReconnectOverlay, showReconnectOverlay } from './ui/reconnect_overlay';
 import { createSpectateBadge } from './ui/spectate_badge';
 import { type PresetId, type ThemeKnob, ThemeStore } from './ui/theme';
@@ -214,6 +215,7 @@ import {
   setWocBalance,
   shouldDisconnectUnverifiedWallet,
 } from './ui/wallet_balance';
+import { setWocSeason, setWocSeasonUiEnabled } from './ui/woc_season';
 import { formatXp } from './ui/xp_bar';
 import type { IWorld, LeaderboardEntry } from './world_api';
 
@@ -6450,6 +6452,44 @@ async function signRealmPurchase(quote: RealmBuyQuoteResponse): Promise<string |
   }
 }
 
+// Sign + send a presale contribution for a launchpad quote. Returns the payment
+// signature, or null if the player rejected/cancelled in their wallet. Mirrors
+// signRealmPurchase for the token launchpad's contribute flow.
+async function signPresaleContribution(quote: RealmPresaleQuote): Promise<string | null> {
+  const wallet = await loadWallet();
+  try {
+    return await wallet.signAndSendPresaleContribution({
+      native: quote.native,
+      currencyMint: quote.currencyMint,
+      currencyDecimals: quote.currencyDecimals,
+      escrowWallet: quote.escrowWallet,
+      amountBase: quote.amountBase,
+      memo: quote.memo,
+    });
+  } catch (err) {
+    if (wallet.isWalletSelectionCancelled(err)) return null;
+    throw err instanceof Error ? err : new Error(t('launchpad.err.generic'));
+  }
+}
+
+// Realm token launchpad (phases 0 to 2): rendered into the realm-operator panel
+// body for one owned realm; Back re-opens the operator dashboard.
+function openRealmLaunchpad(realm: OwnedRealm): void {
+  const body = $('#realm-operator-body') as HTMLElement;
+  const launchpad = new RealmLaunchpad(body, {
+    api,
+    realm: { realmId: realm.realmId, name: realm.name },
+    linkedWallet: () => linkedWalletPubkey,
+    ensureWalletReady: ensureRealmWalletReady,
+    signContribution: signPresaleContribution,
+    close: () => {
+      realmOperator = null; // the panel body was repurposed; rebuild fresh
+      openRealmOperator();
+    },
+  });
+  void launchpad.open();
+}
+
 let realmOperator: RealmOperator | null = null;
 function openRealmOperator(): void {
   show('#realm-operator-panel');
@@ -6463,7 +6503,9 @@ function openRealmOperator(): void {
       signLock: signRealmLock,
       signPurchase: signRealmPurchase,
       affiliateCode: () => REFERRAL_CODE || null,
-      enterRealm: (realm: OwnedRealm) => selectRealm({ name: realm.name, url: realm.url, type: realm.type }),
+      enterRealm: (realm: OwnedRealm) =>
+        selectRealm({ name: realm.name, url: realm.url, type: realm.type }),
+      openLaunchpad: (realm: OwnedRealm) => openRealmLaunchpad(realm),
       close: () => showRealmList(),
     });
   }
