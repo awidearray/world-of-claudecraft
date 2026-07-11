@@ -1,0 +1,242 @@
+# Branch state: feature/woc-realm-token-launchpad-impl
+
+Realm Token Launchpad, phases 0 to 2 of
+`docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
+freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
+branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
+the bottom).
+
+## Locked decisions honored
+
+- Presale/vote identity = game account + verified linked wallet (the #473
+  rail). An unlinked account is rejected with the typed `wallet_not_linked`
+  error on both the vote and presale paths.
+- Commerce core = a FORK of this branch's `realm_buy` quote/verify/confirm
+  machinery (`server/realm_presale.ts` mirrors `server/realm_buy.ts` shape,
+  reusing `parseSplitPayment` / `parseNativePayment` /
+  `fetchFinalizedTransaction`). This is the fourth fork of the shared shape;
+  convergence is a documented follow-up (see Open questions).
+- `monetization_policy` defaults `'cosmetic'` and is STORAGE ONLY: no power
+  behavior reads it anywhere in phases 0 to 2 (the token-to-copper credit path
+  is phase 7 behind its own gate). The UI labels a `power` realm plainly.
+
+## Commits (one series per phase, each commit tsc-clean in isolation)
+
+| Commit | Phase | What |
+|---|---|---|
+| 047965f1b | 0 | `feat(realm-token)`: registry + resolver + directory identity |
+| e5c481a25 | 1 | `feat(realm-vote)`: weighted off-chain launch vote |
+| 1c0c24b5d | 2 | `feat(realm-presale)`: asset-only non-custodial presale + surface-inventory registration |
+| 2ae0ef47c | 1+2 UI | `feat(ui)`: launchpad panel + view-core + i18n domain + wiring |
+
+## Phase 0: registry + identity
+
+Files: `server/realm_token.ts` (types, validation, pure
+`realmTokenConfig(realmId, tokens)` resolver falling back to the $WOC display
+currency, `mergeDirectoryCurrencies`, register orchestration against the
+`RealmTokenDb` interface), `server/realm_token_db.ts` (`realm_tokens` table:
+symbol/icon, 9-state lifecycle, `monetization_policy` CHECK defaulting
+cosmetic, `launch_tx_sig UNIQUE` reserved for the phase-3 mint, guarded status
+CAS). `assertRealmSchema` (server/realm_db.ts) extended: a dropped
+`realm_tokens` (or vote/presale) column fails at boot. `GET /api/realms` now
+attaches an additive, FAIL-OPEN `currency` field per directory entry. Routes:
+`POST /api/realms/:id/token/register` (owner-only, active realm, one token per
+realm), `GET /api/realms/:id/token`. No chain writes; `mint` stays NULL until
+phase 3.
+
+Acceptance:
+- In-memory-fake test + register/resolver/directory-merge coverage:
+  `tests/realm_token.test.ts` (18 tests, green).
+- Real-DB variant per the `realm_db.integration.test.ts` pattern:
+  `tests/realm_launchpad_db.integration.test.ts` (9 tests, green against
+  Postgres 16 via `PG_TEST_URL`), including boot-fail-on-dropped-column
+  (`ALTER TABLE realm_tokens DROP COLUMN monetization_policy` makes
+  `assertRealmSchema` throw) and the guarded CAS.
+- Boot-fail also unit-tested without Postgres via a stubbed Queryable.
+- Directory merge test: currency attaches additively, env-only realms and
+  closed tokens fall back to $WOC.
+
+## Phase 1: launch vote
+
+Files: `server/realm_vote.ts` + `server/realm_vote_db.ts`. Off-chain advisory
+tally weighted by `cachedWocBalance` (whole $WOC, floored), SNAPSHOTTED into
+the ledger row at cast time (a later balance change never rewrites a tally).
+One vote per linked wallet AND per account (`UNIQUE(realm_id, wallet)` +
+`UNIQUE(realm_id, account_id)`). Env quorum + yes threshold
+(`REALM_VOTE_QUORUM_WOC`, default 1,000,000 $WOC;
+`REALM_VOTE_YES_THRESHOLD_BPS`, default 6000), exact bigint outcome math. A
+pass flips `voting -> presale` via the registry CAS, exactly once. Routes:
+`POST .../token/vote/open` (owner), `GET`/`POST .../token/vote` (cast is
+rate-limited: it reads the balance RPC).
+
+Acceptance (`tests/realm_vote.test.ts`, 13 tests, green):
+- Weighted tally + exact quorum/threshold boundaries (pass exactly at both,
+  fail one unit under), whale-scale bigint weights.
+- Double-vote rejection (same wallet, and same account with a rotated wallet).
+- Unlinked wallet -> typed `wallet_not_linked`; null balance -> 503; zero
+  whole-$WOC weight rejected.
+- Pass flips voting -> presale; late votes rejected; met-quorum-failed-threshold
+  stays `voting`.
+- Real-DB: vote uniques + bigint round-trip in the integration suite.
+- Panel view-core tested (see UI); S3 i18n guard green.
+
+## Phase 2: presale (asset-only, non-custodial)
+
+Files: `server/realm_presale.ts` + `server/realm_presale_db.ts` (tables
+`realm_presales` config, `realm_presale_quotes`,
+`realm_presale_contributions` with `pay_tx_sig UNIQUE` +
+`refund_tx_sig UNIQUE`). Rails: SOL (native), USDC, $WOC (legacy SPL;
+Token-2022 hard-rejected). Stripe fiat DEFERRED (noted in the panel copy).
+Flow: owner configures the presale (founder-owned escrow wallet + per-rail
+caps) once the vote passes; contributor quotes (memo == quoteId, TTL) and pays
+ONE transfer into the escrow; confirm verifies the finalized tx and inserts
+the contribution LEDGER-FIRST under a `SELECT ... FOR UPDATE` presale row
+lock with an exact cap recheck. Combined soft cap = exact bigint fraction sum
+across rails (asset-only: no pricing, no oracle). Owner finalize:
+`presale -> funded` (soft cap met) or `-> refunding`; refunds are
+founder/escrow-signed transactions the server only VERIFIES (fee payer must be
+the escrow wallet, contributor credited in full, memo == the contribution's
+pay signature binding one refund tx to one contribution); all rows refunded
+flips `refunding -> refunded`.
+
+Acceptance (`tests/realm_presale.test.ts`, 32 tests, green):
+- Verifier rejects wrong-amount (`escrow_short`), wrong-recipient, replayed
+  signature (second confirm with the same sig -> 409
+  `contribution_already_recorded`, quote consumed), memo mismatch, wrong
+  payer, reverted/unfinalized txs, Token-2022 look-alikes, malformed sigs
+  (pre-RPC).
+- Caps exact at boundaries: at-cap accepted, one base unit over rejected, for
+  both the per-wallet and total-raise caps, including a raced contribution
+  landing between quote and confirm (rechecked under the lock).
+- Refund path: verified escrow-signed refund marks the row; double refund and
+  refund-tx reuse rejected; status flips to `refunded` when all covered;
+  short/wrong-recipient/wrong-refunder refunds rejected.
+- Grep-level non-custodial assertion: a test scans `server/realm_presale.ts` +
+  `realm_presale_db.ts` for any keypair/signing/secret material and fails on a
+  match. No settle keypair exists anywhere in the presale path.
+- Real-DB: config rails round-trip, ledger UNIQUEs, refund marking,
+  `withPresaleLock` commit/rollback atomicity.
+
+## UI (panel for phases 0 to 2)
+
+`src/ui/realm_launchpad_view.ts`: pure view-core (registered in
+`UI_PURE_CORES`), exact bigint vote/presale render math, the launch checklist,
+and `parseAmountToBase`/`formatBaseAmount` (exact round-trip, no floats).
+`src/ui/realm_launchpad.ts`: the panel on the `realm_operator.ts` template
+(status page + checklist, pay-to-win banner, register form, vote panel with
+tally/quorum progress bars, presale progress + contribute flow + founder
+config/finalize + refund status), opened from a Token Launchpad action on each
+owned realm row (host hook wired in `src/main.ts`).
+`src/net/realm_presale.ts`: pure contribution-instruction builder (single
+escrow leg + memo, reusing the realm_buy encoders);
+`signAndSendPresaleContribution` in `src/net/wallet.ts`; launchpad REST
+methods + wire types on `Api` (src/net/online.ts).
+
+i18n: new flat English-only `launchpad` catalog domain
+(`src/ui/i18n.catalog/launchpad.ts`, 130 keys) spread into
+`i18n.catalog/index.ts` exactly like `realmOp`; never per-locale overlays for
+the source. The five non-Latin M16 fills (zh_CN, zh_TW, ja_JP, ko_KR, ru_RU;
+130 keys each) ride in the same change. Server error codes map to
+`launchpad.err.*` via an exported `ERR_KEYS` table; a test pins coverage of
+every server-emitted code. Generated i18n artifacts + the resolved-table hash
+baseline are regenerated and committed (`npm run i18n:gen`,
+`npm run i18n:hash -- --write`).
+
+Acceptance: `tests/realm_launchpad_view.test.ts` (17 tests) green;
+`tests/architecture.test.ts` (purity + UI_PURE_CORES completeness) green;
+S3 guard (`tests/localization_fixes.test.ts`) green; M16
+(`tests/i18n_completeness.test.ts`) green; i18n freshness gates
+(`i18n_resolved_equivalence`, `i18n_status_registry`) green.
+
+## Invariant confirmations
+
+- `src/sim/` purity: NOTHING was added to `src/sim/` (no mint, RPC, decimals,
+  or price anywhere near it); `tests/architecture.test.ts` green.
+- Server authoritative: every on-chain claim is accepted only after
+  `fetchFinalizedTransaction` + the branch's own delta/memo/fee-payer parsers
+  verify it (contribution AND refund), mirroring `verifyBuyPayment`.
+- Non-custodial: the server pins quotes and verifies; funds move
+  contributor -> founder escrow and escrow -> contributor only. No keypair,
+  no signing, no settlement credentials in the presale path (test-pinned).
+- SQL only in `*_db.ts`, each behind an interface (`RealmTokenDb`,
+  `RealmVoteDb`, `RealmPresaleStore`) with in-memory fakes in the tests.
+- Money tables ledger-first with `UNIQUE(tx_sig)`:
+  `realm_presale_contributions.pay_tx_sig` UNIQUE (+ `refund_tx_sig` UNIQUE);
+  nothing is granted in phases 0 to 2, so the ledger row IS the entire write.
+- Untouched: realm stake escrow semantics, `usesToken2022` rejection on
+  stake/buy (still hard-rejecting, re-pinned by the existing realm_buy tests
+  and the new presale Token-2022 test), `TOKEN_PROGRAM_ID`,
+  `server/realm_tiers.ts` (founding stays priced in $WOC).
+- No em/en dashes or emojis in any new file; conventional scoped commits.
+
+## Gate status on this branch
+
+- `npx tsc --noEmit`: clean (also verified per intermediate commit via
+  detached worktrees).
+- Biome on changed files: clean (warnings only, per CI policy).
+- New suites: 89 unit tests green + 9 real-Postgres integration tests green.
+- Full `npm test`: 23 failures BEFORE the docs/i18n commits, of which 19 are
+  PRE-EXISTING at the base merge 2bb4d5084 (verified by stash-and-run):
+  `schema_wiring` (11: its ensureSchema mock never served
+  `information_schema` for the branch's own `assertRealmSchema`),
+  `malware_scan` (branch keeper files + `@solana/web3.js`, the known
+  category blocker), `entry_window_parity` + `mobile_window_coverage`
+  (`woc-season-window`), `rate_limit_copy` (pre-existing em dashes in
+  main.ts keeper comments), `characterization` `realms_get_noauth` (the
+  branch's realm directory 500s with no DB at HEAD too),
+  `surface_inventory` (the branch never registered its realm/affiliate/season
+  routes). This branch REPAIRED the surface inventory for all realm +
+  launchpad + affiliate routes (3 failing tests -> 1; the remaining diff is
+  only the two `/internal/woc/season/*` arms, which cannot be inventoried
+  without also registering them as RouteDefs, a pre-existing conflict between
+  two guards). The 4 failures my changes introduced (i18n freshness x4) are
+  fixed by the committed regenerated artifacts + hash baseline.
+
+## Open questions surfaced
+
+- Cap denomination semantics: caps are per-rail and the soft cap is a combined
+  exact fraction sum (fully funding any one rail's soft component satisfies
+  the whole target). PRD leaves multi-rail cap semantics unspecified; confirm
+  or switch to a single founder-chosen quote asset before phase 4 feeds the
+  curve.
+- Player entry point: vote/presale panels are currently reachable from the
+  OWNER dashboard (realm_operator row action). Non-owner voters/contributors
+  need a public entry (realm-list integration per PRD section 9) in a
+  follow-up; the routes already serve any authed account.
+- Refund binding: a refund tx must carry the ORIGINAL contribution signature
+  as its memo (1:1 binding). Founder tooling to batch-issue refunds does not
+  exist yet; refunds are submitted per contribution via
+  `POST .../token/presale/refund`.
+- Presale config immutability: config is once-only and immutable; no
+  cancel/extend path exists (PRD is silent). Decide before mainnet.
+- Core convergence (PRD section 13): this adds the FOURTH quote/verify/confirm
+  fork. Converge marketplace/realm_buy/ads/presale onto one parametric core
+  before phase 3 to 6 add more surface.
+- `/api/woc/season` + `/internal/woc/season/*` inventory/RouteDef debt and the
+  other pre-existing red gates above belong to the base branch, not this
+  feature.
+
+## Upstream-PR recipe (when the #799/#475 chain lands)
+
+1. Rebase this branch onto the then-current `release/**` integration base
+   (`git rebase --onto <release> 2bb4d5084 feature/woc-realm-token-launchpad-impl`),
+   resolving `server/db.ts` / `server/main.ts` / `server/realm_db.ts` wiring
+   hunks (all additive) and re-running `npm run i18n:gen` +
+   `npm run i18n:hash -- --write` (never hand-resolve generated conflicts).
+2. Re-run the gate: `npx tsc --noEmit`, `npx vitest run
+   tests/realm_token.test.ts tests/realm_vote.test.ts
+   tests/realm_presale.test.ts tests/realm_launchpad_view.test.ts
+   tests/architecture.test.ts tests/localization_fixes.test.ts
+   tests/i18n_completeness.test.ts`, plus the PG integration suites with a
+   throwaway Postgres 16 (`PG_TEST_URL=... npx vitest run
+   --no-file-parallelism tests/realm_*.integration.test.ts
+   tests/realm_launchpad_db.integration.test.ts`), then `npm run gate`.
+3. Expect the pre-existing red gates above to be fixed (or explicitly waived)
+   on the integration base; the malware-gate allowlist question
+   (@solana/web3.js keeper imports) is the known category blocker for every
+   on-chain PR.
+4. Open the PR against upstream with `.github/PULL_REQUEST_TEMPLATE.md`,
+   scope: phases 0 to 2 only (no mint, no chain writes, no mainnet
+   dependency), and link the PRD + this file. Screenshots of the launchpad
+   panel (desktop + mobile) go under `docs/screenshots` per the repo rule;
+   they still need to be captured against a running dev server.
