@@ -146,6 +146,7 @@ const UI_PURE_CORES = [
   'src/ui/vendor_view.ts',
   'src/ui/heroic_vendor_view.ts',
   'src/ui/claudium_view.ts',
+  'src/ui/merch_view.ts',
   'src/ui/loot_roll_status_view.ts',
   'src/ui/loot_settings_view.ts',
   'src/ui/crafting_view.ts',
