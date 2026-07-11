@@ -3,10 +3,15 @@
 // pays two System transfers (treasury + buyback) plus a memo; a USDC purchase
 // creates the recipient ATAs idempotently then TransferChecks the two legs, plus a
 // memo. The memo always carries the quoteId.
-import { describe, it, expect } from 'vitest';
+
 import { PublicKey, SystemProgram } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, ownerTokenAccount } from '../src/net/realm_escrow';
+import { describe, expect, it } from 'vitest';
 import { buildRealmPurchaseInstructions } from '../src/net/realm_buy';
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  ownerTokenAccount,
+  TOKEN_PROGRAM_ID,
+} from '../src/net/realm_escrow';
 
 const MEMO_PROGRAM = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 const pk = (b: number) => new PublicKey(new Uint8Array(32).fill(b));

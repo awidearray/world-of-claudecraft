@@ -1,18 +1,14 @@
-import { describe, expect, it } from 'vitest';
 import type { Pool } from 'pg';
+import { describe, expect, it } from 'vitest';
 import {
   BASE_WORLD_SEED,
+  type DbRealmSummary,
   DEFAULT_REALM_NAME,
   mergeRealmDirectory,
-  worldSeedForRealm,
-  type DbRealmSummary,
   type RealmEntry,
+  worldSeedForRealm,
 } from '../server/realm';
-import {
-  getRealmById,
-  listRealmsForDirectory,
-  rolesForAccountOnRealm,
-} from '../server/realm_db';
+import { getRealmById, listRealmsForDirectory, rolesForAccountOnRealm } from '../server/realm_db';
 
 // A minimal fake of the `Queryable` the realm_db functions accept: it returns a
 // canned result for each call and records the SQL + params so we can assert the
@@ -78,12 +74,25 @@ describe('mergeRealmDirectory', () => {
   it('returns env entries enriched with a null identity when there is no registry row', () => {
     const out = mergeRealmDirectory(env, []);
     expect(out).toHaveLength(2);
-    expect(out[0]).toMatchObject({ name: 'Claudemoon', realmId: null, status: 'active', owned: false, tier: 0 });
+    expect(out[0]).toMatchObject({
+      name: 'Claudemoon',
+      realmId: null,
+      status: 'active',
+      owned: false,
+      tier: 0,
+    });
   });
 
   it('enriches an env entry from its matching registry row but keeps the pinned env url', () => {
     const out = mergeRealmDirectory(env, [
-      dbRealm({ name: 'ironforge', realmId: 7, originUrl: '', ownerAccountId: 42, tier: 2, type: 'PvP' }),
+      dbRealm({
+        name: 'ironforge',
+        realmId: 7,
+        originUrl: '',
+        ownerAccountId: 42,
+        tier: 2,
+        type: 'PvP',
+      }),
     ]);
     const iron = out.find((r) => r.name === 'Ironforge')!;
     expect(iron.url).toBe('https://ironforge.example.com'); // env url wins
@@ -92,11 +101,22 @@ describe('mergeRealmDirectory', () => {
 
   it('appends an active player-provisioned realm not pinned in env, using its origin url', () => {
     const out = mergeRealmDirectory(env, [
-      dbRealm({ name: 'Aerie Peak', realmId: 9, originUrl: 'https://aerie.example.com', ownerAccountId: 5, tier: 1 }),
+      dbRealm({
+        name: 'Aerie Peak',
+        realmId: 9,
+        originUrl: 'https://aerie.example.com',
+        ownerAccountId: 5,
+        tier: 1,
+      }),
     ]);
     expect(out).toHaveLength(3);
     const aerie = out[2];
-    expect(aerie).toMatchObject({ name: 'Aerie Peak', url: 'https://aerie.example.com', realmId: 9, owned: true });
+    expect(aerie).toMatchObject({
+      name: 'Aerie Peak',
+      url: 'https://aerie.example.com',
+      realmId: 9,
+      owned: true,
+    });
   });
 
   it('hides registry realms that are not active (provisioning / decommissioning / etc.)', () => {
@@ -108,7 +128,9 @@ describe('mergeRealmDirectory', () => {
   });
 
   it('de-dupes case-insensitively, env first', () => {
-    const out = mergeRealmDirectory(env, [dbRealm({ name: 'CLAUDEMOON', realmId: 3, ownerAccountId: 1 })]);
+    const out = mergeRealmDirectory(env, [
+      dbRealm({ name: 'CLAUDEMOON', realmId: 3, ownerAccountId: 1 }),
+    ]);
     expect(out).toHaveLength(2);
     // the env entry absorbs the registry id rather than producing a duplicate
     expect(out[0]).toMatchObject({ name: 'Claudemoon', realmId: 3, owned: true });
@@ -148,7 +170,19 @@ describe('realm_db row mapping', () => {
 
   it('maps an unknown status defensively to active', async () => {
     const { db } = fakeDb([
-      { rows: [{ realm_id: 5, name: 'X', type: 'bogus', origin_url: '', status: 'weird', owner_account_id: 2, tier: 1 }] },
+      {
+        rows: [
+          {
+            realm_id: 5,
+            name: 'X',
+            type: 'bogus',
+            origin_url: '',
+            status: 'weird',
+            owner_account_id: 2,
+            tier: 1,
+          },
+        ],
+      },
     ]);
     const [row] = await listRealmsForDirectory(db);
     expect(row.status).toBe('active'); // defensive fallback

@@ -34,7 +34,11 @@ const ZERO: ReferralBonus = { refereeXp: 0, refereeCopper: 0, referrerXp: 0, ref
 
 // The bonus for a chunk of fresh earnings. Outside the window, or with no new
 // earnings, nothing. Integer math (XP + copper are whole units); a bps cut floors.
-export function computeReferralBonus(deltaXp: number, deltaCopper: number, withinWindow: boolean): ReferralBonus {
+export function computeReferralBonus(
+  deltaXp: number,
+  deltaCopper: number,
+  withinWindow: boolean,
+): ReferralBonus {
   const dx = Math.max(0, Math.floor(deltaXp));
   const dc = Math.max(0, Math.floor(deltaCopper));
   if (!withinWindow || (dx === 0 && dc === 0)) return { ...ZERO };
@@ -70,7 +74,11 @@ export function reconcileReferral(i: ReferralReconcileInput): ReferralReconcileR
   const dx = Math.max(0, i.xpGained - i.lastXpGained);
   const dc = Math.max(0, i.lootCopper - i.lastLootCopper);
   const bonus = computeReferralBonus(dx, dc, i.withinWindow);
-  const applied = bonus.refereeXp > 0 || bonus.refereeCopper > 0 || bonus.referrerXp > 0 || bonus.referrerCopper > 0;
+  const applied =
+    bonus.refereeXp > 0 ||
+    bonus.refereeCopper > 0 ||
+    bonus.referrerXp > 0 ||
+    bonus.referrerCopper > 0;
   return {
     ...bonus,
     // even with the window closed (bonus all zero) we advance the checkpoint to

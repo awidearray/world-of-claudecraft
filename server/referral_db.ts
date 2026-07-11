@@ -44,7 +44,10 @@ export async function referrerForReferee(
     [refereeAccountId],
   );
   return res.rows[0]
-    ? { referrerAccountId: Number(res.rows[0].referrer_account_id), referredAt: res.rows[0].created_at as Date }
+    ? {
+        referrerAccountId: Number(res.rows[0].referrer_account_id),
+        referredAt: res.rows[0].created_at as Date,
+      }
     : null;
 }
 
@@ -58,7 +61,10 @@ export async function getReferralProgress(
     [characterId],
   );
   return res.rows[0]
-    ? { xpGained: Number(res.rows[0].last_xp_gained), lootCopper: Number(res.rows[0].last_loot_copper) }
+    ? {
+        xpGained: Number(res.rows[0].last_xp_gained),
+        lootCopper: Number(res.rows[0].last_loot_copper),
+      }
     : null;
 }
 
@@ -101,7 +107,10 @@ export async function accrueReferralReward(
 
 // Atomically take the referrer's pending pool (zeroing it) so it can be granted
 // to a live character exactly once. Returns {0,0} when nothing is pending.
-export async function claimReferralRewards(db: Queryable, accountId: number): Promise<{ xp: number; copper: number }> {
+export async function claimReferralRewards(
+  db: Queryable,
+  accountId: number,
+): Promise<{ xp: number; copper: number }> {
   const res = await db.query(
     `WITH old AS (
        SELECT account_id, pending_xp, pending_copper FROM referral_rewards
@@ -112,7 +121,9 @@ export async function claimReferralRewards(db: Queryable, accountId: number): Pr
      RETURNING old.pending_xp AS xp, old.pending_copper AS copper`,
     [accountId],
   );
-  return res.rows[0] ? { xp: Number(res.rows[0].xp), copper: Number(res.rows[0].copper) } : { xp: 0, copper: 0 };
+  return res.rows[0]
+    ? { xp: Number(res.rows[0].xp), copper: Number(res.rows[0].copper) }
+    : { xp: 0, copper: 0 };
 }
 
 export interface ReferralRewardSummary {
@@ -123,7 +134,10 @@ export interface ReferralRewardSummary {
   referredCount: number; // how many accounts this account has referred
 }
 
-export async function referralRewardSummary(db: Queryable, accountId: number): Promise<ReferralRewardSummary> {
+export async function referralRewardSummary(
+  db: Queryable,
+  accountId: number,
+): Promise<ReferralRewardSummary> {
   const res = await db.query(
     `SELECT
        COALESCE((SELECT pending_xp FROM referral_rewards WHERE account_id = $1), 0) AS pending_xp,

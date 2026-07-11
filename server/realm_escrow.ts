@@ -12,7 +12,9 @@ import { PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.j
 // Standard SPL program ids (the program uses the legacy Token program, matching
 // the server verifier which rejects Token-2022).
 export const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
-export const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
+export const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
+  'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+);
 
 // The deployed realm_stake_escrow program id. Overridable per cluster.
 export const REALM_ESCROW_PROGRAM_ID = new PublicKey(

@@ -5,10 +5,10 @@
 // these tests pin the parts that decide what a player actually reads on failure,
 // which a screenshot cannot prove.
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { ApiError } from '../src/net/online';
-import { ERR_KEYS, messageForError, formatTokens, tierWord } from '../src/ui/realm_operator';
-import { t, formatNumber } from '../src/ui/i18n';
+import { formatNumber, t } from '../src/ui/i18n';
+import { ERR_KEYS, formatTokens, messageForError, tierWord } from '../src/ui/realm_operator';
 
 describe('formatTokens', () => {
   it('reduces base units to whole tokens at the mint decimals', () => {
@@ -35,15 +35,25 @@ describe('formatTokens', () => {
 
 describe('messageForError', () => {
   it('maps a known server error code to its localized message', () => {
-    expect(messageForError(new ApiError('realm_name_taken', 409))).toBe(t('realmOp.err.realm_name_taken'));
-    expect(messageForError(new ApiError('stake_below_minimum', 400))).toBe(t('realmOp.err.stake_below_minimum'));
-    expect(messageForError(new ApiError('timelock_not_elapsed', 409))).toBe(t('realmOp.err.timelock_not_elapsed'));
+    expect(messageForError(new ApiError('realm_name_taken', 409))).toBe(
+      t('realmOp.err.realm_name_taken'),
+    );
+    expect(messageForError(new ApiError('stake_below_minimum', 400))).toBe(
+      t('realmOp.err.stake_below_minimum'),
+    );
+    expect(messageForError(new ApiError('timelock_not_elapsed', 409))).toBe(
+      t('realmOp.err.timelock_not_elapsed'),
+    );
     expect(messageForError(new ApiError('wrong_payer', 400))).toBe(t('realmOp.err.wrong_payer'));
   });
 
   it('maps the two literal route messages (not codes) too', () => {
-    expect(messageForError(new ApiError('link a wallet first', 400))).toBe(t('realmOp.err.link_wallet'));
-    expect(messageForError(new ApiError('too many requests, slow down', 429))).toBe(t('realmOp.err.rate_limited'));
+    expect(messageForError(new ApiError('link a wallet first', 400))).toBe(
+      t('realmOp.err.link_wallet'),
+    );
+    expect(messageForError(new ApiError('too many requests, slow down', 429))).toBe(
+      t('realmOp.err.rate_limited'),
+    );
   });
 
   it('falls back to a generic message for an unmapped server code', () => {
@@ -55,7 +65,9 @@ describe('messageForError', () => {
   });
 
   it('shows a wallet-layer Error message verbatim (already English by design)', () => {
-    expect(messageForError(new Error('User rejected the request.'))).toBe('User rejected the request.');
+    expect(messageForError(new Error('User rejected the request.'))).toBe(
+      'User rejected the request.',
+    );
   });
 
   it('is generic for a non-Error throw', () => {
@@ -69,15 +81,32 @@ describe('ERR_KEYS server-code coverage', () => {
   // have a mapping; a new code without one would silently render as generic.
   const SERVER_CODES = [
     // prepareProvisionQuote + the quote route
-    'invalid_realm_name', 'realm_name_not_allowed', 'realm_name_taken', 'realm_cap_reached',
-    'stake_below_minimum', 'supply_unavailable', 'invalid_amount', 'link a wallet first',
+    'invalid_realm_name',
+    'realm_name_not_allowed',
+    'realm_name_taken',
+    'realm_cap_reached',
+    'stake_below_minimum',
+    'supply_unavailable',
+    'invalid_amount',
+    'link a wallet first',
     // confirmProvisionQuote + verifyStakeLock (local + service-backed paths)
-    'quote_not_found', 'not_your_quote', 'quote_expired', 'stake_already_recorded',
-    'tx_not_finalized', 'tx_failed', 'token_2022', 'wrong_vault_amount', 'wrong_payer',
+    'quote_not_found',
+    'not_your_quote',
+    'quote_expired',
+    'stake_already_recorded',
+    'tx_not_finalized',
+    'tx_failed',
+    'token_2022',
+    'wrong_vault_amount',
+    'wrong_payer',
     'stake_service_unavailable',
     // decommission + release
-    'not_realm_owner', 'realm_not_found', 'realm_not_active', 'realm_not_decommissioning',
-    'timelock_not_elapsed', 'stake_not_released_onchain',
+    'not_realm_owner',
+    'realm_not_found',
+    'realm_not_active',
+    'realm_not_decommissioning',
+    'timelock_not_elapsed',
+    'stake_not_released_onchain',
     // buy/quote ongoing-$WOC-bond precheck
     'bond_required',
     // route-level rate limit

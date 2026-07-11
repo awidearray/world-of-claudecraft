@@ -19,7 +19,8 @@ run('referral_db against real Postgres', () => {
   let charId: number;
 
   async function newAccount(prefix: string): Promise<number> {
-    return (await db.createAccount(`${prefix}_${Date.now()}_${Math.floor(performance.now())}`, 'h')).id;
+    return (await db.createAccount(`${prefix}_${Date.now()}_${Math.floor(performance.now())}`, 'h'))
+      .id;
   }
   async function newCharacter(accountId: number): Promise<number> {
     const r = await db.pool.query(
@@ -68,7 +69,10 @@ run('referral_db against real Postgres', () => {
     // Character names are globally unique; delete-first keeps the test idempotent.
     await db.pool.query("DELETE FROM characters WHERE name IN ('Thrandara', 'Sir Galahad')");
     const refA = await newAccount('charrefa');
-    await db.pool.query("INSERT INTO characters (account_id, name, class, level) VALUES ($1, 'Thrandara', 'mage', 12)", [refA]);
+    await db.pool.query(
+      "INSERT INTO characters (account_id, name, class, level) VALUES ($1, 'Thrandara', 'mage', 12)",
+      [refA],
+    );
     expect(await db.accountForCharacterName('THRANDARA')).toBe(refA); // case-insensitive
     expect(await db.primaryCharacterName(refA)).toBe('Thrandara');
 
@@ -78,34 +82,53 @@ run('referral_db against real Postgres', () => {
 
     // a name with a space (Sir Galahad) round-trips through the link too
     const refB = await newAccount('charrefb');
-    await db.pool.query("INSERT INTO characters (account_id, name, class, level) VALUES ($1, 'Sir Galahad', 'warrior', 5)", [refB]);
+    await db.pool.query(
+      "INSERT INTO characters (account_id, name, class, level) VALUES ($1, 'Sir Galahad', 'warrior', 5)",
+      [refB],
+    );
     const refeeB = await newAccount('charrefeeb');
     await card.captureReferral(refeeB, 'Sir Galahad');
     expect((await refDb.referrerForReferee(db.pool, refeeB))?.referrerAccountId).toBe(refB);
   });
 
-  it('checkpoints a character\'s earned counters (upsert round-trip)', async () => {
+  it("checkpoints a character's earned counters (upsert round-trip)", async () => {
     expect(await refDb.getReferralProgress(db.pool, charId)).toBeNull();
     await refDb.setReferralProgress(db.pool, charId, 1000, 500);
-    expect(await refDb.getReferralProgress(db.pool, charId)).toEqual({ xpGained: 1000, lootCopper: 500 });
+    expect(await refDb.getReferralProgress(db.pool, charId)).toEqual({
+      xpGained: 1000,
+      lootCopper: 500,
+    });
     await refDb.setReferralProgress(db.pool, charId, 1650, 800);
-    expect(await refDb.getReferralProgress(db.pool, charId)).toEqual({ xpGained: 1650, lootCopper: 800 });
+    expect(await refDb.getReferralProgress(db.pool, charId)).toEqual({
+      xpGained: 1650,
+      lootCopper: 800,
+    });
   });
 
-  it('accrues, summarizes, and atomically claims a referrer\'s commission', async () => {
+  it("accrues, summarizes, and atomically claims a referrer's commission", async () => {
     const rr = await newAccount('rwd');
     await refDb.accrueReferralReward(db.pool, rr, 50, 25);
     await refDb.accrueReferralReward(db.pool, rr, 50, 25);
     await refDb.accrueReferralReward(db.pool, rr, 0, 0); // no-op
 
     let sum = await refDb.referralRewardSummary(db.pool, rr);
-    expect(sum).toMatchObject({ pendingXp: 100, pendingCopper: 50, lifetimeXp: 100, lifetimeCopper: 50 });
+    expect(sum).toMatchObject({
+      pendingXp: 100,
+      pendingCopper: 50,
+      lifetimeXp: 100,
+      lifetimeCopper: 50,
+    });
 
     // claim takes the pending pool exactly once; lifetime persists
     expect(await refDb.claimReferralRewards(db.pool, rr)).toEqual({ xp: 100, copper: 50 });
     expect(await refDb.claimReferralRewards(db.pool, rr)).toEqual({ xp: 0, copper: 0 });
     sum = await refDb.referralRewardSummary(db.pool, rr);
-    expect(sum).toMatchObject({ pendingXp: 0, pendingCopper: 0, lifetimeXp: 100, lifetimeCopper: 50 });
+    expect(sum).toMatchObject({
+      pendingXp: 0,
+      pendingCopper: 0,
+      lifetimeXp: 100,
+      lifetimeCopper: 50,
+    });
   });
 
   it('counts how many accounts a referrer has referred', async () => {

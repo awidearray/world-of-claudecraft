@@ -25,7 +25,9 @@ run('affiliate_db against real Postgres', () => {
     db = await import('../server/db');
     realmDb = await import('../server/realm_db');
     aff = await import('../server/affiliate_db');
-    await db.pool.query('DROP TABLE IF EXISTS realm_affiliates, affiliate_codes, realm_quotes, realm_stakes, realm_roles, realms CASCADE');
+    await db.pool.query(
+      'DROP TABLE IF EXISTS realm_affiliates, affiliate_codes, realm_quotes, realm_stakes, realm_roles, realms CASCADE',
+    );
     await db.ensureSchema();
     seller = (await db.createAccount(`seller_${Date.now()}`, 'h')).id;
     founder = (await db.createAccount(`founder_${Date.now()}`, 'h')).id;
@@ -49,33 +51,80 @@ run('affiliate_db against real Postgres', () => {
   });
 
   it('attributes a realm to an affiliate first-touch and reads it back', async () => {
-    const realm = await realmDb.createProvisioningRealm(db.pool, { name: `Aff A ${Date.now()}`, type: 'PvP', ownerAccountId: founder, tier: 2 });
-    await aff.setRealmAffiliate(db.pool, { realmId: realm.realmId, affiliateAccountId: seller, bps: 1500 });
-    expect(await aff.getRealmAffiliate(db.pool, realm.realmId)).toEqual({ affiliateAccountId: seller, bps: 1500 });
+    const realm = await realmDb.createProvisioningRealm(db.pool, {
+      name: `Aff A ${Date.now()}`,
+      type: 'PvP',
+      ownerAccountId: founder,
+      tier: 2,
+    });
+    await aff.setRealmAffiliate(db.pool, {
+      realmId: realm.realmId,
+      affiliateAccountId: seller,
+      bps: 1500,
+    });
+    expect(await aff.getRealmAffiliate(db.pool, realm.realmId)).toEqual({
+      affiliateAccountId: seller,
+      bps: 1500,
+    });
 
     // first-touch: a later attribution (different affiliate or bps) is a no-op
-    await aff.setRealmAffiliate(db.pool, { realmId: realm.realmId, affiliateAccountId: founder, bps: 9999 });
-    expect(await aff.getRealmAffiliate(db.pool, realm.realmId)).toEqual({ affiliateAccountId: seller, bps: 1500 });
+    await aff.setRealmAffiliate(db.pool, {
+      realmId: realm.realmId,
+      affiliateAccountId: founder,
+      bps: 9999,
+    });
+    expect(await aff.getRealmAffiliate(db.pool, realm.realmId)).toEqual({
+      affiliateAccountId: seller,
+      bps: 1500,
+    });
 
     // a realm with no affiliate returns null
-    const bare = await realmDb.createProvisioningRealm(db.pool, { name: `Aff Bare ${Date.now()}`, type: 'Normal', ownerAccountId: founder, tier: 1 });
+    const bare = await realmDb.createProvisioningRealm(db.pool, {
+      name: `Aff Bare ${Date.now()}`,
+      type: 'Normal',
+      ownerAccountId: founder,
+      tier: 1,
+    });
     expect(await aff.getRealmAffiliate(db.pool, bare.realmId)).toBeNull();
   });
 
-  it('lists an affiliate\'s referred realms (non-closed, newest first) with the commission bps', async () => {
+  it("lists an affiliate's referred realms (non-closed, newest first) with the commission bps", async () => {
     const ts = Date.now();
-    const r1 = await realmDb.createProvisioningRealm(db.pool, { name: `Ref One ${ts}`, type: 'PvP', ownerAccountId: founder, tier: 1 });
-    const r2 = await realmDb.createProvisioningRealm(db.pool, { name: `Ref Two ${ts}`, type: 'RP', ownerAccountId: founder, tier: 3 });
+    const r1 = await realmDb.createProvisioningRealm(db.pool, {
+      name: `Ref One ${ts}`,
+      type: 'PvP',
+      ownerAccountId: founder,
+      tier: 1,
+    });
+    const r2 = await realmDb.createProvisioningRealm(db.pool, {
+      name: `Ref Two ${ts}`,
+      type: 'RP',
+      ownerAccountId: founder,
+      tier: 3,
+    });
     await realmDb.activateRealm(db.pool, r1.realmId);
     await realmDb.activateRealm(db.pool, r2.realmId);
-    await aff.setRealmAffiliate(db.pool, { realmId: r1.realmId, affiliateAccountId: seller, bps: 1500 });
-    await aff.setRealmAffiliate(db.pool, { realmId: r2.realmId, affiliateAccountId: seller, bps: 1500 });
+    await aff.setRealmAffiliate(db.pool, {
+      realmId: r1.realmId,
+      affiliateAccountId: seller,
+      bps: 1500,
+    });
+    await aff.setRealmAffiliate(db.pool, {
+      realmId: r2.realmId,
+      affiliateAccountId: seller,
+      bps: 1500,
+    });
 
     const list = await aff.listRealmsByAffiliate(db.pool, seller);
     const refNames = list.map((r) => r.name);
     expect(refNames).toContain(`Ref One ${ts}`);
     expect(refNames).toContain(`Ref Two ${ts}`);
-    expect(list.find((r) => r.name === `Ref Two ${ts}`)).toMatchObject({ bps: 1500, tier: 3, type: 'RP', status: 'active' });
+    expect(list.find((r) => r.name === `Ref Two ${ts}`)).toMatchObject({
+      bps: 1500,
+      tier: 3,
+      type: 'RP',
+      status: 'active',
+    });
 
     const countBefore = await aff.affiliateRealmCount(db.pool, seller);
     expect(countBefore).toBe(list.length);
@@ -88,8 +137,17 @@ run('affiliate_db against real Postgres', () => {
   });
 
   it('cascades the affiliate row when the realm is deleted', async () => {
-    const realm = await realmDb.createProvisioningRealm(db.pool, { name: `Aff Cascade ${Date.now()}`, type: 'Normal', ownerAccountId: founder, tier: 1 });
-    await aff.setRealmAffiliate(db.pool, { realmId: realm.realmId, affiliateAccountId: seller, bps: 1500 });
+    const realm = await realmDb.createProvisioningRealm(db.pool, {
+      name: `Aff Cascade ${Date.now()}`,
+      type: 'Normal',
+      ownerAccountId: founder,
+      tier: 1,
+    });
+    await aff.setRealmAffiliate(db.pool, {
+      realmId: realm.realmId,
+      affiliateAccountId: seller,
+      bps: 1500,
+    });
     await db.pool.query('DELETE FROM realms WHERE realm_id = $1', [realm.realmId]);
     expect(await aff.getRealmAffiliate(db.pool, realm.realmId)).toBeNull();
   });

@@ -73,7 +73,16 @@ export async function createRealmQuote(
   await db.query(
     `INSERT INTO realm_quotes (quote_id, account_id, realm_id, owner_wallet, amount_base, tier, mint, expires_at)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [q.quoteId, q.accountId, q.realmId, q.ownerWallet, q.amountBase.toString(), q.tier, q.mint, q.expiresAt],
+    [
+      q.quoteId,
+      q.accountId,
+      q.realmId,
+      q.ownerWallet,
+      q.amountBase.toString(),
+      q.tier,
+      q.mint,
+      q.expiresAt,
+    ],
   );
 }
 

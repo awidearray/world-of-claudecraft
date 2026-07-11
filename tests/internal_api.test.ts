@@ -107,7 +107,10 @@ describe('internal api', () => {
 describe('internal api — $WOC season ops', () => {
   const previousSecret = process.env.WOC_OPS_SECRET;
   const game = { startRestartCountdown: vi.fn() } as any;
-  const fakeSeasonOps = () => ({ openSeason: vi.fn(async () => {}), closeSeason: vi.fn(async () => {}) });
+  const fakeSeasonOps = () => ({
+    openSeason: vi.fn(async () => {}),
+    closeSeason: vi.fn(async () => {}),
+  });
 
   afterEach(() => {
     if (previousSecret === undefined) delete process.env.WOC_OPS_SECRET;
@@ -126,7 +129,10 @@ describe('internal api — $WOC season ops', () => {
   // (before the await suspends), so feeding the body right after the call works.
   async function call(req: any, res: any, ops: any, body?: unknown): Promise<void> {
     const p = handleInternalApi(req, res, game, ops);
-    if (body !== undefined) { req.emit('data', Buffer.from(JSON.stringify(body))); req.emit('end'); }
+    if (body !== undefined) {
+      req.emit('data', Buffer.from(JSON.stringify(body)));
+      req.emit('end');
+    }
     await p;
   }
 
@@ -157,10 +163,18 @@ describe('internal api — $WOC season ops', () => {
     process.env.WOC_OPS_SECRET = 'ops';
     const ops = fakeSeasonOps();
     const res = fakeRes();
-    await call(seasonReq('/internal/woc/season/open', 'ops'), res, ops, { seasonId: 4, label: 'S4', endsAt: '2026-07-01T00:00:00.000Z' });
+    await call(seasonReq('/internal/woc/season/open', 'ops'), res, ops, {
+      seasonId: 4,
+      label: 'S4',
+      endsAt: '2026-07-01T00:00:00.000Z',
+    });
     expect(res.statusCode).toBe(200);
     expect(res.body.data.seasonId).toBe(4);
-    expect(ops.openSeason).toHaveBeenCalledWith({ seasonId: 4, label: 'S4', endsAt: '2026-07-01T00:00:00.000Z' });
+    expect(ops.openSeason).toHaveBeenCalledWith({
+      seasonId: 4,
+      label: 'S4',
+      endsAt: '2026-07-01T00:00:00.000Z',
+    });
   });
 
   it('rejects a non-integer seasonId with 400 (no DB write)', async () => {
@@ -176,7 +190,10 @@ describe('internal api — $WOC season ops', () => {
     process.env.WOC_OPS_SECRET = 'ops';
     const ops = fakeSeasonOps();
     const res = fakeRes();
-    await call(seasonReq('/internal/woc/season/open', 'ops'), res, ops, { seasonId: 1, endsAt: 'not-a-date' });
+    await call(seasonReq('/internal/woc/season/open', 'ops'), res, ops, {
+      seasonId: 1,
+      endsAt: 'not-a-date',
+    });
     expect(res.statusCode).toBe(400);
     expect(ops.openSeason).not.toHaveBeenCalled();
   });

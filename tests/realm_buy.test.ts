@@ -4,7 +4,7 @@
 // (server/realm_buy.ts verifyBuyPayment) for both the USDC (SPL token-delta) and
 // SOL (native lamport) rails. Only the RPC fetch (fetchFinalizedTransaction) is
 // mocked; the real delta/memo/Token-2022 parsing runs against synthetic fixtures.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // verifyBuyPayment lives in realm_buy.ts, which transitively imports server/db.ts
 // (it throws at import without DATABASE_URL). Neither db export is used at load on
@@ -16,9 +16,13 @@ vi.mock('../server/solana_rpc', async (importActual) => {
   return { ...actual, fetchFinalizedTransaction: vi.fn() };
 });
 
-import { fetchFinalizedTransaction, parseNativePayment, type RawConfirmedTransaction } from '../server/solana_rpc';
-import { splitBuy } from '../server/realm_price';
 import { verifyBuyPayment } from '../server/realm_buy';
+import { splitBuy } from '../server/realm_price';
+import {
+  fetchFinalizedTransaction,
+  parseNativePayment,
+  type RawConfirmedTransaction,
+} from '../server/solana_rpc';
 
 const SPL = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
@@ -62,7 +66,9 @@ function nativeTx(opts: {
   if (opts.memo !== null) instructions.push({ program: 'spl-memo', parsed: opts.memo ?? MEMO });
   return {
     meta: { err: opts.err ?? null, preBalances: opts.pre, postBalances: opts.post },
-    transaction: { message: { accountKeys: opts.keys ?? [BUYER, TREASURY, BUYBACK], instructions } },
+    transaction: {
+      message: { accountKeys: opts.keys ?? [BUYER, TREASURY, BUYBACK], instructions },
+    },
   };
 }
 
@@ -191,29 +197,41 @@ const solArgs = { ...usdcArgs, currency: 'SOL' as const };
 
 describe('verifyBuyPayment (SOL)', () => {
   it('accepts a finalized native split crediting both legs', async () => {
-    mocked.mockResolvedValue(nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 700_000, 300_000] }));
+    mocked.mockResolvedValue(
+      nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 700_000, 300_000] }),
+    );
     expect(await verifyBuyPayment(solArgs)).toEqual({ ok: true });
   });
 
   it('rejects a short treasury leg', async () => {
-    mocked.mockResolvedValue(nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 699_999, 300_000] }));
+    mocked.mockResolvedValue(
+      nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 699_999, 300_000] }),
+    );
     expect(await verifyBuyPayment(solArgs)).toEqual({ ok: false, reason: 'treasury_short' });
   });
 
   it('rejects a short buyback leg', async () => {
-    mocked.mockResolvedValue(nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 700_000, 299_999] }));
+    mocked.mockResolvedValue(
+      nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 700_000, 299_999] }),
+    );
     expect(await verifyBuyPayment(solArgs)).toEqual({ ok: false, reason: 'buyback_short' });
   });
 
   it('binds the payer to the linked wallet (fee payer)', async () => {
     mocked.mockResolvedValue(
-      nativeTx({ keys: ['Other1111111111111111111111111111111111111', TREASURY, BUYBACK], pre: [10_000_000, 0, 0], post: [9_000_000, 700_000, 300_000] }),
+      nativeTx({
+        keys: ['Other1111111111111111111111111111111111111', TREASURY, BUYBACK],
+        pre: [10_000_000, 0, 0],
+        post: [9_000_000, 700_000, 300_000],
+      }),
     );
     expect(await verifyBuyPayment(solArgs)).toEqual({ ok: false, reason: 'wrong_payer' });
   });
 
   it('rejects a wrong / missing memo', async () => {
-    mocked.mockResolvedValue(nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 700_000, 300_000], memo: null }));
+    mocked.mockResolvedValue(
+      nativeTx({ pre: [10_000_000, 0, 0], post: [9_000_000, 700_000, 300_000], memo: null }),
+    );
     expect(await verifyBuyPayment(solArgs)).toEqual({ ok: false, reason: 'memo_mismatch' });
   });
 });

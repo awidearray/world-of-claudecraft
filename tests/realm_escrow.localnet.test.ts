@@ -17,9 +17,8 @@
 
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir, homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   Connection,
   Keypair,
@@ -28,19 +27,21 @@ import {
   Transaction,
   type TransactionInstruction,
 } from '@solana/web3.js';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
   buildLockIx,
   buildReleaseIx,
   buildRequestDecommissionIx,
   decodeRealmStake,
   realmStakePda,
   realmVaultAddress,
+  TOKEN_PROGRAM_ID,
 } from '../server/realm_escrow';
 
 const RPC = process.env.REALM_ESCROW_RPC;
-const SOLANA_BIN = process.env.SOLANA_BIN ?? join(homedir(), '.local/share/solana/install/active_release/bin');
+const SOLANA_BIN =
+  process.env.SOLANA_BIN ?? join(homedir(), '.local/share/solana/install/active_release/bin');
 const run = RPC ? describe : describe.skip;
 
 function ataFor(owner: PublicKey, mint: PublicKey): PublicKey {
@@ -84,13 +85,42 @@ run('realm_stake_escrow on a live validator', () => {
     // Fund the actor (fee payer + mint authority + staker). On devnet the actor
     // is the pre-funded REALM_TEST_FUNDER, so skip the (rate-limited) faucet.
     if (!FUNDER) {
-      await conn.confirmTransaction(await conn.requestAirdrop(actor.publicKey, 5_000_000_000), 'confirmed');
+      await conn.confirmTransaction(
+        await conn.requestAirdrop(actor.publicKey, 5_000_000_000),
+        'confirmed',
+      );
     }
     // Create the 6-decimal mock $WOC mint with the actor as authority, the
     // actor's ATA, and mint MINTED to it (the stake source).
-    spl(['create-token', mintFile, '--decimals', String(DECIMALS), '--fee-payer', actorFile, '--mint-authority', actor.publicKey.toBase58()]);
-    spl(['create-account', mint.toBase58(), '--fee-payer', actorFile, '--owner', actor.publicKey.toBase58()]);
-    spl(['mint', mint.toBase58(), String(MINTED / 10n ** BigInt(DECIMALS)), '--mint-authority', actorFile, '--fee-payer', actorFile, '--recipient-owner', actor.publicKey.toBase58()]);
+    spl([
+      'create-token',
+      mintFile,
+      '--decimals',
+      String(DECIMALS),
+      '--fee-payer',
+      actorFile,
+      '--mint-authority',
+      actor.publicKey.toBase58(),
+    ]);
+    spl([
+      'create-account',
+      mint.toBase58(),
+      '--fee-payer',
+      actorFile,
+      '--owner',
+      actor.publicKey.toBase58(),
+    ]);
+    spl([
+      'mint',
+      mint.toBase58(),
+      String(MINTED / 10n ** BigInt(DECIMALS)),
+      '--mint-authority',
+      actorFile,
+      '--fee-payer',
+      actorFile,
+      '--recipient-owner',
+      actor.publicKey.toBase58(),
+    ]);
   }, 120_000);
 
   afterAll(() => {
@@ -114,7 +144,9 @@ run('realm_stake_escrow on a live validator', () => {
   });
 
   it('lock: moves the stake into the program-owned vault and records it', async () => {
-    await send(buildLockIx({ staker: actor.publicKey, realmId, amount: STAKE, mint, stakerToken: actorAta }));
+    await send(
+      buildLockIx({ staker: actor.publicKey, realmId, amount: STAKE, mint, stakerToken: actorAta }),
+    );
 
     const vault = realmVaultAddress(realmStakePda(realmId), mint);
     expect(await tokenAmount(vault)).toBe(STAKE); // staked principal is in the vault

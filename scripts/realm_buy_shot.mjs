@@ -10,10 +10,11 @@
 // Pattern: export_loot_spreadsheet.mjs (esbuild self-bundle) + account_portal_shots.mjs
 // (puppeteer-core). Outputs PNGs into docs/screenshots/. Build artifacts go under
 // tmp/ (gitignored). Run: node scripts/realm_buy_shot.mjs
-import * as esbuild from 'esbuild';
-import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
-import { setTimeout as sleep } from 'node:timers/promises';
+
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+import * as esbuild from 'esbuild';
 import puppeteer from 'puppeteer-core';
 import { BROWSER_PATH } from './browser_path.mjs';
 
@@ -266,7 +267,8 @@ try {
 
   await page.goto('file://' + harnessPath, { waitUntil: 'networkidle0' });
   // Wait for the async open() loads (tiers/buyInfo/owned) to settle.
-  await page.waitForFunction(() => window.__shot && window.__shot.ready === true, { timeout: 15000 })
+  await page
+    .waitForFunction(() => window.__shot && window.__shot.ready === true, { timeout: 15000 })
     .catch(async (err) => {
       const state = await page.evaluate(() => ({
         hasShot: typeof window.__shot,
@@ -307,14 +309,17 @@ try {
   // (c) The operator dashboard's owned realms incl. the bond grace WARNING. Clip to
   //     the "My Realms" (.ro-mine) section so the warning is the focus.
   const mineHandle = await page.evaluateHandle(() =>
-    document.querySelector('#realm-operator-body .ro-mine'));
+    document.querySelector('#realm-operator-body .ro-mine'),
+  );
   const mineEl = mineHandle.asElement();
   await shot(mineEl ?? panel, 'realm-operator-bond-warning.png');
 
   const dsf = 2; // deviceScaleFactor set on the viewport
   console.log('Wrote ' + written.length + ' screenshots:');
   for (const w of written) {
-    const px = w.css ? Math.round(w.css.width * dsf) + 'x' + Math.round(w.css.height * dsf) : 'unknown';
+    const px = w.css
+      ? Math.round(w.css.width * dsf) + 'x' + Math.round(w.css.height * dsf)
+      : 'unknown';
     console.log('  ' + path.relative(root, w.file) + '  (' + px + ' px)');
   }
   if (pageErrors.length) {

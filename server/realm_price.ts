@@ -15,7 +15,7 @@
 // Server-only module (no SQL, no client import). The actual on-chain swap+burn of
 // the 30% lives in server/realm_buyback_keeper.ts, reusing the proven PayoutKeeper.
 
-import { WOC_MINT, WOC_DECIMALS, USDC_MINT } from './woc_config';
+import { USDC_MINT, WOC_DECIMALS, WOC_MINT } from './woc_config';
 
 // Native SOL is swapped through its wrapped-SOL mint on Jupiter (wrapAndUnwrapSol
 // handles the wrap/unwrap); the buyer still pays in native lamports.
@@ -109,8 +109,16 @@ async function jupiterOutForWoc(outMint: string, inWocBase: bigint): Promise<big
       `&amount=${inWocBase.toString()}&swapMode=ExactIn&slippageBps=${PRICE_SLIPPAGE_BPS}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return null;
-    const data = (await res.json()) as { outAmount?: string; routePlan?: unknown[]; priceImpactPct?: string };
-    if (typeof data.outAmount !== 'string' || !/^[0-9]+$/.test(data.outAmount) || !data.routePlan?.length) {
+    const data = (await res.json()) as {
+      outAmount?: string;
+      routePlan?: unknown[];
+      priceImpactPct?: string;
+    };
+    if (
+      typeof data.outAmount !== 'string' ||
+      !/^[0-9]+$/.test(data.outAmount) ||
+      !data.routePlan?.length
+    ) {
       return null; // no route / thin liquidity
     }
     // priceImpactPct is a decimal fraction string ("0.0123" = 1.23%). A large impact

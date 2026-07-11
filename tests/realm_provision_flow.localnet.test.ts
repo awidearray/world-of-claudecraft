@@ -11,12 +11,19 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {
+  Connection,
+  Keypair,
+  type PublicKey,
+  sendAndConfirmTransaction,
+  Transaction,
+} from '@solana/web3.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 
 const PG = process.env.PG_TEST_URL;
 const RPC = process.env.REALM_ESCROW_RPC;
-const SOLANA_BIN = process.env.SOLANA_BIN ?? join(homedir(), '.local/share/solana/install/active_release/bin');
+const SOLANA_BIN =
+  process.env.SOLANA_BIN ?? join(homedir(), '.local/share/solana/install/active_release/bin');
 if (PG) process.env.DATABASE_URL ??= PG;
 if (RPC) process.env.SOLANA_RPC_URL ??= RPC;
 // A fixed mock $WOC mint so woc_config.WOC_MINT (read at import) is the mint we
@@ -58,10 +65,14 @@ run('stake-to-provision route logic, end to end', () => {
   let stakeBase: bigint;
 
   function spl(args: string[]): string {
-    return execFileSync(join(SOLANA_BIN, 'spl-token'), [...args, '--url', RPC as string], { encoding: 'utf8' });
+    return execFileSync(join(SOLANA_BIN, 'spl-token'), [...args, '--url', RPC as string], {
+      encoding: 'utf8',
+    });
   }
   async function send(...ixs: Parameters<Transaction['add']>): Promise<string> {
-    return sendAndConfirmTransaction(conn, new Transaction().add(...ixs), [staker], { commitment: 'confirmed' });
+    return sendAndConfirmTransaction(conn, new Transaction().add(...ixs), [staker], {
+      commitment: 'confirmed',
+    });
   }
   async function waitFinalized(sig: string): Promise<void> {
     const deadline = Date.now() + 60_000;
@@ -81,21 +92,55 @@ run('stake-to-provision route logic, end to end', () => {
     quoteDb = await import('../server/realm_quote_db');
     escrow = await import('../server/realm_escrow');
 
-    await db.pool.query('DROP TABLE IF EXISTS realm_quotes, realm_stakes, realm_roles, realms CASCADE');
+    await db.pool.query(
+      'DROP TABLE IF EXISTS realm_quotes, realm_stakes, realm_roles, realms CASCADE',
+    );
     await db.ensureSchema();
     accountId = (await db.createAccount(`founder_${Date.now()}`, 'hash')).id;
     // Link the staker wallet to the account (provision requires a linked wallet).
-    await db.pool.query('INSERT INTO wallet_links (account_id, pubkey, linked_at) VALUES ($1, $2, now())', [accountId, staker.publicKey.toBase58()]);
+    await db.pool.query(
+      'INSERT INTO wallet_links (account_id, pubkey, linked_at) VALUES ($1, $2, now())',
+      [accountId, staker.publicKey.toBase58()],
+    );
 
     writeFileSync(stakerFile, JSON.stringify(Array.from(staker.secretKey)));
     writeFileSync(mintFile, JSON.stringify(Array.from(mintKp.secretKey)));
     if (!FUNDER) {
-      await conn.confirmTransaction(await conn.requestAirdrop(staker.publicKey, 5_000_000_000), 'confirmed');
+      await conn.confirmTransaction(
+        await conn.requestAirdrop(staker.publicKey, 5_000_000_000),
+        'confirmed',
+      );
     }
     // Create the mock $WOC mint (1e9 tokens) and give it all to the staker.
-    spl(['create-token', mintFile, '--decimals', '6', '--fee-payer', stakerFile, '--mint-authority', staker.publicKey.toBase58()]);
-    spl(['create-account', mint.toBase58(), '--fee-payer', stakerFile, '--owner', staker.publicKey.toBase58()]);
-    spl(['mint', mint.toBase58(), '1000000000', '--mint-authority', stakerFile, '--fee-payer', stakerFile, '--recipient-owner', staker.publicKey.toBase58()]);
+    spl([
+      'create-token',
+      mintFile,
+      '--decimals',
+      '6',
+      '--fee-payer',
+      stakerFile,
+      '--mint-authority',
+      staker.publicKey.toBase58(),
+    ]);
+    spl([
+      'create-account',
+      mint.toBase58(),
+      '--fee-payer',
+      stakerFile,
+      '--owner',
+      staker.publicKey.toBase58(),
+    ]);
+    spl([
+      'mint',
+      mint.toBase58(),
+      '1000000000',
+      '--mint-authority',
+      stakerFile,
+      '--fee-payer',
+      stakerFile,
+      '--recipient-owner',
+      staker.publicKey.toBase58(),
+    ]);
     stakerAta = escrow.realmVaultAddress(staker.publicKey, mint);
   }, 120_000);
 
@@ -125,36 +170,66 @@ run('stake-to-provision route logic, end to end', () => {
 
     // 2) LOCK the quoted amount into the escrow vault, on chain
     const lockSig = await send(
-      escrow.buildLockIx({ staker: staker.publicKey, realmId: quote.realmId, amount: stakeBase, mint, stakerToken: stakerAta }),
+      escrow.buildLockIx({
+        staker: staker.publicKey,
+        realmId: quote.realmId,
+        amount: stakeBase,
+        mint,
+        stakerToken: stakerAta,
+      }),
     );
     await waitFinalized(lockSig);
 
     // 3) CONFIRM
-    const confirmed = await provision.confirmProvisionQuote(db.pool, { accountId, quoteId: quote.quoteId, lockSig });
+    const confirmed = await provision.confirmProvisionQuote(db.pool, {
+      accountId,
+      quoteId: quote.quoteId,
+      lockSig,
+    });
     expect(confirmed.ok).toBe(true);
 
     // realm online, stake recorded, owner role granted, quote consumed
     expect((await realmDb.getRealmById(db.pool, quote.realmId))?.status).toBe('active');
-    expect((await stakeDb.getActiveStakeByRealm(db.pool, quote.realmId))?.amountBase).toBe(stakeBase);
-    expect(await realmDb.rolesForAccountOnRealm(db.pool, quote.realmId, accountId)).toContain('owner');
+    expect((await stakeDb.getActiveStakeByRealm(db.pool, quote.realmId))?.amountBase).toBe(
+      stakeBase,
+    );
+    expect(await realmDb.rolesForAccountOnRealm(db.pool, quote.realmId, accountId)).toContain(
+      'owner',
+    );
     expect(await quoteDb.getRealmQuote(db.pool, quote.quoteId)).toBeNull();
 
     // 4) DECOMMISSION (server marks decommissioning + stake releasing)
-    const dec = await provision.requestRealmDecommission(db.pool, { accountId, realmId: quote.realmId });
+    const dec = await provision.requestRealmDecommission(db.pool, {
+      accountId,
+      realmId: quote.realmId,
+    });
     expect(dec.ok).toBe(true);
     expect((await realmDb.getRealmById(db.pool, quote.realmId))?.status).toBe('decommissioning');
     expect((await stakeDb.getActiveStakeByRealm(db.pool, quote.realmId))?.status).toBe('releasing');
 
     // 5) on-chain request_decommission + (timelock) + release, closing the PDA
-    await send(escrow.buildRequestDecommissionIx({ owner: staker.publicKey, realmId: quote.realmId }));
+    await send(
+      escrow.buildRequestDecommissionIx({ owner: staker.publicKey, realmId: quote.realmId }),
+    );
     const stakeAcct = await conn.getAccountInfo(escrow.realmStakePda(quote.realmId));
     const eligible = escrow.decodeRealmStake(stakeAcct!.data).unlockEligibleSlot;
-    while (BigInt(await conn.getSlot('confirmed')) < eligible) await new Promise((r) => setTimeout(r, 1000));
-    const releaseSig = await send(escrow.buildReleaseIx({ owner: staker.publicKey, realmId: quote.realmId, mint, ownerToken: stakerAta }));
+    while (BigInt(await conn.getSlot('confirmed')) < eligible)
+      await new Promise((r) => setTimeout(r, 1000));
+    const releaseSig = await send(
+      escrow.buildReleaseIx({
+        owner: staker.publicKey,
+        realmId: quote.realmId,
+        mint,
+        ownerToken: stakerAta,
+      }),
+    );
     await waitFinalized(releaseSig);
 
     // 6) FINALIZE (server confirms the PDA is gone, closes the realm)
-    const fin = await provision.finalizeRealmRelease(db.pool, { accountId, realmId: quote.realmId });
+    const fin = await provision.finalizeRealmRelease(db.pool, {
+      accountId,
+      realmId: quote.realmId,
+    });
     expect(fin.ok).toBe(true);
     expect((await realmDb.getRealmById(db.pool, quote.realmId))?.status).toBe('closed');
     // the staker has the full principal back

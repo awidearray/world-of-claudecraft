@@ -15,12 +15,19 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { beforeAll, afterAll, describe, expect, it } from 'vitest';
-import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
+import {
+  Connection,
+  Keypair,
+  type PublicKey,
+  sendAndConfirmTransaction,
+  Transaction,
+} from '@solana/web3.js';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const PG = process.env.PG_TEST_URL;
 const RPC = process.env.REALM_ESCROW_RPC;
-const SOLANA_BIN = process.env.SOLANA_BIN ?? join(homedir(), '.local/share/solana/install/active_release/bin');
+const SOLANA_BIN =
+  process.env.SOLANA_BIN ?? join(homedir(), '.local/share/solana/install/active_release/bin');
 // db.ts + solana_tx read these at import time; point both at the test backends
 // before the dynamic imports below.
 if (PG) process.env.DATABASE_URL ??= PG;
@@ -57,7 +64,9 @@ run('stake-to-provision against real Postgres + validator', () => {
   let stakerAta: PublicKey;
 
   function spl(args: string[]): string {
-    return execFileSync(join(SOLANA_BIN, 'spl-token'), [...args, '--url', RPC as string], { encoding: 'utf8' });
+    return execFileSync(join(SOLANA_BIN, 'spl-token'), [...args, '--url', RPC as string], {
+      encoding: 'utf8',
+    });
   }
 
   beforeAll(async () => {
@@ -74,11 +83,40 @@ run('stake-to-provision against real Postgres + validator', () => {
     writeFileSync(stakerFile, JSON.stringify(Array.from(staker.secretKey)));
     writeFileSync(mintFile, JSON.stringify(Array.from(mintKp.secretKey)));
     if (!FUNDER) {
-      await conn.confirmTransaction(await conn.requestAirdrop(staker.publicKey, 5_000_000_000), 'confirmed');
+      await conn.confirmTransaction(
+        await conn.requestAirdrop(staker.publicKey, 5_000_000_000),
+        'confirmed',
+      );
     }
-    spl(['create-token', mintFile, '--decimals', String(DECIMALS), '--fee-payer', stakerFile, '--mint-authority', staker.publicKey.toBase58()]);
-    spl(['create-account', mint.toBase58(), '--fee-payer', stakerFile, '--owner', staker.publicKey.toBase58()]);
-    spl(['mint', mint.toBase58(), String(MINTED / 10n ** BigInt(DECIMALS)), '--mint-authority', stakerFile, '--fee-payer', stakerFile, '--recipient-owner', staker.publicKey.toBase58()]);
+    spl([
+      'create-token',
+      mintFile,
+      '--decimals',
+      String(DECIMALS),
+      '--fee-payer',
+      stakerFile,
+      '--mint-authority',
+      staker.publicKey.toBase58(),
+    ]);
+    spl([
+      'create-account',
+      mint.toBase58(),
+      '--fee-payer',
+      stakerFile,
+      '--owner',
+      staker.publicKey.toBase58(),
+    ]);
+    spl([
+      'mint',
+      mint.toBase58(),
+      String(MINTED / 10n ** BigInt(DECIMALS)),
+      '--mint-authority',
+      stakerFile,
+      '--fee-payer',
+      stakerFile,
+      '--recipient-owner',
+      staker.publicKey.toBase58(),
+    ]);
     stakerAta = escrow.realmVaultAddress(staker.publicKey, mint); // generic ATA(owner, mint)
   }, 120_000);
 
@@ -87,8 +125,16 @@ run('stake-to-provision against real Postgres + validator', () => {
   });
 
   async function lockFor(realmId: number, amount: bigint): Promise<string> {
-    const ix = escrow.buildLockIx({ staker: staker.publicKey, realmId, amount, mint, stakerToken: stakerAta });
-    return sendAndConfirmTransaction(conn, new Transaction().add(ix), [staker], { commitment: 'confirmed' });
+    const ix = escrow.buildLockIx({
+      staker: staker.publicKey,
+      realmId,
+      amount,
+      mint,
+      stakerToken: stakerAta,
+    });
+    return sendAndConfirmTransaction(conn, new Transaction().add(ix), [staker], {
+      commitment: 'confirmed',
+    });
   }
 
   // The verify path reads finalized state, so wait for the lock to finalize.
@@ -137,13 +183,23 @@ run('stake-to-provision against real Postgres + validator', () => {
     // realm is now active, the stake is recorded, and the owner role is granted
     expect((await realmDb.getRealmById(db.pool, realm.realmId))?.status).toBe('active');
     expect((await stakeDb.getActiveStakeByRealm(db.pool, realm.realmId))?.lockTxSig).toBe(sig);
-    expect(await realmDb.rolesForAccountOnRealm(db.pool, realm.realmId, accountId)).toContain('owner');
+    expect(await realmDb.rolesForAccountOnRealm(db.pool, realm.realmId, accountId)).toContain(
+      'owner',
+    );
 
     // replay guard: re-recording the same finalized lock is rejected
     const { isUniqueViolation } = await import('../server/http_util');
     let dup: unknown;
     await provision
-      .recordProvisionedStake(db.pool, { realmId: realm.realmId, accountId, stakerWallet: staker.publicKey.toBase58(), mint: mint.toBase58(), amountBase: STAKE, tier: 3, lockTxSig: sig })
+      .recordProvisionedStake(db.pool, {
+        realmId: realm.realmId,
+        accountId,
+        stakerWallet: staker.publicKey.toBase58(),
+        mint: mint.toBase58(),
+        amountBase: STAKE,
+        tier: 3,
+        lockTxSig: sig,
+      })
       .catch((e) => {
         dup = e;
       });
@@ -162,12 +218,24 @@ run('stake-to-provision against real Postgres + validator', () => {
 
     // wrong expected amount: the vault credit does not equal the quote
     expect(
-      await provision.verifyStakeLock({ lockSig: sig, realmId: realm.realmId, stakerWallet: staker.publicKey.toBase58(), mint: mint.toBase58(), expectedAmount: STAKE + 1n }),
+      await provision.verifyStakeLock({
+        lockSig: sig,
+        realmId: realm.realmId,
+        stakerWallet: staker.publicKey.toBase58(),
+        mint: mint.toBase58(),
+        expectedAmount: STAKE + 1n,
+      }),
     ).toEqual({ ok: false, reason: 'wrong_vault_amount' });
 
     // wrong payer: the staked wallet is not the one that funded the lock
     expect(
-      await provision.verifyStakeLock({ lockSig: sig, realmId: realm.realmId, stakerWallet: Keypair.generate().publicKey.toBase58(), mint: mint.toBase58(), expectedAmount: STAKE }),
+      await provision.verifyStakeLock({
+        lockSig: sig,
+        realmId: realm.realmId,
+        stakerWallet: Keypair.generate().publicKey.toBase58(),
+        mint: mint.toBase58(),
+        expectedAmount: STAKE,
+      }),
     ).toEqual({ ok: false, reason: 'wrong_payer' });
   }, 120_000);
 });

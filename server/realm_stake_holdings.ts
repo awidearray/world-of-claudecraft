@@ -14,13 +14,16 @@
 
 import { pool } from './db';
 import { stakedBaseForWallet } from './realm_stake_db';
-import { WOC_DECIMALS } from './woc_config';
 import { invalidateWocBalance } from './woc_balance';
+import { WOC_DECIMALS } from './woc_config';
 
 const TTL_MS = 2 * 60 * 1000;
 const BASE_UNIT = 10 ** WOC_DECIMALS;
 
-interface Entry { staked: number; at: number; }
+interface Entry {
+  staked: number;
+  at: number;
+}
 const cache = new Map<string, Entry>();
 
 // Whole-$WOC sum of a wallet's escrowed stakes. Realm-scale stakes stay well

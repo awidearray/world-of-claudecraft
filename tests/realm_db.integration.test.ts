@@ -94,7 +94,12 @@ run('realm_db against real Postgres', () => {
     const { isUniqueViolation } = await import('../server/http_util');
     let caught: unknown;
     await realmDb
-      .createProvisioningRealm(db.pool, { name: 'IRONFORGE', type: 'Normal', ownerAccountId: ownerId, tier: 1 })
+      .createProvisioningRealm(db.pool, {
+        name: 'IRONFORGE',
+        type: 'Normal',
+        ownerAccountId: ownerId,
+        tier: 1,
+      })
       .catch((e) => {
         caught = e;
       });
@@ -128,7 +133,9 @@ run('realm_db against real Postgres', () => {
 
     // the closed realm drops out of the live lookup and the directory
     expect(await realmDb.getLiveRealmByName(db.pool, 'Ironforge')).toBeNull();
-    expect((await realmDb.listRealmsForDirectory(db.pool)).find((x) => x.name === 'Ironforge')).toBeUndefined();
+    expect(
+      (await realmDb.listRealmsForDirectory(db.pool)).find((x) => x.name === 'Ironforge'),
+    ).toBeUndefined();
 
     // and the freed name can be provisioned anew (partial index excludes closed)
     const reborn = await realmDb.createProvisioningRealm(db.pool, {
@@ -160,7 +167,10 @@ run('realm_db against real Postgres', () => {
 
     // an owner who is also granted builder sees both, de-duped by the UNION
     await realmDb.addRealmRole(db.pool, id, ownerId, 'builder', ownerId);
-    expect((await realmDb.rolesForAccountOnRealm(db.pool, id, ownerId)).sort()).toEqual(['builder', 'owner']);
+    expect((await realmDb.rolesForAccountOnRealm(db.pool, id, ownerId)).sort()).toEqual([
+      'builder',
+      'owner',
+    ]);
 
     // revoke
     await realmDb.removeRealmRole(db.pool, id, modId, 'moderator');
@@ -193,7 +203,9 @@ run('realm_db against real Postgres', () => {
     });
     await realmDb.addRealmRole(db.pool, r.realmId, modId, 'builder', ownerId);
     await db.pool.query('DELETE FROM realms WHERE realm_id = $1', [r.realmId]);
-    const orphans = await db.pool.query('SELECT 1 FROM realm_roles WHERE realm_id = $1', [r.realmId]);
+    const orphans = await db.pool.query('SELECT 1 FROM realm_roles WHERE realm_id = $1', [
+      r.realmId,
+    ]);
     expect(orphans.rowCount).toBe(0);
   });
 
@@ -252,43 +264,92 @@ run('realm_db against real Postgres', () => {
     expect(await stakeDb.getActiveStakeByRealm(db.pool, r.realmId)).toBeNull();
   });
 
-  it('lists an owner\'s realms across non-closed states (newest first), excluding strangers and closed', async () => {
+  it("lists an owner's realms across non-closed states (newest first), excluding strangers and closed", async () => {
     const owner = (await db.createAccount(`lro_${Date.now()}`, 'h')).id;
     const stranger = (await db.createAccount(`lrs_${Date.now()}`, 'h')).id;
 
     // Created oldest -> newest: provisioning, then active, then decommissioning.
-    const prov = await realmDb.createProvisioningRealm(db.pool, { name: `LRO Prov ${owner}`, type: 'Normal', ownerAccountId: owner, tier: 1 });
-    const act = await realmDb.createProvisioningRealm(db.pool, { name: `LRO Active ${owner}`, type: 'PvP', ownerAccountId: owner, tier: 2 });
+    const prov = await realmDb.createProvisioningRealm(db.pool, {
+      name: `LRO Prov ${owner}`,
+      type: 'Normal',
+      ownerAccountId: owner,
+      tier: 1,
+    });
+    const act = await realmDb.createProvisioningRealm(db.pool, {
+      name: `LRO Active ${owner}`,
+      type: 'PvP',
+      ownerAccountId: owner,
+      tier: 2,
+    });
     await realmDb.activateRealm(db.pool, act.realmId);
-    const dec = await realmDb.createProvisioningRealm(db.pool, { name: `LRO Dec ${owner}`, type: 'RP', ownerAccountId: owner, tier: 3 });
+    const dec = await realmDb.createProvisioningRealm(db.pool, {
+      name: `LRO Dec ${owner}`,
+      type: 'RP',
+      ownerAccountId: owner,
+      tier: 3,
+    });
     await realmDb.activateRealm(db.pool, dec.realmId);
     await realmDb.requestDecommission(db.pool, dec.realmId, new Date('2026-08-01T00:00:00Z'));
     // A closed realm is freed for re-provisioning and must drop out of the dashboard.
-    const closed = await realmDb.createProvisioningRealm(db.pool, { name: `LRO Closed ${owner}`, type: 'Normal', ownerAccountId: owner, tier: 1 });
+    const closed = await realmDb.createProvisioningRealm(db.pool, {
+      name: `LRO Closed ${owner}`,
+      type: 'Normal',
+      ownerAccountId: owner,
+      tier: 1,
+    });
     await realmDb.setRealmStatus(db.pool, closed.realmId, 'closed');
     // A stranger's realm must never appear in this owner's list.
-    await realmDb.createProvisioningRealm(db.pool, { name: `LRO Stranger ${stranger}`, type: 'Normal', ownerAccountId: stranger, tier: 1 });
+    await realmDb.createProvisioningRealm(db.pool, {
+      name: `LRO Stranger ${stranger}`,
+      type: 'Normal',
+      ownerAccountId: stranger,
+      tier: 1,
+    });
 
     const mine = await realmDb.listRealmsForOwner(db.pool, owner);
     expect(mine.map((r) => r.realmId)).toEqual([dec.realmId, act.realmId, prov.realmId]); // newest first
     expect(mine.map((r) => r.status)).toEqual(['decommissioning', 'active', 'provisioning']);
     expect(mine.every((r) => r.ownerAccountId === owner)).toBe(true);
-    expect(mine.find((r) => r.realmId === dec.realmId)?.releaseEligibleAt?.toISOString()).toBe('2026-08-01T00:00:00.000Z');
+    expect(mine.find((r) => r.realmId === dec.realmId)?.releaseEligibleAt?.toISOString()).toBe(
+      '2026-08-01T00:00:00.000Z',
+    );
   });
 
-  it('sums a wallet\'s non-released escrowed stake for the holder badge (stakedBaseForWallet)', async () => {
+  it("sums a wallet's non-released escrowed stake for the holder badge (stakedBaseForWallet)", async () => {
     const wallet = `HBWALLET_${Date.now()}`;
     const mk = async (name: string, tier: number, amountBase: bigint, sig: string) => {
-      const r = await realmDb.createProvisioningRealm(db.pool, { name, type: 'Normal', ownerAccountId: ownerId, tier });
+      const r = await realmDb.createProvisioningRealm(db.pool, {
+        name,
+        type: 'Normal',
+        ownerAccountId: ownerId,
+        tier,
+      });
       return stakeDb.insertStake(db.pool, {
-        realmId: r.realmId, accountId: ownerId, ownerWallet: wallet, pda: `P_${sig}`, vault: `V_${sig}`,
-        mint: 'M', amountBase, tier, lockTxSig: sig,
+        realmId: r.realmId,
+        accountId: ownerId,
+        ownerWallet: wallet,
+        pda: `P_${sig}`,
+        vault: `V_${sig}`,
+        mint: 'M',
+        amountBase,
+        tier,
+        lockTxSig: sig,
       });
     };
     // 10M $WOC (1e13 base) locked, 50M (5e13) releasing, 100M (1e14) released.
     await mk(`HB Locked ${wallet}`, 1, 10_000_000_000_000n, `hb_lock_${wallet}`);
-    const releasing = await mk(`HB Releasing ${wallet}`, 2, 50_000_000_000_000n, `hb_releasing_${wallet}`);
-    const released = await mk(`HB Released ${wallet}`, 3, 100_000_000_000_000n, `hb_released_${wallet}`);
+    const releasing = await mk(
+      `HB Releasing ${wallet}`,
+      2,
+      50_000_000_000_000n,
+      `hb_releasing_${wallet}`,
+    );
+    const released = await mk(
+      `HB Released ${wallet}`,
+      3,
+      100_000_000_000_000n,
+      `hb_released_${wallet}`,
+    );
     await stakeDb.setStakeReleasing(db.pool, releasing.stakeId);
     await stakeDb.setStakeReleased(db.pool, released.stakeId, `hb_rel_${wallet}`);
 
@@ -298,7 +359,9 @@ run('realm_db against real Postgres', () => {
     expect(await stakeDb.stakedBaseForWallet(db.pool, 'NOBODY_HAS_THIS_WALLET')).toBe(0n);
 
     // the cached whole-$WOC reader converts at the mint decimals (6): 6e13 -> 60M
-    const { escrowedWocForWallet, resetEscrowedWocCacheForTests } = await import('../server/realm_stake_holdings');
+    const { escrowedWocForWallet, resetEscrowedWocCacheForTests } = await import(
+      '../server/realm_stake_holdings'
+    );
     resetEscrowedWocCacheForTests();
     expect(await escrowedWocForWallet(wallet)).toBe(60_000_000);
   });

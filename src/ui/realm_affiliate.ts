@@ -5,10 +5,10 @@
 // rails land (#477). Self-contained, like realm_operator: it renders into a
 // host-provided container and reaches the server only through the injected Api.
 
-import { t, formatNumber, formatMoney } from './i18n';
+import type { AffiliateRealm, Api, ReferralSummary } from '../net/online';
 import { esc } from './esc';
-import type { Api, AffiliateRealm, ReferralSummary } from '../net/online';
-import { TYPE_LABEL, STATUS_LABEL, tierWord } from './realm_operator';
+import { formatMoney, formatNumber, t } from './i18n';
+import { STATUS_LABEL, TYPE_LABEL, tierWord } from './realm_operator';
 
 export interface RealmAffiliateHost {
   api: Api;
@@ -60,9 +60,10 @@ export class RealmAffiliate {
 
   private render(): void {
     const count = this.realms.length;
-    const countLine = count === 1
-      ? t('realmOp.affiliate.referredCount', { count: formatNumber(1) })
-      : t('realmOp.affiliate.referredCountPlural', { count: formatNumber(count) });
+    const countLine =
+      count === 1
+        ? t('realmOp.affiliate.referredCount', { count: formatNumber(1) })
+        : t('realmOp.affiliate.referredCountPlural', { count: formatNumber(count) });
 
     this.root.innerHTML = `
       <div class="ro">
@@ -91,9 +92,11 @@ export class RealmAffiliate {
           <h3 id="ra-mine-h" class="ro-h">${esc(t('realmOp.affiliate.referredTitle'))}</h3>
           <p class="ro-hint">${esc(countLine)}</p>
           <p class="ro-hint ro-hint-muted">${esc(t('realmOp.affiliate.earningsSoon'))}</p>
-          <div class="ro-mine-list">${count === 0
-            ? `<p class="ro-empty">${esc(t('realmOp.affiliate.empty'))}</p>`
-            : this.realms.map((r) => this.realmRowHtml(r)).join('')}</div>
+          <div class="ro-mine-list">${
+            count === 0
+              ? `<p class="ro-empty">${esc(t('realmOp.affiliate.empty'))}</p>`
+              : this.realms.map((r) => this.realmRowHtml(r)).join('')
+          }</div>
         </section>
       </div>`;
 
@@ -103,13 +106,25 @@ export class RealmAffiliate {
 
   private rewardsHtml(): string {
     const s = this.summary;
-    const nothing = !s || (s.referredCount === 0 && s.pendingXp === 0 && s.pendingCopper === 0 && s.lifetimeXp === 0 && s.lifetimeCopper === 0);
+    const nothing =
+      !s ||
+      (s.referredCount === 0 &&
+        s.pendingXp === 0 &&
+        s.pendingCopper === 0 &&
+        s.lifetimeXp === 0 &&
+        s.lifetimeCopper === 0);
     if (nothing) return `<p class="ro-empty">${esc(t('realmOp.affiliate.rewardsEmpty'))}</p>`;
-    const lines = [`<p class="ro-hint">${esc(t('realmOp.affiliate.rewardsReferred', { count: formatNumber(s!.referredCount) }))}</p>`];
+    const lines = [
+      `<p class="ro-hint">${esc(t('realmOp.affiliate.rewardsReferred', { count: formatNumber(s!.referredCount) }))}</p>`,
+    ];
     if (s!.pendingXp > 0 || s!.pendingCopper > 0) {
-      lines.push(`<p class="ro-reward-pending">${esc(t('realmOp.affiliate.rewardsPending', { xp: formatNumber(s!.pendingXp), gold: formatMoney(s!.pendingCopper) }))}</p>`);
+      lines.push(
+        `<p class="ro-reward-pending">${esc(t('realmOp.affiliate.rewardsPending', { xp: formatNumber(s!.pendingXp), gold: formatMoney(s!.pendingCopper) }))}</p>`,
+      );
     }
-    lines.push(`<p class="ro-hint ro-hint-muted">${esc(t('realmOp.affiliate.rewardsLifetime', { xp: formatNumber(s!.lifetimeXp), gold: formatMoney(s!.lifetimeCopper) }))}</p>`);
+    lines.push(
+      `<p class="ro-hint ro-hint-muted">${esc(t('realmOp.affiliate.rewardsLifetime', { xp: formatNumber(s!.lifetimeXp), gold: formatMoney(s!.lifetimeCopper) }))}</p>`,
+    );
     return lines.join('');
   }
 
@@ -133,12 +148,17 @@ export class RealmAffiliate {
     } catch {
       // Clipboard API unavailable (insecure context / permission): fall back to
       // selecting the field so the player can copy manually.
-      if (input) { input.focus(); input.select(); }
+      if (input) {
+        input.focus();
+        input.select();
+      }
       return;
     }
     const prev = btn.textContent;
     btn.textContent = t('realmOp.affiliate.copied');
-    window.setTimeout(() => { btn.textContent = prev; }, 1500);
+    window.setTimeout(() => {
+      btn.textContent = prev;
+    }, 1500);
   }
 }
 

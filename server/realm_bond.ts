@@ -15,15 +15,15 @@
 // longer cover is the one that falls short.
 
 import type { Pool } from 'pg';
-import { cachedWocBalance } from './woc_balance';
 import { walletForAccount } from './db';
-import { WOC_DECIMALS } from './woc_config';
-import { setRealmStatus } from './realm_db';
 import {
   accountsWithActiveBonds,
   listActiveBondsForAccount,
   setRealmBondGrace,
 } from './realm_buy_db';
+import { setRealmStatus } from './realm_db';
+import { cachedWocBalance } from './woc_balance';
+import { WOC_DECIMALS } from './woc_config';
 
 function intEnv(key: string, def: number, min: number, max: number): number {
   const v = Number.parseInt(process.env[key] ?? '', 10);
@@ -56,7 +56,11 @@ function toHuman(base: bigint): number {
 // ('enter_grace'), waits it out ('wait'), or lapses once it expires ('lapse').
 export type BondAction = 'ok' | 'enter_grace' | 'cure' | 'lapse' | 'wait';
 
-export function bondAction(args: { belowBond: boolean; graceUntil: number | null; now: number }): BondAction {
+export function bondAction(args: {
+  belowBond: boolean;
+  graceUntil: number | null;
+  now: number;
+}): BondAction {
   if (!args.belowBond) return args.graceUntil != null ? 'cure' : 'ok';
   if (args.graceUntil == null) return 'enter_grace';
   return args.now >= args.graceUntil ? 'lapse' : 'wait';
@@ -67,7 +71,9 @@ export function bondAction(args: { belowBond: boolean; graceUntil: number | null
 // and walk its realms oldest-first against the cumulative bond. A transient RPC
 // failure is skipped (state untouched), so a flaky read never lapses a realm; an
 // unlinked wallet counts as fully short (you must keep a wallet holding the bond).
-export async function reconcileBonds(pool: Pool): Promise<{ entered: number; cured: number; lapsed: number }> {
+export async function reconcileBonds(
+  pool: Pool,
+): Promise<{ entered: number; cured: number; lapsed: number }> {
   if (!bondEnabled()) return { entered: 0, cured: 0, lapsed: 0 };
   let entered = 0;
   let cured = 0;
@@ -101,7 +107,9 @@ export async function reconcileBonds(pool: Pool): Promise<{ entered: number; cur
         // realm (frees the name + the per-account cap slot, like a decommission).
         await setRealmStatus(pool, bond.realmId, 'closed');
         lapsed += 1;
-        console.log(`realm bond: realm ${bond.realmId} (account ${accountId}) lapsed, bond unmet past grace`);
+        console.log(
+          `realm bond: realm ${bond.realmId} (account ${accountId}) lapsed, bond unmet past grace`,
+        );
       }
     }
   }
@@ -112,7 +120,11 @@ export async function reconcileBonds(pool: Pool): Promise<{ entered: number; cur
 // covers the bond at confirm time, null (no grace); otherwise start the grace clock
 // so they have the window to top up. A null/failed balance read is treated as
 // covered (lenient) since the periodic enforcer will catch a real shortfall.
-export function initialGraceUntil(balanceHuman: number | null, bondBase: bigint, now: number): Date | null {
+export function initialGraceUntil(
+  balanceHuman: number | null,
+  bondBase: bigint,
+  now: number,
+): Date | null {
   if (balanceHuman === null) return null;
   return balanceHuman < toHuman(bondBase) ? new Date(now + GRACE_MS) : null;
 }

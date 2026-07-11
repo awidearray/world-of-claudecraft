@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { TIER_BPS, minStakeBase, tierForStake, tierName, tierThreshold } from '../server/realm_tiers';
+import {
+  minStakeBase,
+  TIER_BPS,
+  tierForStake,
+  tierName,
+  tierThreshold,
+} from '../server/realm_tiers';
 
 // 1e9 tokens at 6 decimals = 1e15 base units.
 const SUPPLY = 1_000_000_000n * 1_000_000n;

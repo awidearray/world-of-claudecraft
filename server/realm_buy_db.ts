@@ -118,15 +118,31 @@ export async function createRealmBuyQuote(db: Queryable, q: RealmBuyQuoteRow): P
         treasury_base, buyback_base, treasury_addr, buyback_addr, tier, woc_base, bond_base, expires_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
     [
-      q.quoteId, q.accountId, q.realmId, q.buyerWallet, q.currency, q.totalBase.toString(),
-      q.treasuryBase.toString(), q.buybackBase.toString(), q.treasuryAddr, q.buybackAddr,
-      q.tier, q.wocBase.toString(), q.bondBase.toString(), q.expiresAt,
+      q.quoteId,
+      q.accountId,
+      q.realmId,
+      q.buyerWallet,
+      q.currency,
+      q.totalBase.toString(),
+      q.treasuryBase.toString(),
+      q.buybackBase.toString(),
+      q.treasuryAddr,
+      q.buybackAddr,
+      q.tier,
+      q.wocBase.toString(),
+      q.bondBase.toString(),
+      q.expiresAt,
     ],
   );
 }
 
-export async function getRealmBuyQuote(db: Queryable, quoteId: string): Promise<RealmBuyQuoteRow | null> {
-  const res = await db.query(`SELECT ${QUOTE_COLS} FROM realm_buy_quotes WHERE quote_id = $1`, [quoteId]);
+export async function getRealmBuyQuote(
+  db: Queryable,
+  quoteId: string,
+): Promise<RealmBuyQuoteRow | null> {
+  const res = await db.query(`SELECT ${QUOTE_COLS} FROM realm_buy_quotes WHERE quote_id = $1`, [
+    quoteId,
+  ]);
   return res.rows[0] ? toQuoteRow(res.rows[0]) : null;
 }
 
@@ -136,7 +152,10 @@ export async function deleteRealmBuyQuote(db: Queryable, quoteId: string): Promi
 
 // Open (unexpired) buy quotes for an account, counted toward the provisioning cap
 // alongside owned realms + open stake quotes so neither path can over-reserve.
-export async function countOpenBuyQuotesForAccount(db: Queryable, accountId: number): Promise<number> {
+export async function countOpenBuyQuotesForAccount(
+  db: Queryable,
+  accountId: number,
+): Promise<number> {
   const res = await db.query(
     `SELECT count(*)::int AS n FROM realm_buy_quotes WHERE account_id = $1 AND expires_at > now()`,
     [accountId],
@@ -179,8 +198,15 @@ export async function insertRealmPurchase(
        (realm_id, account_id, buyer_wallet, currency, total_base, treasury_base, buyback_base, tier, pay_tx_sig)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
     [
-      p.realmId, p.accountId, p.buyerWallet, p.currency, p.totalBase.toString(),
-      p.treasuryBase.toString(), p.buybackBase.toString(), p.tier, p.payTxSig,
+      p.realmId,
+      p.accountId,
+      p.buyerWallet,
+      p.currency,
+      p.totalBase.toString(),
+      p.treasuryBase.toString(),
+      p.buybackBase.toString(),
+      p.tier,
+      p.payTxSig,
     ],
   );
 }
@@ -188,7 +214,9 @@ export async function insertRealmPurchase(
 // Whether a realm was acquired by purchase (vs stake). Lets the lifecycle close a
 // bought realm directly (no on-chain stake to release).
 export async function realmWasPurchased(db: Queryable, realmId: number): Promise<boolean> {
-  const res = await db.query('SELECT 1 FROM realm_purchases WHERE realm_id = $1 LIMIT 1', [realmId]);
+  const res = await db.query('SELECT 1 FROM realm_purchases WHERE realm_id = $1 LIMIT 1', [
+    realmId,
+  ]);
   return (res.rowCount ?? 0) > 0;
 }
 
@@ -223,19 +251,32 @@ export async function createRealmBond(
 }
 
 export async function getRealmBond(db: Queryable, realmId: number): Promise<RealmBondRow | null> {
-  const res = await db.query('SELECT realm_id, account_id, bond_base, grace_until FROM realm_bonds WHERE realm_id = $1', [realmId]);
+  const res = await db.query(
+    'SELECT realm_id, account_id, bond_base, grace_until FROM realm_bonds WHERE realm_id = $1',
+    [realmId],
+  );
   return res.rows[0] ? toBondRow(res.rows[0]) : null;
 }
 
 // Set or clear a realm's bond grace window. null clears it (the wallet recovered).
-export async function setRealmBondGrace(db: Queryable, realmId: number, graceUntil: Date | null): Promise<void> {
-  await db.query('UPDATE realm_bonds SET grace_until = $2 WHERE realm_id = $1', [realmId, graceUntil]);
+export async function setRealmBondGrace(
+  db: Queryable,
+  realmId: number,
+  graceUntil: Date | null,
+): Promise<void> {
+  await db.query('UPDATE realm_bonds SET grace_until = $2 WHERE realm_id = $1', [
+    realmId,
+    graceUntil,
+  ]);
 }
 
 // Active bonded realms for one account, oldest first. The enforcer checks the
 // cumulative bond against the owner's wallet: the oldest realms a wallet can cover
 // stay, the newest that push the cumulative bond past the balance fall short.
-export async function listActiveBondsForAccount(db: Queryable, accountId: number): Promise<RealmBondRow[]> {
+export async function listActiveBondsForAccount(
+  db: Queryable,
+  accountId: number,
+): Promise<RealmBondRow[]> {
   const res = await db.query(
     `SELECT b.realm_id, b.account_id, b.bond_base, b.grace_until
        FROM realm_bonds b JOIN realms r ON r.realm_id = b.realm_id
@@ -258,7 +299,10 @@ export async function accountsWithActiveBonds(db: Queryable): Promise<number[]> 
 }
 
 // Bonds for a set of realms (for the operator dashboard), keyed by realm_id.
-export async function bondsForRealms(db: Queryable, realmIds: number[]): Promise<Map<number, RealmBondRow>> {
+export async function bondsForRealms(
+  db: Queryable,
+  realmIds: number[],
+): Promise<Map<number, RealmBondRow>> {
   const out = new Map<number, RealmBondRow>();
   if (realmIds.length === 0) return out;
   const res = await db.query(

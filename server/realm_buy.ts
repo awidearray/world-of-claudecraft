@@ -10,20 +10,18 @@
 
 import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
-import { fetchFinalizedTransaction, parseSplitPayment, parseNativePayment } from './solana_rpc';
-import { WOC_MINT, WOC_DECIMALS, WOC_TREASURY } from './woc_config';
-import { isSolanaAddress } from './wallet_link';
+import { setRealmAffiliate } from './affiliate_db';
 import { offensiveName } from './auth';
+import { resolveReferralAccount } from './db';
 import { isUniqueViolation } from './http_util';
-import { resolveRealm, type RealmType } from './realm';
+import { type RealmType, resolveRealm } from './realm';
 import {
-  activateRealm,
-  addRealmRole,
-  countOwnedRealms,
-  createProvisioningRealm,
-  getLiveRealmByName,
-} from './realm_db';
-import { countOpenQuotesForAccount, reclaimExpiredProvisioning } from './realm_quote_db';
+  BOND_BPS,
+  bondBaseForTier,
+  bondEnabled,
+  initialGraceUntil,
+  walletCoversBond,
+} from './realm_bond';
 import {
   countOpenBuyQuotesForAccount,
   createRealmBond,
@@ -33,20 +31,28 @@ import {
   insertRealmPurchase,
   reclaimExpiredBuyProvisioning,
 } from './realm_buy_db';
-import { BOND_BPS, bondBaseForTier, bondEnabled, initialGraceUntil, walletCoversBond } from './realm_bond';
-import { cachedWocBalance } from './woc_balance';
-import { TIER_BPS, tierName, tierThreshold, type RealmTier } from './realm_tiers';
-import { getMintSupplyBase } from './realm_provision';
 import {
+  activateRealm,
+  addRealmRole,
+  countOwnedRealms,
+  createProvisioningRealm,
+  getLiveRealmByName,
+} from './realm_db';
+import {
+  type BuyCurrency,
   CURRENCIES,
-  TREASURY_BPS,
   isBuyCurrency,
   priceTierInCurrency,
   splitBuy,
-  type BuyCurrency,
+  TREASURY_BPS,
 } from './realm_price';
-import { setRealmAffiliate } from './affiliate_db';
-import { resolveReferralAccount } from './db';
+import { getMintSupplyBase } from './realm_provision';
+import { countOpenQuotesForAccount, reclaimExpiredProvisioning } from './realm_quote_db';
+import { type RealmTier, TIER_BPS, tierName, tierThreshold } from './realm_tiers';
+import { fetchFinalizedTransaction, parseNativePayment, parseSplitPayment } from './solana_rpc';
+import { isSolanaAddress } from './wallet_link';
+import { cachedWocBalance } from './woc_balance';
+import { WOC_DECIMALS, WOC_MINT, WOC_TREASURY } from './woc_config';
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,90}$/;
 
@@ -214,7 +220,8 @@ export async function prepareBuyQuote(
 ): Promise<Result<BuyQuote>> {
   if (!buyConfigured()) return fail(503, 'buy_unavailable');
   if (!isBuyCurrency(args.currency)) return fail(400, 'invalid_currency');
-  if (!Number.isInteger(args.tier) || args.tier < 1 || args.tier > 3) return fail(400, 'invalid_tier');
+  if (!Number.isInteger(args.tier) || args.tier < 1 || args.tier > 3)
+    return fail(400, 'invalid_tier');
   const currency = args.currency;
 
   const name = args.name.trim();
@@ -354,8 +361,10 @@ export async function verifyBuyPayment(args: {
     if (!p.succeeded) return bad('tx_failed');
     if (p.memo !== args.memo) return bad('memo_mismatch');
     if (p.feePayer !== args.buyerWallet) return bad('wrong_payer');
-    if ((p.lamportDeltas.get(args.treasury) ?? 0n) < args.treasuryBase) return bad('treasury_short');
-    if ((p.lamportDeltas.get(args.buybackVault) ?? 0n) < args.buybackBase) return bad('buyback_short');
+    if ((p.lamportDeltas.get(args.treasury) ?? 0n) < args.treasuryBase)
+      return bad('treasury_short');
+    if ((p.lamportDeltas.get(args.buybackVault) ?? 0n) < args.buybackBase)
+      return bad('buyback_short');
     return { ok: true };
   }
 

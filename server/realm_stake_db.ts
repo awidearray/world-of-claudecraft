@@ -109,13 +109,26 @@ export async function insertStake(
        (realm_id, account_id, owner_wallet, pda, vault, mint, amount_base, tier, status, lock_tx_sig)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'locked', $9)
      RETURNING ${COLS}`,
-    [s.realmId, s.accountId, s.ownerWallet, s.pda, s.vault, s.mint, s.amountBase.toString(), s.tier, s.lockTxSig],
+    [
+      s.realmId,
+      s.accountId,
+      s.ownerWallet,
+      s.pda,
+      s.vault,
+      s.mint,
+      s.amountBase.toString(),
+      s.tier,
+      s.lockTxSig,
+    ],
   );
   return toRow(res.rows[0]);
 }
 
 // The live stake for a realm (the one that is not released), if any.
-export async function getActiveStakeByRealm(db: Queryable, realmId: number): Promise<RealmStakeRow | null> {
+export async function getActiveStakeByRealm(
+  db: Queryable,
+  realmId: number,
+): Promise<RealmStakeRow | null> {
   const res = await db.query(
     `SELECT ${COLS} FROM realm_stakes WHERE realm_id = $1 AND status <> 'released' ORDER BY locked_at DESC LIMIT 1`,
     [realmId],
@@ -140,13 +153,21 @@ export async function stakedBaseForWallet(db: Queryable, ownerWallet: string): P
 }
 
 // Lookup by the lock signature, used to detect a replayed confirm before insert.
-export async function getStakeByLockTx(db: Queryable, lockTxSig: string): Promise<RealmStakeRow | null> {
-  const res = await db.query(`SELECT ${COLS} FROM realm_stakes WHERE lock_tx_sig = $1`, [lockTxSig]);
+export async function getStakeByLockTx(
+  db: Queryable,
+  lockTxSig: string,
+): Promise<RealmStakeRow | null> {
+  const res = await db.query(`SELECT ${COLS} FROM realm_stakes WHERE lock_tx_sig = $1`, [
+    lockTxSig,
+  ]);
   return res.rows[0] ? toRow(res.rows[0]) : null;
 }
 
 // Mark a stake as releasing (the owner has begun decommissioning on chain).
-export async function setStakeReleasing(db: Queryable, stakeId: number): Promise<RealmStakeRow | null> {
+export async function setStakeReleasing(
+  db: Queryable,
+  stakeId: number,
+): Promise<RealmStakeRow | null> {
   const res = await db.query(
     `UPDATE realm_stakes SET status = 'releasing' WHERE stake_id = $1 AND status = 'locked' RETURNING ${COLS}`,
     [stakeId],

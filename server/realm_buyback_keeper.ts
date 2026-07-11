@@ -13,21 +13,41 @@
 // dedicated REALM_BUYBACK_VAULT + its signing secret are configured; the buyer's
 // split still accrues to the vault either way, so nothing is lost when it is off.
 
+import { randomBytes } from 'node:crypto';
 import { Connection, Keypair, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { randomBytes } from 'node:crypto';
-import { isSolanaAddress } from './wallet_link';
-import { DEFAULT_PAYOUT_POLICY, planTwapChunks, shouldRunBatch, type PayoutPolicy } from './payout_policy';
-import { solanaRpc, SOLANA_RPC_URL, parseSplitPayment, fetchFinalizedTransaction, signatureStatus } from './solana_rpc';
 import {
-  createBuybackBatch, markBatchSwapped, markBatchSettling, markBatchSettled, markBatchFailed,
-  openBuybackBatchesBySource, lastSettleAtBySource,
+  createBuybackBatch,
+  lastSettleAtBySource,
+  markBatchFailed,
+  markBatchSettled,
+  markBatchSettling,
+  markBatchSwapped,
+  openBuybackBatchesBySource,
 } from './payout_db';
 import {
-  PayoutKeeper, associatedTokenAccount, burnCheckedIx,
-  type PayoutExecutor, type PayoutStore, type KeeperOpts,
+  associatedTokenAccount,
+  burnCheckedIx,
+  type KeeperOpts,
+  type PayoutExecutor,
+  PayoutKeeper,
+  type PayoutStore,
 } from './payout_keeper';
-import { CURRENCIES, type BuyCurrency } from './realm_price';
+import {
+  DEFAULT_PAYOUT_POLICY,
+  type PayoutPolicy,
+  planTwapChunks,
+  shouldRunBatch,
+} from './payout_policy';
+import { type BuyCurrency, CURRENCIES } from './realm_price';
+import {
+  fetchFinalizedTransaction,
+  parseSplitPayment,
+  SOLANA_RPC_URL,
+  signatureStatus,
+  solanaRpc,
+} from './solana_rpc';
+import { isSolanaAddress } from './wallet_link';
 import { WOC_MINT } from './woc_config';
 
 // keep planTwapChunks/shouldRunBatch referenced via the policy the keeper uses; the
@@ -90,9 +110,11 @@ async function wocDecimals(): Promise<number> {
 }
 
 async function vaultTokenBalance(owner: string, mint: string): Promise<bigint> {
-  const res = await solanaRpc<{ value?: Array<{ account?: { data?: { parsed?: { info?: { tokenAmount?: { amount?: string } } } } } }> }>(
-    'getTokenAccountsByOwner', [owner, { mint }, { encoding: 'jsonParsed' }],
-  );
+  const res = await solanaRpc<{
+    value?: Array<{
+      account?: { data?: { parsed?: { info?: { tokenAmount?: { amount?: string } } } } };
+    }>;
+  }>('getTokenAccountsByOwner', [owner, { mint }, { encoding: 'jsonParsed' }]);
   let total = 0n;
   for (const a of res?.value ?? []) {
     const amt = a?.account?.data?.parsed?.info?.tokenAmount?.amount;
@@ -102,19 +124,28 @@ async function vaultTokenBalance(owner: string, mint: string): Promise<bigint> {
 }
 
 async function vaultNativeBalance(owner: string): Promise<bigint> {
-  const res = await solanaRpc<{ value?: number }>('getBalance', [owner, { commitment: 'confirmed' }]);
+  const res = await solanaRpc<{ value?: number }>('getBalance', [
+    owner,
+    { commitment: 'confirmed' },
+  ]);
   const bal = typeof res?.value === 'number' ? BigInt(Math.trunc(res.value)) : 0n;
   return bal > SOL_RESERVE_LAMPORTS ? bal - SOL_RESERVE_LAMPORTS : 0n;
 }
 
-function buildExecutor(vault: Keypair, conn: Connection, currency: BuyCurrency, policy: PayoutPolicy): PayoutExecutor {
+function buildExecutor(
+  vault: Keypair,
+  conn: Connection,
+  currency: BuyCurrency,
+  policy: PayoutPolicy,
+): PayoutExecutor {
   const cfg = CURRENCIES[currency];
   const inputMint = cfg.mint; // USDC mint, or wSOL for native SOL (wrapAndUnwrapSol handles the wrap)
   const wocMint = new PublicKey(WOC_MINT);
   const vaultWocAta = associatedTokenAccount(vault.publicKey, wocMint);
 
   return {
-    vaultUsdcBalance: () => (cfg.native ? vaultNativeBalance(VAULT) : vaultTokenBalance(VAULT, inputMint)),
+    vaultUsdcBalance: () =>
+      cfg.native ? vaultNativeBalance(VAULT) : vaultTokenBalance(VAULT, inputMint),
 
     async quote(inAmount) {
       const url =
@@ -144,7 +175,12 @@ function buildExecutor(vault: Keypair, conn: Connection, currency: BuyCurrency, 
       const tx = VersionedTransaction.deserialize(Buffer.from(swapTransaction, 'base64'));
       tx.sign([vault]);
       const signature = bs58.encode(tx.signatures[0]);
-      return { signature, send: async () => { await conn.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 5 }); } };
+      return {
+        signature,
+        send: async () => {
+          await conn.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 5 });
+        },
+      };
     },
 
     confirm: signatureStatus,
@@ -160,10 +196,19 @@ function buildExecutor(vault: Keypair, conn: Connection, currency: BuyCurrency, 
       const decimals = await wocDecimals();
       const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash();
       const ix = burnCheckedIx(vaultWocAta, wocMint, vault.publicKey, amountWoc, decimals);
-      const tx = new Transaction({ feePayer: vault.publicKey, blockhash, lastValidBlockHeight }).add(ix);
+      const tx = new Transaction({
+        feePayer: vault.publicKey,
+        blockhash,
+        lastValidBlockHeight,
+      }).add(ix);
       tx.sign(vault);
       const signature = bs58.encode(tx.signature!);
-      return { signature, send: async () => { await conn.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 5 }); } };
+      return {
+        signature,
+        send: async () => {
+          await conn.sendRawTransaction(tx.serialize(), { skipPreflight: false, maxRetries: 5 });
+        },
+      };
     },
   };
 }
@@ -171,7 +216,15 @@ function buildExecutor(vault: Keypair, conn: Connection, currency: BuyCurrency, 
 function buildStore(source: string): PayoutStore {
   return {
     createBatch: (b) =>
-      createBuybackBatch({ batchId: b.batchId, mode: 'burn', source, usdcIn: b.usdcIn, buyTxSig: b.buyTxSig, seasonId: null, dest: null }),
+      createBuybackBatch({
+        batchId: b.batchId,
+        mode: 'burn',
+        source,
+        usdcIn: b.usdcIn,
+        buyTxSig: b.buyTxSig,
+        seasonId: null,
+        dest: null,
+      }),
     markSwapped: markBatchSwapped,
     markSettling: markBatchSettling,
     markSettled: markBatchSettled,
@@ -206,7 +259,12 @@ export function buildRealmBuybackKeepers(): RealmBuybackKeeper[] {
     const source = `realm_${currency.toLowerCase()}`;
     return {
       label: currency,
-      keeper: new PayoutKeeper(buildExecutor(vault, conn, currency, policy), buildStore(source), policy, opts),
+      keeper: new PayoutKeeper(
+        buildExecutor(vault, conn, currency, policy),
+        buildStore(source),
+        policy,
+        opts,
+      ),
     };
   });
 }

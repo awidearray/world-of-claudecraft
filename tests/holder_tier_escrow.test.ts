@@ -7,14 +7,14 @@
 // combiner is tested directly; the wiring test stubs the RPC + injects an escrow
 // source to prove holderInfoForPubkey sums them.
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
 import bs58 from 'bs58';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  holderInfoFromParts,
   holderInfoForPubkey,
-  setEscrowedWocSource,
+  holderInfoFromParts,
   resetEscrowedWocSourceForTests,
   resetWocBalanceCacheForTests,
+  setEscrowedWocSource,
 } from '../server/woc_balance';
 
 const ADDR = bs58.encode(Uint8Array.from({ length: 32 }, (_, i) => i + 7));
@@ -24,7 +24,11 @@ function mockRpc(uiAmounts: number[]) {
   return vi.fn(async () => ({
     ok: true,
     json: async () => ({
-      result: { value: uiAmounts.map((ui) => ({ account: { data: { parsed: { info: { tokenAmount: { uiAmount: ui } } } } } })) },
+      result: {
+        value: uiAmounts.map((ui) => ({
+          account: { data: { parsed: { info: { tokenAmount: { uiAmount: ui } } } } },
+        })),
+      },
     }),
   }));
 }

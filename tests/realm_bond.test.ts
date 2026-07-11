@@ -4,12 +4,17 @@
 // + coverage helpers. The reconcileBonds DB walk is covered by integration tests;
 // here we pin the pure decisions. realm_bond.ts transitively imports server/db.ts
 // (throws at import without DATABASE_URL), stubbed minimally.
-import { describe, it, expect } from 'vitest';
-import { vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../server/db', () => ({ pool: {}, walletForAccount: vi.fn() }));
 
-import { bondAction, bondBaseForTier, initialGraceUntil, walletCoversBond, BOND_BPS } from '../server/realm_bond';
+import {
+  BOND_BPS,
+  bondAction,
+  bondBaseForTier,
+  initialGraceUntil,
+  walletCoversBond,
+} from '../server/realm_bond';
 
 // At the default REALM_BOND_BPS=1000, a 6dp $WOC bond of 100 tokens is 100_000_000
 // base units; used by the coverage helpers below (default WOC_DECIMALS=6).

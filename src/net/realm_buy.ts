@@ -8,7 +8,7 @@
 // signAndSendRealmPurchase in src/net/wallet.ts.
 
 import { PublicKey, SystemProgram, TransactionInstruction } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, ownerTokenAccount } from './realm_escrow';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, ownerTokenAccount, TOKEN_PROGRAM_ID } from './realm_escrow';
 
 // SPL Memo program (v2). The server reads the memo via jsonParsed `spl-memo`.
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
@@ -20,7 +20,11 @@ function u64le(v: bigint): Uint8Array {
 }
 
 // SystemProgram transfer (instruction index 2): u32 LE tag + u64 LE lamports.
-export function nativeTransferIx(from: PublicKey, to: PublicKey, lamports: bigint): TransactionInstruction {
+export function nativeTransferIx(
+  from: PublicKey,
+  to: PublicKey,
+  lamports: bigint,
+): TransactionInstruction {
   const data = new Uint8Array(12);
   new DataView(data.buffer).setUint32(0, 2, true);
   data.set(u64le(lamports), 4);
@@ -62,7 +66,11 @@ export function transferCheckedIx(
 // Associated Token Account program CreateIdempotent (tag 1): create the recipient's
 // ATA if it does not exist yet, no-op if it does. The buyer funds the rent. Lets a
 // purchase succeed even when the treasury / buyback vault has never held this mint.
-export function createAtaIdempotentIx(payer: PublicKey, owner: PublicKey, mint: PublicKey): TransactionInstruction {
+export function createAtaIdempotentIx(
+  payer: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey,
+): TransactionInstruction {
   const ata = ownerTokenAccount(owner, mint);
   return new TransactionInstruction({
     programId: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -112,8 +120,26 @@ export function buildRealmPurchaseInstructions(plan: RealmPurchasePlan): Transac
     const buybackAta = ownerTokenAccount(plan.buybackVault, plan.currencyMint);
     ixs.push(createAtaIdempotentIx(plan.buyer, plan.treasury, plan.currencyMint));
     ixs.push(createAtaIdempotentIx(plan.buyer, plan.buybackVault, plan.currencyMint));
-    ixs.push(transferCheckedIx(buyerAta, plan.currencyMint, treasuryAta, plan.buyer, plan.treasuryBase, plan.currencyDecimals));
-    ixs.push(transferCheckedIx(buyerAta, plan.currencyMint, buybackAta, plan.buyer, plan.buybackBase, plan.currencyDecimals));
+    ixs.push(
+      transferCheckedIx(
+        buyerAta,
+        plan.currencyMint,
+        treasuryAta,
+        plan.buyer,
+        plan.treasuryBase,
+        plan.currencyDecimals,
+      ),
+    );
+    ixs.push(
+      transferCheckedIx(
+        buyerAta,
+        plan.currencyMint,
+        buybackAta,
+        plan.buyer,
+        plan.buybackBase,
+        plan.currencyDecimals,
+      ),
+    );
   }
   ixs.push(memoIx(plan.memo));
   return ixs;

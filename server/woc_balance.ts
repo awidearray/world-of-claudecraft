@@ -256,7 +256,10 @@ export function resetEscrowedWocSourceForTests(): void {
  * escrowed; an escrow-only holder (RPC down, or wallet emptied into a stake) still
  * keeps the badge. Unit-tested directly (no IO).
  */
-export function holderInfoFromParts(walletBalance: number | null, escrowed: number): { tier: number; balance: number } {
+export function holderInfoFromParts(
+  walletBalance: number | null,
+  escrowed: number,
+): { tier: number; balance: number } {
   if (walletBalance === null && escrowed <= 0) return { tier: 0, balance: 0 };
   const balance = (walletBalance ?? 0) + Math.max(0, escrowed);
   return { tier: holderTierIndexForBalance(balance), balance };
@@ -267,8 +270,13 @@ export function holderInfoFromParts(walletBalance: number | null, escrowed: numb
  * $WOC and the $WOC it has escrowed to found realms. Backs the `ht`/`hb`
  * holder-tier identity payload the server broadcasts.
  */
-export async function holderInfoForPubkey(pubkey: string): Promise<{ tier: number; balance: number }> {
-  const [walletBalance, escrowed] = await Promise.all([cachedWocBalance(pubkey), escrowedWocSource(pubkey)]);
+export async function holderInfoForPubkey(
+  pubkey: string,
+): Promise<{ tier: number; balance: number }> {
+  const [walletBalance, escrowed] = await Promise.all([
+    cachedWocBalance(pubkey),
+    escrowedWocSource(pubkey),
+  ]);
   return holderInfoFromParts(walletBalance, escrowed);
 }
 

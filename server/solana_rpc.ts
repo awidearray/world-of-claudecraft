@@ -19,16 +19,27 @@
 // AND the buy-and-burn keeper's reads/broadcast) resolves against this one URL,
 // so they can never diverge onto different clusters. Must point at the cluster
 // payments + swaps actually settle on (mainnet in production).
-export const SOLANA_RPC_URL = (process.env.SOLANA_RPC_URL ?? process.env.VITE_SOLANA_RPC_URL ?? 'https://api.mainnet-beta.solana.com').trim();
+export const SOLANA_RPC_URL = (
+  process.env.SOLANA_RPC_URL ??
+  process.env.VITE_SOLANA_RPC_URL ??
+  'https://api.mainnet-beta.solana.com'
+).trim();
 
 // The two SPL token programs. We accept ONLY the legacy program; a Token-2022
 // account can carry transfer hooks / fees that make "amount sent" != "amount
 // received", so a USDC look-alike under Token-2022 is rejected outright.
 export const SPL_TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 export const SPL_TOKEN_2022_PROGRAM = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
-const MEMO_PROGRAMS = new Set(['MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr', 'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo']);
+const MEMO_PROGRAMS = new Set([
+  'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr',
+  'Memo1UhkJRfHyvLMcVucJwxXeuD728EqVDDwQDxFMNo',
+]);
 
-export async function solanaRpc<T>(method: string, params: unknown[], timeoutMs = 8000): Promise<T | null> {
+export async function solanaRpc<T>(
+  method: string,
+  params: unknown[],
+  timeoutMs = 8000,
+): Promise<T | null> {
   const res = await fetch(SOLANA_RPC_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -88,9 +99,12 @@ function pubkeyOf(key: { pubkey: string } | string): string {
 // The first SPL-memo instruction's string payload, or null. jsonParsed renders a
 // memo program's data as the raw string in `parsed`. Shared by the token-split and
 // native-SOL parsers so a quoteId memo binds a payment to its quote either way.
-function extractMemo(instructions: Array<{ program?: string; programId?: string; parsed?: unknown }>): string | null {
+function extractMemo(
+  instructions: Array<{ program?: string; programId?: string; parsed?: unknown }>,
+): string | null {
   for (const ix of instructions) {
-    const isMemo = ix.program === 'spl-memo' || (ix.programId !== undefined && MEMO_PROGRAMS.has(ix.programId));
+    const isMemo =
+      ix.program === 'spl-memo' || (ix.programId !== undefined && MEMO_PROGRAMS.has(ix.programId));
     if (isMemo && typeof ix.parsed === 'string') return ix.parsed;
   }
   return null;
@@ -103,7 +117,10 @@ function extractMemo(instructions: Array<{ program?: string; programId?: string;
  * USDC token accounts touched by the tx (post − pre), so a freshly-created ATA
  * (absent from preTokenBalances) is treated as starting at zero.
  */
-export function parseSplitPayment(tx: RawConfirmedTransaction, usdcMint: string): ParsedSplitPayment {
+export function parseSplitPayment(
+  tx: RawConfirmedTransaction,
+  usdcMint: string,
+): ParsedSplitPayment {
   const message = tx.transaction.message;
   const feePayer = message.accountKeys.length > 0 ? pubkeyOf(message.accountKeys[0]) : null;
 
@@ -115,7 +132,12 @@ export function parseSplitPayment(tx: RawConfirmedTransaction, usdcMint: string)
   const accumulate = (into: Map<string, bigint>, rows: RawTokenBalance[] | undefined): void => {
     if (!rows) return;
     for (const row of rows) {
-      if (row.mint !== usdcMint || typeof row.owner !== 'string' || typeof row.uiTokenAmount?.amount !== 'string') continue;
+      if (
+        row.mint !== usdcMint ||
+        typeof row.owner !== 'string' ||
+        typeof row.uiTokenAmount?.amount !== 'string'
+      )
+        continue;
       if (row.programId === SPL_TOKEN_2022_PROGRAM) usesToken2022ForMint = true;
       into.set(row.owner, (into.get(row.owner) ?? 0n) + BigInt(row.uiTokenAmount.amount));
     }
@@ -187,7 +209,9 @@ export function parseNativePayment(tx: RawConfirmedTransaction): ParsedNativePay
  * verifiable" rather than valid). jsonParsed gives us pre/postTokenBalances with
  * owner+mint+programId, which is what the parser reads.
  */
-export async function fetchFinalizedTransaction(signature: string): Promise<RawConfirmedTransaction | null> {
+export async function fetchFinalizedTransaction(
+  signature: string,
+): Promise<RawConfirmedTransaction | null> {
   return solanaRpc<RawConfirmedTransaction>('getTransaction', [
     signature,
     { commitment: 'finalized', encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 },
@@ -203,10 +227,12 @@ export async function fetchFinalizedTransaction(signature: string): Promise<RawC
  *   'confirmed' = landed + finalized + no error · 'failed' = landed but reverted
  *   'unknown'   = not found in history, or seen but not yet finalized
  */
-export async function signatureStatus(signature: string): Promise<'confirmed' | 'failed' | 'unknown'> {
-  const res = await solanaRpc<{ value: Array<{ confirmationStatus?: string; err: unknown } | null> }>(
-    'getSignatureStatuses', [[signature], { searchTransactionHistory: true }],
-  );
+export async function signatureStatus(
+  signature: string,
+): Promise<'confirmed' | 'failed' | 'unknown'> {
+  const res = await solanaRpc<{
+    value: Array<{ confirmationStatus?: string; err: unknown } | null>;
+  }>('getSignatureStatuses', [[signature], { searchTransactionHistory: true }]);
   const status = res?.value?.[0];
   if (!status) return 'unknown';
   if (status.err != null) return 'failed';

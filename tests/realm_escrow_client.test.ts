@@ -5,19 +5,19 @@
 // and the server would reject every client lock. No browser needed: both
 // builders run in Node.
 
-import { describe, expect, it } from 'vitest';
 import { Keypair } from '@solana/web3.js';
+import { describe, expect, it } from 'vitest';
+import {
+  buildLockIx,
+  REALM_ESCROW_PROGRAM_ID,
+  realmStakePda as serverStakePda,
+  realmVaultAddress as serverVault,
+} from '../server/realm_escrow';
 import {
   buildRealmLockIx,
   realmStakePda as clientStakePda,
   realmVaultAddress as clientVault,
 } from '../src/net/realm_escrow';
-import {
-  REALM_ESCROW_PROGRAM_ID,
-  buildLockIx,
-  realmStakePda as serverStakePda,
-  realmVaultAddress as serverVault,
-} from '../server/realm_escrow';
 
 describe('client realm-escrow encoding matches the server', () => {
   const staker = Keypair.generate().publicKey;
@@ -27,13 +27,22 @@ describe('client realm-escrow encoding matches the server', () => {
   const stakerToken = clientVault(staker, mint);
 
   it('derives the same stake PDA and vault address', () => {
-    expect(clientStakePda(REALM_ESCROW_PROGRAM_ID, realmId).toBase58()).toBe(serverStakePda(realmId).toBase58());
+    expect(clientStakePda(REALM_ESCROW_PROGRAM_ID, realmId).toBase58()).toBe(
+      serverStakePda(realmId).toBase58(),
+    );
     const pda = serverStakePda(realmId);
     expect(clientVault(pda, mint).toBase58()).toBe(serverVault(pda, mint).toBase58());
   });
 
   it('builds a byte-identical lock instruction (program, data, account metas)', () => {
-    const client = buildRealmLockIx({ programId: REALM_ESCROW_PROGRAM_ID, staker, realmId, amount, mint, stakerToken });
+    const client = buildRealmLockIx({
+      programId: REALM_ESCROW_PROGRAM_ID,
+      staker,
+      realmId,
+      amount,
+      mint,
+      stakerToken,
+    });
     const server = buildLockIx({ staker, realmId, amount, mint, stakerToken });
 
     expect(client.programId.toBase58()).toBe(server.programId.toBase58());

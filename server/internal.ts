@@ -54,11 +54,22 @@ function secretsMatch(actual: string, expected: string): boolean {
 // present AND the request's header matches it (constant-time). An UNSET secret is
 // a hard 404 — an op nobody enabled is indistinguishable from one that does not
 // exist, so it can't be probed.
-function authorize(req: http.IncomingMessage, res: http.ServerResponse, envVar: string, header: string): boolean {
+function authorize(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  envVar: string,
+  header: string,
+): boolean {
   const expected = process.env[envVar] ?? '';
-  if (!expected) { fail(res, 404, 'unknown endpoint'); return false; }
+  if (!expected) {
+    fail(res, 404, 'unknown endpoint');
+    return false;
+  }
   const actual = String(req.headers[header] ?? '');
-  if (!secretsMatch(actual, expected)) { fail(res, 401, 'not authenticated'); return false; }
+  if (!secretsMatch(actual, expected)) {
+    fail(res, 401, 'not authenticated');
+    return false;
+  }
   return true;
 }
 

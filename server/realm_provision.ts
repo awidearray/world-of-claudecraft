@@ -7,16 +7,15 @@
 // the logic module main.ts calls.
 
 import { randomUUID } from 'node:crypto';
-import type { Pool } from 'pg';
 import { PublicKey } from '@solana/web3.js';
-import { getFinalizedTx, ownerCreditedBase, ownerSpentBase, txSucceeded, usesToken2022 } from './solana_tx';
-import { solanaRpc } from './solana_rpc';
-import { WOC_MINT, WOC_DECIMALS } from './woc_config';
+import type { Pool } from 'pg';
+import { setRealmAffiliate } from './affiliate_db';
 import { offensiveName } from './auth';
+import { resolveReferralAccount } from './db';
 import { isUniqueViolation } from './http_util';
-import { resolveRealm, type RealmType } from './realm';
-import { REALM_ESCROW_PROGRAM_ID, realmStakePda, realmVaultAddress } from './realm_escrow';
-import { realmStakeConfirm, realmStakeQuote, realmStakeServiceConfigured } from './realm_stake_proxy';
+import { type RealmType, resolveRealm } from './realm';
+import { reconcileBonds } from './realm_bond';
+import { realmWasPurchased, reclaimExpiredBuyProvisioning } from './realm_buy_db';
 import {
   activateRealm,
   addRealmRole,
@@ -28,7 +27,7 @@ import {
   requestDecommission,
   setRealmStatus,
 } from './realm_db';
-import { getActiveStakeByRealm, insertStake, setStakeReleased, setStakeReleasing, type RealmStakeRow } from './realm_stake_db';
+import { REALM_ESCROW_PROGRAM_ID, realmStakePda, realmVaultAddress } from './realm_escrow';
 import {
   countOpenQuotesForAccount,
   createRealmQuote,
@@ -36,12 +35,29 @@ import {
   getRealmQuote,
   reclaimExpiredProvisioning,
 } from './realm_quote_db';
-import { reclaimExpiredBuyProvisioning, realmWasPurchased } from './realm_buy_db';
-import { reconcileBonds } from './realm_bond';
-import { minStakeBase, tierForStake, TIER_BPS, tierThreshold } from './realm_tiers';
+import {
+  getActiveStakeByRealm,
+  insertStake,
+  type RealmStakeRow,
+  setStakeReleased,
+  setStakeReleasing,
+} from './realm_stake_db';
 import { invalidateWalletHoldings } from './realm_stake_holdings';
-import { setRealmAffiliate } from './affiliate_db';
-import { resolveReferralAccount } from './db';
+import {
+  realmStakeConfirm,
+  realmStakeQuote,
+  realmStakeServiceConfigured,
+} from './realm_stake_proxy';
+import { minStakeBase, TIER_BPS, tierForStake, tierThreshold } from './realm_tiers';
+import { solanaRpc } from './solana_rpc';
+import {
+  getFinalizedTx,
+  ownerCreditedBase,
+  ownerSpentBase,
+  txSucceeded,
+  usesToken2022,
+} from './solana_tx';
+import { WOC_DECIMALS, WOC_MINT } from './woc_config';
 
 function intEnv(key: string, def: number, min: number, max: number): number {
   const v = Number.parseInt(process.env[key] ?? '', 10);
@@ -236,10 +252,15 @@ const supplyCache = new Map<string, { at: number; value: bigint }>();
 export async function getMintSupplyBase(mint: string): Promise<bigint | null> {
   const hit = supplyCache.get(mint);
   if (hit && Date.now() - hit.at < SUPPLY_CACHE_MS) return hit.value;
-  const res = await solanaRpc<{ value: { amount: string } }>('getTokenSupply', [mint, { commitment: 'confirmed' }]);
+  const res = await solanaRpc<{ value: { amount: string } }>('getTokenSupply', [
+    mint,
+    { commitment: 'confirmed' },
+  ]);
   const amount = res?.value?.amount;
   if (typeof amount !== 'string' || !/^[0-9]+$/.test(amount)) {
-    console.error(`realm: $WOC supply read failed for mint ${mint} (rpc returned ${res === null ? 'null' : 'unexpected shape'})`);
+    console.error(
+      `realm: $WOC supply read failed for mint ${mint} (rpc returned ${res === null ? 'null' : 'unexpected shape'})`,
+    );
     return null;
   }
   const value = BigInt(amount);
@@ -308,7 +329,14 @@ export interface ProvisionQuote {
 // client locks exactly amountBase into the returned vault, then calls confirm.
 export async function prepareProvisionQuote(
   pool: Pool,
-  args: { accountId: number; ownerWallet: string; name: string; type: RealmType; amountBase: bigint; affiliateCode?: string },
+  args: {
+    accountId: number;
+    ownerWallet: string;
+    name: string;
+    type: RealmType;
+    amountBase: bigint;
+    affiliateCode?: string;
+  },
 ): Promise<Result<ProvisionQuote>> {
   // Cheap, no-DB name checks first so a bad name short-circuits before any query.
   const name = args.name.trim();
@@ -444,7 +472,9 @@ export async function requestRealmDecommission(
   const realm = await getRealmById(pool, args.realmId);
   if (!realm || realm.status === 'closed') return fail(404, 'realm_not_found');
   if (realm.ownerAccountId !== args.accountId) {
-    console.warn(`realm: account ${args.accountId} tried to decommission realm ${args.realmId} it does not own`);
+    console.warn(
+      `realm: account ${args.accountId} tried to decommission realm ${args.realmId} it does not own`,
+    );
     return fail(403, 'not_realm_owner');
   }
   if (realm.status !== 'active') return fail(409, 'realm_not_active');
@@ -459,7 +489,12 @@ export async function requestRealmDecommission(
     const closedAt = new Date();
     const updated = await setRealmStatus(pool, args.realmId, 'closed');
     if (!updated) return fail(409, 'realm_not_active');
-    return { ok: true, realmId: args.realmId, releaseEligibleAt: closedAt.toISOString(), closed: true };
+    return {
+      ok: true,
+      realmId: args.realmId,
+      releaseEligibleAt: closedAt.toISOString(),
+      closed: true,
+    };
   }
 
   const eligibleAt = new Date(Date.now() + UNSTAKE_TIMELOCK_MS);
@@ -481,7 +516,9 @@ async function isStakeAccountClosed(realmId: number): Promise<boolean> {
     // Transient RPC failure: do not assume released (the caller returns a
     // retryable 409), but log it so it is not indistinguishable from a real
     // not-yet-released state.
-    console.error(`realm: PDA-closed read failed for realm ${realmId} (rpc null); treating as not released`);
+    console.error(
+      `realm: PDA-closed read failed for realm ${realmId} (rpc null); treating as not released`,
+    );
     return false;
   }
   return res.value === null;
@@ -509,7 +546,12 @@ export async function finalizeRealmRelease(
   if (!(await isStakeAccountClosed(args.realmId))) return fail(409, 'stake_not_released_onchain');
 
   const stake = await getActiveStakeByRealm(pool, args.realmId);
-  if (stake) await setStakeReleased(pool, stake.stakeId, `pda-closed:${realmStakePda(args.realmId).toBase58()}`);
+  if (stake)
+    await setStakeReleased(
+      pool,
+      stake.stakeId,
+      `pda-closed:${realmStakePda(args.realmId).toBase58()}`,
+    );
   await setRealmStatus(pool, args.realmId, 'closed');
   // The stake left escrow and returned to the wallet; refresh its holdings caches
   // so the badge re-reads (the released stake no longer counts as escrow, and the
@@ -530,7 +572,8 @@ export async function reconcileRealmLifecycle(
 ): Promise<{ reclaimed: number; finalized: number; bondLapsed: number }> {
   // Reclaim abandoned provisioning from BOTH acquisition paths (expired stake
   // quotes and expired buy quotes) so neither leaves a realm stuck.
-  const reclaimed = (await reclaimExpiredProvisioning(pool)) + (await reclaimExpiredBuyProvisioning(pool));
+  const reclaimed =
+    (await reclaimExpiredProvisioning(pool)) + (await reclaimExpiredBuyProvisioning(pool));
   // Enforce the ongoing $WOC bond on bought realms (skin in the game): start/clear
   // grace windows and lapse realms whose owner's wallet stayed below the bond.
   const bond = await reconcileBonds(pool);
@@ -541,7 +584,12 @@ export async function reconcileRealmLifecycle(
     if (realm.releaseEligibleAt && realm.releaseEligibleAt.getTime() > Date.now()) continue;
     if (!(await isStakeAccountClosed(realmId))) continue; // stake still escrowed; leave it
     const stake = await getActiveStakeByRealm(pool, realmId);
-    if (stake) await setStakeReleased(pool, stake.stakeId, `pda-closed:${realmStakePda(realmId).toBase58()}`);
+    if (stake)
+      await setStakeReleased(
+        pool,
+        stake.stakeId,
+        `pda-closed:${realmStakePda(realmId).toBase58()}`,
+      );
     await setRealmStatus(pool, realmId, 'closed');
     finalized += 1;
   }

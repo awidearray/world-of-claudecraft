@@ -11,7 +11,7 @@
 import { randomBytes } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import { isUniqueViolation } from './http_util';
-import { resolveRealmType, isRealmStatus, type RealmType, type RealmStatus } from './realm';
+import { isRealmStatus, type RealmStatus, type RealmType, resolveRealmType } from './realm';
 
 type Queryable = Pick<Pool, 'query'> | PoolClient;
 
@@ -47,7 +47,9 @@ function generateAffiliateCode(): string {
 // concurrent create is absorbed by the account_id conflict, and the rare code
 // collision (a different account drawing the same random code) retries.
 export async function getOrCreateAffiliateCode(db: Queryable, accountId: number): Promise<string> {
-  const existing = await db.query('SELECT code FROM affiliate_codes WHERE account_id = $1', [accountId]);
+  const existing = await db.query('SELECT code FROM affiliate_codes WHERE account_id = $1', [
+    accountId,
+  ]);
   if (existing.rows[0]) return String(existing.rows[0].code);
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateAffiliateCode();
@@ -59,7 +61,9 @@ export async function getOrCreateAffiliateCode(db: Queryable, accountId: number)
       );
       if (res.rows[0]) return String(res.rows[0].code);
       // account_id already had a code (a concurrent create won); read it back.
-      const again = await db.query('SELECT code FROM affiliate_codes WHERE account_id = $1', [accountId]);
+      const again = await db.query('SELECT code FROM affiliate_codes WHERE account_id = $1', [
+        accountId,
+      ]);
       if (again.rows[0]) return String(again.rows[0].code);
     } catch (err) {
       if (!isUniqueViolation(err)) throw err; // a code collision: retry a fresh code
@@ -93,7 +97,10 @@ export async function getRealmAffiliate(
   db: Queryable,
   realmId: number,
 ): Promise<{ affiliateAccountId: number; bps: number } | null> {
-  const res = await db.query('SELECT affiliate_account_id, bps FROM realm_affiliates WHERE realm_id = $1', [realmId]);
+  const res = await db.query(
+    'SELECT affiliate_account_id, bps FROM realm_affiliates WHERE realm_id = $1',
+    [realmId],
+  );
   return res.rows[0]
     ? { affiliateAccountId: Number(res.rows[0].affiliate_account_id), bps: Number(res.rows[0].bps) }
     : null;
@@ -110,7 +117,10 @@ export interface AffiliateRealm {
 }
 
 // An affiliate's referred realms (non-closed), newest first, for their dashboard.
-export async function listRealmsByAffiliate(db: Queryable, affiliateAccountId: number): Promise<AffiliateRealm[]> {
+export async function listRealmsByAffiliate(
+  db: Queryable,
+  affiliateAccountId: number,
+): Promise<AffiliateRealm[]> {
   const res = await db.query(
     `SELECT r.realm_id, r.name, r.type, r.status, r.tier, ra.bps, ra.attributed_at
        FROM realm_affiliates ra JOIN realms r ON r.realm_id = ra.realm_id
@@ -133,7 +143,10 @@ export async function listRealmsByAffiliate(db: Queryable, affiliateAccountId: n
 }
 
 // Count of an affiliate's live referred realms, for the affiliate summary.
-export async function affiliateRealmCount(db: Queryable, affiliateAccountId: number): Promise<number> {
+export async function affiliateRealmCount(
+  db: Queryable,
+  affiliateAccountId: number,
+): Promise<number> {
   const res = await db.query(
     `SELECT count(*)::int AS n FROM realm_affiliates ra JOIN realms r ON r.realm_id = ra.realm_id
       WHERE ra.affiliate_account_id = $1 AND r.status <> 'closed'`,
