@@ -587,6 +587,42 @@ Phase 8 gate status, THE HUMAN GATES (cannot be coded around):
   other pre-existing red gates above belong to the base branch, not this
   feature.
 
+## Upstream freshen-merge: release/v0.25.0 (626bf8a69)
+
+The owner directed the chain upstream before the #799/#475 prerequisites
+landed there, so the branch now CARRIES the whole chain and was freshened
+against the then-current upstream integration base with a merge (the same
+house pattern as the v0.23.0 base merge), not the rebase recipe below.
+
+- Merged: levy-street release/v0.25.0 (3c796d4e7) into the launchpad chain.
+  17 conflicted files, every hunk a same-anchor append from both sides,
+  resolved by union: deps (upstream sesv2/capacitor + branch meteora/solana
+  SDKs), .env.example blocks, db.ts schema imports, main.ts boot lines,
+  components.css sections, UI_PURE_CORES entries, the five non-Latin
+  overlay appends. Generated i18n artifacts regenerated (never
+  hand-resolved) + `i18n_resolved_hash --write`; the freshness suites are
+  green at the merge commit. IWORLD_MEMBERS unioned (upstream
+  readyCheckRespond + branch realmCurrency) and the count pins
+  re-baselined 205 to 206 (54 data + 152 method).
+- release-merge-audit run on 626bf8a69: all 50 overlap files verified (the
+  branch's game.ts/online.ts/sim.ts/hud.ts/index.html/inventory intent all
+  survived the auto-merge); the release brought NOTHING launchpad-shaped
+  (no premise invalidated); no injected-helper signature drift (tsc clean,
+  greps clean); no release-authored `vi.mock('../server/db')` site
+  conflicts with the branch's game.ts imports (power credits import from
+  realm_power_db, not db).
+- Full `npm test` at the merged tip: 12640 passed, 18 failed. 17 are the
+  SAME pre-existing base set documented below. The 18th,
+  `tests/ai_review.test.ts` "builds a static harness from a verified
+  nested checkout", is release-authored (new in v0.24) and
+  ENVIRONMENT-INDUCED here: the harness completes successfully (its
+  success line prints) but its git/network fixture takes ~73s through
+  this container's egress proxy against the test's 30s cap. Expected
+  green in upstream CI with direct network.
+- ffmpeg-static (new upstream dep) cannot fetch its binary through this
+  container's proxy; installed with scripts skipped. No test or build
+  path here depends on it.
+
 ## Upstream-PR recipe (when the #799/#475 chain lands)
 
 1. Rebase this branch onto the then-current `release/**` integration base
