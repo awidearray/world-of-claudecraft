@@ -36,6 +36,8 @@ export interface SamplerOnline {
   connected: boolean;
   /** ms between server snapshots; <=0 means unknown (snapshot row hidden). */
   snapInterval: number;
+  /** Server-measured achieved sim tick rate (Hz); null until reported (row hidden). */
+  serverTickHz: number | null;
 }
 
 export interface SamplerDeps {
@@ -47,6 +49,11 @@ export interface SamplerDeps {
   /** Smoothed input-echo RTT (ms); <=0 means not yet measured (ping/jitter hidden). */
   getEchoMs: () => number;
   getJitterMs: () => number;
+  /** Latency hidden by the self-motion extrapolation (ms); null when inactive.
+   *  Optional so hosts without the predictor (tests) omit it. */
+  getPredLeadMs?: () => number | null;
+  /** Player-input edges in the trailing 60 s. */
+  getApm: () => number;
   // Environment probes — injectable so tests need no browser globals. Each
   // defaults to the real browser source, returning null where unsupported.
   readMemory?: () => { usedMb: number; limitMb: number | null } | null;
@@ -56,7 +63,9 @@ export interface SamplerDeps {
 
 function defaultReadMemory(): { usedMb: number; limitMb: number | null } | null {
   if (typeof performance === 'undefined') return null;
-  const mem = (performance as unknown as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+  const mem = (
+    performance as unknown as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }
+  ).memory;
   if (!mem) return null;
   return { usedMb: mem.usedJSHeapSize / 1048576, limitMb: mem.jsHeapSizeLimit / 1048576 };
 }
@@ -96,7 +105,12 @@ export function createMetricsSampler(deps: SamplerDeps): () => MetricsSample {
       connected: isOnline ? online.connected : true,
       pingMs: isOnline && echo > 0 ? echo : null,
       jitterMs: isOnline && echo > 0 ? deps.getJitterMs() : null,
+      predLeadMs: isOnline ? (deps.getPredLeadMs?.() ?? null) : null,
       snapshotHz: isOnline && online.snapInterval > 0 ? 1000 / online.snapInterval : null,
+      serverTickHz:
+        isOnline && online.serverTickHz != null && online.serverTickHz > 0
+          ? online.serverTickHz
+          : null,
       connectionType: readConnectionType(),
       drawCalls: r.calls,
       triangles: r.triangles,
@@ -109,6 +123,7 @@ export function createMetricsSampler(deps: SamplerDeps): () => MetricsSample {
       memoryLimitMb: mem ? mem.limitMb : null,
       hitches: deps.meter.hitches(),
       entities: deps.getEntityCount(),
+      apm: deps.getApm(),
       backgrounded: isBackgrounded(),
     };
   };

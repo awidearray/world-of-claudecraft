@@ -1,0 +1,284 @@
+{
+  "scenario": "arena_1v1",
+  "seed": 1008,
+  "sampleEvery": 25,
+  "ticks": 142,
+  "coverage": [
+    "arena 1v1 match + Elo result",
+    "multi-player PlayerMeta sampling",
+    "classes:warrior,mage"
+  ],
+  "draws": 482,
+  "drawDigest": "b4688c48",
+  "frames": [
+    {
+      "tick": 0,
+      "time": 0,
+      "nextId": 405,
+      "state": "5bc471b0",
+      "events": "741638a5",
+      "rng": {
+        "draws": 0,
+        "digest": "811c9dc5"
+      },
+      "label": "init",
+      "players": [],
+      "entities": []
+    },
+    {
+      "tick": 25,
+      "time": 1.25,
+      "nextId": 407,
+      "state": "d52adc86",
+      "events": "10366efa",
+      "rng": {
+        "draws": 0,
+        "digest": "811c9dc5"
+      }
+    },
+    {
+      "tick": 50,
+      "time": 2.5,
+      "nextId": 407,
+      "state": "76415d02",
+      "events": "084c2ae4",
+      "rng": {
+        "draws": 34,
+        "digest": "a750ddeb"
+      }
+    },
+    {
+      "tick": 75,
+      "time": 3.75,
+      "nextId": 407,
+      "state": "e0ddd67a",
+      "events": "0166c11c",
+      "rng": {
+        "draws": 134,
+        "digest": "e12cceee"
+      }
+    },
+    {
+      "tick": 100,
+      "time": 5,
+      "nextId": 407,
+      "state": "fb041156",
+      "events": "d8f42c8c",
+      "rng": {
+        "draws": 254,
+        "digest": "07655741"
+      }
+    },
+    {
+      "tick": 125,
+      "time": 6.25,
+      "nextId": 407,
+      "state": "c5b1eadd",
+      "events": "57e1d7bf",
+      "rng": {
+        "draws": 384,
+        "digest": "9a9a7293"
+      }
+    },
+    {
+      "tick": 142,
+      "time": 7.1,
+      "nextId": 407,
+      "state": "62e1f7bd",
+      "events": "741638a5",
+      "rng": {
+        "draws": 482,
+        "digest": "b4688c48"
+      },
+      "label": "final",
+      "players": [
+        {
+          "activeLoadout": -1,
+          "archetype": {},
+          "arena2v2Rating": 1500,
+          "arenaRating": 1516,
+          "arenaWins": 1,
+          "bags": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "bank": {},
+          "cls": "warrior",
+          "companionUpgrades": {},
+          "counters": {},
+          "craftSkills": {},
+          "craftThrottle": {},
+          "delveClears": {},
+          "delveDaily": {},
+          "entityId": 405,
+          "equipment": {
+            "chest": "recruit_tunic",
+            "mainhand": "worn_sword"
+          },
+          "gatheringProficiency": {},
+          "heroicDaily": {},
+          "inventory": [
+            {
+              "count": 5,
+              "itemId": "baked_bread"
+            }
+          ],
+          "mailWelcomed": true,
+          "nodeHarvestReadyAt": {},
+          "talents": {
+            "choices": {},
+            "ranks": {}
+          },
+          "townFocus": {}
+        },
+        {
+          "activeLoadout": -1,
+          "archetype": {},
+          "arena2v2Rating": 1500,
+          "arenaLosses": 1,
+          "arenaRating": 1484,
+          "bags": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "bank": {},
+          "cls": "mage",
+          "companionUpgrades": {},
+          "counters": {
+            "deaths": 1
+          },
+          "craftSkills": {},
+          "craftThrottle": {},
+          "delveClears": {},
+          "delveDaily": {},
+          "entityId": 406,
+          "equipment": {
+            "chest": "apprentice_robe",
+            "mainhand": "gnarled_staff"
+          },
+          "gatheringProficiency": {},
+          "heroicDaily": {},
+          "inventory": [
+            {
+              "count": 5,
+              "itemId": "baked_bread"
+            },
+            {
+              "count": 5,
+              "itemId": "spring_water"
+            }
+          ],
+          "mailWelcomed": true,
+          "nodeHarvestReadyAt": {},
+          "talents": {
+            "choices": {},
+            "ranks": {}
+          },
+          "townFocus": {}
+        }
+      ],
+      "entities": [
+        {
+          "aiState": "idle",
+          "attackPower": 46,
+          "combatTimer": 101.05,
+          "comboUntil": -1,
+          "critChance": 0.06,
+          "detonateTimer": "Infinity",
+          "dodgeChance": 0.06,
+          "fiveSecondRule": 106.1,
+          "hp": 90,
+          "id": 405,
+          "kind": "player",
+          "level": 1,
+          "lootFfaTimer": "Infinity",
+          "maxHp": 90,
+          "maxResource": 100,
+          "moveSpeed": 7,
+          "onGround": true,
+          "overpowerUntil": -1,
+          "petMode": "defensive",
+          "pos": {
+            "x": 4200,
+            "z": -1264
+          },
+          "potionCooldownUntil": -1,
+          "resourceType": "rage",
+          "spawnPos": {
+            "x": 2,
+            "y": 1.5,
+            "z": -2
+          },
+          "spellPower": 5,
+          "stats": {
+            "agi": 20,
+            "armor": 110,
+            "int": 10,
+            "spi": 11,
+            "sta": 22,
+            "str": 23
+          },
+          "templateId": "warrior",
+          "weapon": {
+            "max": 5,
+            "min": 2,
+            "speed": 2
+          }
+        },
+        {
+          "aiState": "idle",
+          "attackPower": 10,
+          "combatTimer": 101.05,
+          "comboUntil": -1,
+          "critChance": 0.056,
+          "dead": true,
+          "detonateTimer": "Infinity",
+          "dodgeChance": 0.056,
+          "facing": 3.141593,
+          "fiveSecondRule": 106.1,
+          "id": 406,
+          "kind": "player",
+          "level": 1,
+          "lootFfaTimer": "Infinity",
+          "maxHp": 54,
+          "maxResource": 195,
+          "moveSpeed": 7,
+          "onGround": true,
+          "overpowerUntil": -1,
+          "petMode": "defensive",
+          "pos": {
+            "x": 4200,
+            "z": -1232
+          },
+          "potionCooldownUntil": -1,
+          "resource": 195,
+          "resourceType": "mana",
+          "spawnPos": {
+            "x": 2,
+            "y": 1.5,
+            "z": -2
+          },
+          "spellPower": 13,
+          "stats": {
+            "agi": 12,
+            "armor": 57,
+            "int": 25,
+            "spi": 22,
+            "sta": 14,
+            "str": 10
+          },
+          "templateId": "mage",
+          "weapon": {
+            "max": 6,
+            "min": 3,
+            "speed": 2.9
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,11 +1,11 @@
-// "War Stomp" boss mechanic: a mob with a `stomp` template field periodically
+// "Shuddering Stomp" boss mechanic: a mob with a `stomp` template field periodically
 // slams the ground while in melee combat, stunning (and optionally damaging)
 // every player inside its radius. It is telegraphed — the first slam only lands
 // one full interval after the fight begins — and resets on evade/respawn.
 import { describe, expect, it } from 'vitest';
-import { Sim } from '../src/sim/sim';
 import { MOBS } from '../src/sim/data';
 import { createMob } from '../src/sim/entity';
+import { Sim } from '../src/sim/sim';
 import type { Entity } from '../src/sim/types';
 
 function makeSim() {
@@ -25,9 +25,9 @@ function engagedStomper(sim: Sim): Entity {
 
 const stompAura = (e: Entity) => e.auras.find((a) => a.id === 'stomp_stun');
 
-describe('War Stomp boss mechanic', () => {
-  it('Korgath the Bound carries a War Stomp', () => {
-    expect(MOBS.korgath_the_bound.stomp?.name).toBe('War Stomp');
+describe('Shuddering Stomp boss mechanic', () => {
+  it('Korgath the Bound carries a Shuddering Stomp', () => {
+    expect(MOBS.korgath_the_bound.stomp?.name).toBe('Shuddering Stomp');
   });
 
   it('is telegraphed: a freshly spawned stomper waits one interval before its first slam', () => {
@@ -46,7 +46,7 @@ describe('War Stomp boss mechanic', () => {
 
     const aura = stompAura(sim.player);
     expect(aura?.kind).toBe('stun');
-    expect(aura?.name).toBe('War Stomp');
+    expect(aura?.name).toBe('Shuddering Stomp');
     expect(mob.stompTimer).toBeCloseTo(MOBS.korgath_the_bound.stomp!.every, 5);
   });
 
@@ -59,6 +59,32 @@ describe('War Stomp boss mechanic', () => {
     (sim as any).updateMob(mob);
 
     expect(sim.player.hp).toBeLessThan(5000);
+  });
+
+  it('mechanicDamageMult scales the slam at the fire site (heroic-instance plumbing)', () => {
+    // Two identical seed-42 runs where the ONLY difference is a doubled
+    // mechanicDamageMult on the boss: the slam's rng draw is identical (the
+    // multiply happens after the draw), so the landed damage must double
+    // within one point of rounding.
+    const slamDamage = (mult?: number): number => {
+      const sim = makeSim();
+      const mob = engagedStomper(sim);
+      if (mult !== undefined) mob.mechanicDamageMult = mult;
+      sim.player.maxHp = 5000;
+      sim.player.hp = 5000;
+      mob.stompTimer = 0.001;
+      (sim as any).updateMob(mob);
+      const hit = (sim.drainEvents() as any[]).find(
+        (e) => e.type === 'damage' && e.ability === MOBS.korgath_the_bound.stomp!.name,
+      );
+      if (!hit) throw new Error('the slam never landed');
+      return hit.amount as number;
+    };
+
+    const base = slamDamage();
+    const doubled = slamDamage(2);
+    expect(base).toBeGreaterThan(0);
+    expect(Math.abs(doubled - base * 2)).toBeLessThanOrEqual(1);
   });
 
   it('stuns only players inside the stomp radius', () => {
@@ -78,8 +104,8 @@ describe('War Stomp boss mechanic', () => {
     mob.stompTimer = 0.001;
     (sim as any).updateMob(mob);
 
-    expect(stompAura(sim.player)).toBeDefined();   // in radius → stunned
-    expect(stompAura(far)).toBeUndefined();        // out of radius → spared
+    expect(stompAura(sim.player)).toBeDefined(); // in radius → stunned
+    expect(stompAura(far)).toBeUndefined(); // out of radius → spared
   });
 
   it('does not slam before the timer elapses', () => {

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { DUNGEON_X_THRESHOLD, WORLD_MAX_X, WORLD_MAX_Z, WORLD_MIN_Z } from '../sim/data';
 import type { BiomeId } from '../sim/types';
-import { terrainHeight, zoneBiomeAt, WATER_LEVEL } from '../sim/world';
+import { isInSowfieldShell } from '../sim/vale_cup_layout';
+import { terrainHeight, waterLevelAt, zoneBiomeAt } from '../sim/world';
 import { GFX } from './gfx';
 
 // ---------------------------------------------------------------------------
@@ -20,7 +21,15 @@ export interface MotesView {
 
 // per-biome speck colour — warm gold pollen, sickly green marsh spores, pale
 // blue snow dust; kept lighter than GRASS_TINT so they read as glints in air
-const MOTE_TINT: Record<BiomeId, number> = { vale: 0xf4e6a0, marsh: 0xb8d28a, peaks: 0xdce8f2 };
+const MOTE_TINT: Record<BiomeId, number> = {
+  vale: 0xf4e6a0,
+  marsh: 0xb8d28a,
+  peaks: 0xdce8f2,
+  beach: 0xf6e8b0,
+  desert: 0xecd9a0,
+  volcano: 0xe8a070,
+  cave: 0xa8c4b8,
+};
 
 const RADIUS = 26; // motes live within this ring of the player
 const FLOOR = 0.6; // min height above the sampled ground
@@ -85,8 +94,9 @@ export function buildMotes(seed: number): MotesView {
     const x = px + Math.cos(ang) * r;
     const z = pz + Math.sin(ang) * r;
     if (Math.abs(x) > WORLD_MAX_X - 8 || z < WORLD_MIN_Z + 8 || z > WORLD_MAX_Z - 8) return false;
+    if (isInSowfieldShell(x, z)) return false; // no pollen drifting over the mown pitch
     const h = terrainHeight(x, z, seed);
-    if (h < WATER_LEVEL + 0.5) return false; // no motes hovering over open water
+    if (h < waterLevelAt(x, z) + 0.5) return false; // no motes hovering over open water
     homeX[i] = x;
     homeZ[i] = z;
     baseY[i] = h;
@@ -145,7 +155,10 @@ export function buildMotes(seed: number): MotesView {
         const dx = homeX[i] - px;
         const dz = homeZ[i] - pz;
         if (dx * dx + dz * dz > RADIUS * RADIUS) {
-          if (!place(i, px, pz)) { baseY[i] = -1e6; continue; }
+          if (!place(i, px, pz)) {
+            baseY[i] = -1e6;
+            continue;
+          }
         }
         if (baseY[i] < -1e5) continue; // parked
         const ph = phase[i] + t * 0.6;

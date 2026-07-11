@@ -9,12 +9,18 @@
 // during normal play.
 
 import { formatNumber, t } from './i18n';
+import { frameGraphCanvasMetrics, paintFrameTimeGraph } from './perf_graph_painter';
 import type { PerfOverlayConfig } from './perf_overlay_config';
-import { paintFrameTimeGraph } from './perf_graph_painter';
 import {
-  DEFAULT_PERF_BG_RGB, DEFAULT_PERF_FG, overlayFractionFromPixel, overlayPixelPosition,
-  PERF_OVERLAY_MARGIN, rgbaFromHex,
-  type PerfMetricKey, type PerfOverlayView, type PerfValue,
+  DEFAULT_PERF_BG_RGB,
+  DEFAULT_PERF_FG,
+  overlayFractionFromPixel,
+  overlayPixelPosition,
+  PERF_OVERLAY_MARGIN,
+  type PerfMetricKey,
+  type PerfOverlayView,
+  type PerfValue,
+  rgbaFromHex,
 } from './perf_overlay_model';
 
 interface RowEls {
@@ -23,12 +29,18 @@ interface RowEls {
   value: HTMLSpanElement;
 }
 
-interface Rect { left: number; top: number; width: number; height: number }
+interface Rect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 
 export class PerfOverlay {
   private readonly el: HTMLDivElement;
   private readonly badgesEl: HTMLDivElement;
   private readonly rowsEl: HTMLDivElement;
+  private readonly graphWrap: HTMLDivElement;
   private readonly canvas: HTMLCanvasElement;
   private readonly rowEls = new Map<PerfMetricKey, RowEls>();
 
@@ -53,9 +65,16 @@ export class PerfOverlay {
     this.badgesEl.className = 'perf-badges';
     this.rowsEl = document.createElement('div');
     this.rowsEl.className = 'perf-rows';
+    // The sparkline canvas lives in a fixed-height wrapper and is absolutely
+    // positioned (see CSS), so its large backing-store intrinsic width never
+    // feeds the shrink-wrapped panel's width: the panel sizes to its rows, and
+    // the graph can never get stuck at an old, wider metric set's width.
+    this.graphWrap = document.createElement('div');
+    this.graphWrap.className = 'perf-graph-wrap';
     this.canvas = document.createElement('canvas');
     this.canvas.className = 'perf-graph';
-    this.el.append(this.badgesEl, this.rowsEl, this.canvas);
+    this.graphWrap.append(this.canvas);
+    this.el.append(this.badgesEl, this.rowsEl, this.graphWrap);
 
     // Drag-to-move (only active in placement mode). Pointer events cover mouse +
     // touch + pen consistently across Chromium/Firefox/Safari.
@@ -81,7 +100,10 @@ export class PerfOverlay {
     this.cfg = cfg;
     const s = this.el.style;
     s.setProperty('--perf-fg', cfg.textColor);
-    s.setProperty('--perf-bg', rgbaFromHex(cfg.bgColor, cfg.solidBg ? 1 : cfg.opacity, DEFAULT_PERF_BG_RGB));
+    s.setProperty(
+      '--perf-bg',
+      rgbaFromHex(cfg.bgColor, cfg.solidBg ? 1 : cfg.opacity, DEFAULT_PERF_BG_RGB),
+    );
     s.setProperty('--perf-scale', String(cfg.fontScale));
     this.reposition();
   }
@@ -149,28 +171,32 @@ export class PerfOverlay {
     for (const badge of view.badges) {
       const chip = document.createElement('span');
       chip.className = `perf-badge perf-badge-${badge}`;
-      chip.textContent = badge === 'offline'
-        ? t('hudChrome.perf.badges.offline')
-        : t('hudChrome.perf.badges.backgrounded');
+      chip.textContent =
+        badge === 'offline'
+          ? t('hudChrome.perf.badges.offline')
+          : t('hudChrome.perf.badges.backgrounded');
       this.badgesEl.appendChild(chip);
     }
   }
 
   private renderGraph(view: PerfOverlayView): void {
     if (!view.graph || view.graph.samples.length < 2) {
-      this.canvas.style.display = 'none';
+      this.graphWrap.style.display = 'none';
       return;
     }
-    this.canvas.style.display = 'block';
-    const cssW = Math.max(60, this.rowsEl.clientWidth || this.el.clientWidth || 120);
+    this.graphWrap.style.display = 'block';
+    // Measure the wrapper, not the canvas: the wrapper follows the panel (which
+    // is sized by its rows), so the width never feeds back from the canvas.
+    const cssW = Math.max(
+      60,
+      this.graphWrap.clientWidth || this.rowsEl.clientWidth || this.el.clientWidth || 120,
+    );
     const cssH = 26;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const pxW = Math.max(1, Math.round(cssW * dpr));
-    const pxH = Math.max(1, Math.round(cssH * dpr));
+    const { pxW, pxH, dpr } = frameGraphCanvasMetrics(cssW, cssH, window.devicePixelRatio || 1);
+    // Only the HiDPI backing store is set here; the canvas display size is the
+    // wrapper's (CSS `position:absolute; inset:0`), so it can't pin the panel.
     if (this.canvas.width !== pxW) this.canvas.width = pxW;
     if (this.canvas.height !== pxH) this.canvas.height = pxH;
-    this.canvas.style.width = `${cssW}px`;
-    this.canvas.style.height = `${cssH}px`;
 
     const ctx = this.canvas.getContext('2d');
     if (!ctx) return;
@@ -203,7 +229,14 @@ export class PerfOverlay {
     const parent = this.parentRect();
     const ow = this.el.offsetWidth || 120;
     const oh = this.el.offsetHeight || 40;
-    const { left, top } = overlayPixelPosition(this.cfg.posX, this.cfg.posY, parent.width, parent.height, ow, oh);
+    const { left, top } = overlayPixelPosition(
+      this.cfg.posX,
+      this.cfg.posY,
+      parent.width,
+      parent.height,
+      ow,
+      oh,
+    );
     this.lastPx = { left, top };
     this.el.style.left = `${left}px`;
     this.el.style.top = `${top}px`;
@@ -217,7 +250,11 @@ export class PerfOverlay {
     this.grabDX = e.clientX - rect.left;
     this.grabDY = e.clientY - rect.top;
     // Capture so a fast drag that leaves the element keeps delivering events.
-    try { this.el.setPointerCapture(e.pointerId); } catch { /* not supported */ }
+    try {
+      this.el.setPointerCapture(e.pointerId);
+    } catch {
+      /* not supported */
+    }
     this.el.classList.add('dragging');
   }
 
@@ -228,7 +265,10 @@ export class PerfOverlay {
     const oh = this.el.offsetHeight;
     const maxL = Math.max(PERF_OVERLAY_MARGIN, parent.width - ow - PERF_OVERLAY_MARGIN);
     const maxT = Math.max(PERF_OVERLAY_MARGIN, parent.height - oh - PERF_OVERLAY_MARGIN);
-    const left = Math.min(maxL, Math.max(PERF_OVERLAY_MARGIN, e.clientX - parent.left - this.grabDX));
+    const left = Math.min(
+      maxL,
+      Math.max(PERF_OVERLAY_MARGIN, e.clientX - parent.left - this.grabDX),
+    );
     const top = Math.min(maxT, Math.max(PERF_OVERLAY_MARGIN, e.clientY - parent.top - this.grabDY));
     this.lastPx = { left, top };
     this.el.style.left = `${left}px`;
@@ -238,12 +278,23 @@ export class PerfOverlay {
   private onPointerUp(e: PointerEvent): void {
     if (!this.dragging) return;
     this.dragging = false;
-    try { this.el.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
+    try {
+      this.el.releasePointerCapture(e.pointerId);
+    } catch {
+      /* not captured */
+    }
     this.el.classList.remove('dragging');
     const parent = this.parentRect();
     const ow = this.el.offsetWidth;
     const oh = this.el.offsetHeight;
-    const frac = overlayFractionFromPixel(this.lastPx.left, this.lastPx.top, parent.width, parent.height, ow, oh);
+    const frac = overlayFractionFromPixel(
+      this.lastPx.left,
+      this.lastPx.top,
+      parent.width,
+      parent.height,
+      ow,
+      oh,
+    );
     this.onPositionChange?.(frac.x, frac.y);
   }
 }
@@ -264,16 +315,23 @@ function formatValue(v: PerfValue): string {
       return formatNumber(v.v, { style: 'percent', maximumFractionDigits: 0 });
     case 'ms':
       return t('hudChrome.perf.units.ms', {
-        value: formatNumber(v.v, { minimumFractionDigits: v.digits, maximumFractionDigits: v.digits }),
+        value: formatNumber(v.v, {
+          minimumFractionDigits: v.digits,
+          maximumFractionDigits: v.digits,
+        }),
       });
     case 'hz':
-      return t('hudChrome.perf.units.hz', { value: formatNumber(Math.round(v.v)) });
+      return t('hudChrome.perf.units.hz', {
+        value: v.digits
+          ? formatNumber(v.v, { minimumFractionDigits: v.digits, maximumFractionDigits: v.digits })
+          : formatNumber(Math.round(v.v)),
+      });
     case 'memPair':
       return v.limitMb != null
         ? t('hudChrome.perf.units.memPair', {
-          used: formatNumber(Math.round(v.usedMb)),
-          limit: formatNumber(Math.round(v.limitMb)),
-        })
+            used: formatNumber(Math.round(v.usedMb)),
+            limit: formatNumber(Math.round(v.limitMb)),
+          })
         : t('hudChrome.perf.units.mb', { value: formatNumber(Math.round(v.usedMb)) });
     case 'text':
       return v.text;

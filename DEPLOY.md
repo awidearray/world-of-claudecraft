@@ -102,6 +102,9 @@ For off-box safety, sync the directory to S3 occasionally:
 
 - **Secrets**: the Postgres password is generated at first boot into
   `/opt/eastbrook/.env` (mode 600, gitignored). Nothing else to manage.
+- **Bank ledger audit**: `node scripts/bank_audit.mjs` (reads `DATABASE_URL` from the
+  environment) replays the append-only `bank_ledger` against live character bank state
+  and exits non-zero on any discrepancy. Run it after an economy incident or a restore.
 - **Username bans**: set `USERNAME_BANLIST_FILE=/opt/eastbrook/username-banlist.txt`
   to load blocked username terms from a private newline- or comma-separated
   file. `USERNAME_BANLIST` can also provide a comma-separated inline list.
@@ -117,11 +120,18 @@ For off-box safety, sync the directory to S3 occasionally:
   set by `REALM_NAME` (default `Claudemoon`). To add a realm, run another
   process against the **same** `DATABASE_URL` with a different `REALM_NAME`
   and `PORT` (e.g. behind its own vhost or compose service). Characters,
-  friends, guilds, and presence are realm-scoped, so the worlds are fully
-  isolated — players on different realms can't see, whisper, friend, or
-  guild each other. Concurrent boots serialize their schema setup behind a
+  friends, guilds, presence, and the World Market are realm-scoped, so the
+  worlds are fully isolated: players on different realms can't see, whisper,
+  friend, guild, or share an auction house with each other. Concurrent boots
+  serialize their schema setup behind a
   Postgres advisory lock, so starting several at once is safe. Character and
   guild names remain globally unique across realms.
+- **Raid reset time zone**: raid lockouts end at the next 3 AM (03:00, the classic daily
+  reset) in the realm's civil time zone. Set `REALM_RESET_TZ` to an IANA zone per
+  realm process (e.g. `America/New_York`, `Europe/Paris`); it defaults to
+  `America/New_York`. The process must run on a full-ICU Node (the default for
+  modern Node); an unresolvable zone falls back to the default, and if even the
+  default cannot be resolved the process fails fast at boot.
 - **Bot gate (Cloudflare Turnstile)**: login and registration can be gated by
   Turnstile so headless clients (the aiohttp/websockets bot wave) can't create or
   sign into accounts. It is **off until configured**: both halves must be set or
@@ -146,14 +156,38 @@ For off-box safety, sync the directory to S3 occasionally:
   (`server/bot_detector/stub.ts`). Detection hooks are wired in, but they observe
   nothing and never act. To bundle the real behavioral detector, clone the private
   `bot_detector` repo into `private/bot_detector` **before** `npm run build` (or
-  `npm run build:server`). That directory is not part of the public checkout. At
-  build time, confirm which implementation was picked:
+  `npm run build:server`). The Docker build copies `private/` into the build stage,
+  so the same rule applies to deploys that run `docker compose build`: the private
+  checkout must exist before the image is built. That directory is not part of the
+  public checkout. At build time, confirm which implementation was picked:
   `[build:server] bot detector: stub (no-op)` vs `… bot detector: private`.
 - **Anti-bot runtime knobs**: `MAX_WS_PER_IP_HARD` (default `20`) caps simultaneous
   WebSocket connections per source IP; extra connections are refused at the
   handshake. `ANTIBOT_ENFORCE=1` lets the detector act on its findings (e.g. kick);
   when unset, detection is observe-only. With the no-op stub, enforcement has no
   effect regardless of this flag.
+- **Metrics endpoint**: `GET /metrics` (Prometheus exposition) is **off until
+  configured**: it answers 404 unless `METRICS_TOKEN` is set in the server
+  runtime env. When set, the scraper must send `Authorization: Bearer <token>`
+  (anything else gets an opaque 401). Configure the token on **both** the server
+  and the Prometheus scrape job in the same change or scraping goes dark.
+  `/livez` and `/readyz` stay open for load-balancer checks.
+- **API dispatch (rollback)**: every REST surface (`/api`, `/admin/api`, `/oauth`,
+  `/internal`) runs through the in-house request pipeline by default. To roll back to
+  the old handler ladder, set `API_DISPATCH=legacy` in the server runtime env and
+  restart the process: it is one flag, no code redeploy. Leaving it unset (or `new`)
+  keeps the new pipeline. The boot log warns with an `ALERT` line only when the legacy
+  ladder is serving in production, which after this default flip means the warn fires
+  exactly when someone has rolled back (`API_DISPATCH=legacy`), a deliberate choice
+  worth noticing rather than a routine boot.
+- **Env hygiene: no empty numeric placeholders.** A SET-BUT-EMPTY numeric env
+  line (`CHAT_LOG_RETENTION_DAYS=`, `PORT=`, `MAX_WS_PER_IP_HARD=`,
+  `PERF_REPORT_RETENTION_DAYS=`) now means the DEFAULT, not `0`. Before the
+  validated config loader, `CHAT_LOG_RETENTION_DAYS=` resolved to `0` (keep chat
+  logs forever); the same line now resolves to the 90-day default and pruning
+  turns ON. Audit deployed env files for empty placeholder lines: delete the
+  line to take the default, or set an explicit value (`CHAT_LOG_RETENTION_DAYS=0`
+  is still keep-forever).
 - Logs: `sudo docker compose -f /opt/eastbrook/docker-compose.yml logs -f game`.
 - If the instance ever feels tight, stop → change instance type →
   start. Everything lives in Docker plus one EBS volume, so nothing

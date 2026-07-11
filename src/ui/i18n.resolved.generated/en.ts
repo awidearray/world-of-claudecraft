@@ -191,7 +191,7 @@ export const en: EnTranslations = {
       "subtitle": "Lifetime XP",
       "rank": "Rank",
       "name": "Name",
-      "realmCol": "Realm",
+      "realmCol": "World",
       "level": "Lvl",
       "vlevel": "V.Lvl",
       "lifetimeXp": "Lifetime XP",
@@ -200,7 +200,7 @@ export const en: EnTranslations = {
       "loading": "Loading rankings…",
       "unranked": "Unranked",
       "you": "You",
-      "globalSubtitle": "Top champions across all realms",
+      "globalSubtitle": "Top champions across all worlds",
       "retry": "Could not load the leaderboard. Try again."
     },
     "milestone": {
@@ -299,6 +299,14 @@ export const en: EnTranslations = {
     }
   },
   "hudChrome": {
+    "spectate": {
+      "banner": "Spectating {name}"
+    },
+    "death": {
+      "resurrectAtCorpse": "Resurrect at Corpse",
+      "resurrectAtHealer": "The Pale Keeper (Keeper's Toll)",
+      "spiritHealerAlive": "The Pale Keeper watches over the dead. You are still among the living."
+    },
     "emotes": {
       "wave": "Wave",
       "laugh": "LOL",
@@ -322,12 +330,99 @@ export const en: EnTranslations = {
       "title": "Emotes",
       "done": "Done"
     },
+    "dailyRewards": {
+      "title": "Daily Rewards",
+      "close": "Close daily rewards",
+      "loading": "Loading daily rewards...",
+      "error": "Could not load daily rewards.",
+      "intro": "Hold enough WOC in your verified wallet to unlock daily rewards. Earn points with one daily spin and rotating tasks, then climb the daily leaderboard for a share of the prize pool.",
+      "disclaimer": "WOC price can move quickly. We recommend holding more than the $20 USD minimum so normal price swings do not lock you out. This is not financial advice.",
+      "prize": "Prize Pool",
+      "reset": "Reset",
+      "endsIn": "Ends in {time}",
+      "remainingLessThanMinute": "<1m",
+      "remainingMinutes": "{minutes}m",
+      "remainingHoursMinutes": "{hours}h {minutes}m",
+      "score": "Score",
+      "walletValue": "Wallet Value (WOC)",
+      "usd": "{amount} USD",
+      "sol": "{amount} SOL",
+      "unknown": "Unknown",
+      "spinTitle": "Daily Spin",
+      "spinDialogTitle": "Daily Reward Spin",
+      "spinClose": "Close daily spin",
+      "spinReady": "One spin is ready.",
+      "spinClaimed": "Claimed: +{points} points.",
+      "spinResult": "+{points} points",
+      "spinButton": "Spin",
+      "tasks": "Tasks",
+      "taskMultiplier": "x{multiplier} multiplier",
+      "pointsGained": "{points} daily rewards points gained.",
+      "showChestButton": "Show Chest",
+      "hideChestButton": "Hide Chest",
+      "hideChestConfirmTitle": "Hide Daily Rewards Chest?",
+      "hideChestConfirmBody": "This removes the chest shortcut from your HUD. Rewards, eligibility, and this panel stay available; you can bring the shortcut back from Options.",
+      "hideChestConfirmOk": "Hide Chest",
+      "hideChestConfirmCancel": "Cancel",
+      "leaderboard": "Daily Leaderboard",
+      "totalPlayer": "{count} player today",
+      "totalPlayers": "{count} players today",
+      "history": "Past Winners",
+      "noLeaders": "No points yet.",
+      "noHistory": "No payouts yet.",
+      "walletConnectTitle": "Verify Wallet",
+      "walletConnectBody": "Verify a Solana wallet with WOC to unlock daily rewards.",
+      "walletConnectButton": "Verify Wallet",
+      "walletHoldTitle": "Hold WOC",
+      "walletHoldBody": "Hold at least {amount} USD in WOC to unlock daily rewards.",
+      "walletPriceBody": "WOC pricing is unavailable right now. Check back shortly.",
+      "reason": {
+        "eligible": "Rewards unlocked.",
+        "no_wallet": "Connect a wallet with at least $20 USD in WOC.",
+        "under_minimum": "Wallet is below the $20 USD WOC minimum.",
+        "price_unavailable": "WOC price is unavailable, rewards are temporarily locked."
+      }
+    },
+    "theme": {
+      "preset": "UI Theme",
+      "customColors": "Custom Colors",
+      "reset": "Reset",
+      "presets": {
+        "classic": "Classic Gold",
+        "midnight": "Midnight",
+        "parchment": "Parchment",
+        "highContrast": "High Contrast"
+      },
+      "knob": {
+        "accent": "Accent",
+        "border": "Border",
+        "panel": "Frame",
+        "text": "Text",
+        "textMuted": "Muted Text",
+        "hp": "Health",
+        "mana": "Mana",
+        "rage": "Rage",
+        "energy": "Energy"
+      }
+    },
+    "questTracker": {
+      "count": "({count})",
+      "collapseHint": "Collapse quest tracker",
+      "expandHint": "Expand quest tracker"
+    },
     "chatTimestamps": {
       "show": "Show Chat Timestamps",
       "format": "Timestamp Format",
       "clock12h": "12-hour",
       "clock24h": "24-hour",
       "note": "Prefixes each new chat line with the time it arrived, e.g. [14:32]. Only affects messages received while the option is on."
+    },
+    "chatWindow": {
+      "move": "Drag to move the chat window",
+      "resize": "Drag to resize the chat window",
+      "reset": "Reset Chat Window",
+      "resetAction": "Reset",
+      "note": "Drag the chat tab strip to move the window, or the corner grip to resize it. Reset returns it to the default position and size."
     },
     "swing": {
       "ready": "Swing",
@@ -336,14 +431,53 @@ export const en: EnTranslations = {
     "rest": {
       "resting": "Resting"
     },
+    "abilityScaling": {
+      "bonus": "(+{value})"
+    },
+    "unitFrame": {
+      "playerLabel": "Your Hero",
+      "targetLabel": "Your Mark",
+      "targetAnnounce": "Mark {name}",
+      "partyLabel": "Your Band",
+      "partyChip": "Party",
+      "partyGroup": "Group {n}",
+      "durationUnitSeconds": "s",
+      "durationUnitMinutes": "m",
+      "durationUnitHours": "h",
+      "durationUnitDays": "d"
+    },
+    "character": {
+      "modelPreview": "Character Model Preview"
+    },
+    "skipLinks": {
+      "mainHud": "Skip to Main HUD",
+      "chat": "Skip to Chat"
+    },
     "mobile": {
-      "autorun": "Autorun",
+      "autorun": "Auto",
       "jump": "Jump",
       "leaderboard": "Ranks",
+      "dailyRewards": "Rewards",
       "nameplates": "Names",
       "haptics": "Haptics",
       "hapticsOff": "Haptics Off",
-      "toggleHaptics": "Toggle haptics"
+      "toggleHaptics": "Toggle haptics",
+      "hotbarPage": "Skills",
+      "hotbarPageAria": "Show next set of skills",
+      "actionRing": "Combat actions",
+      "actionPageToggle": "Switch action page",
+      "actionPageIndicator": "{page}",
+      "targetCycle": "Swap target",
+      "targetCycleShort": "Target",
+      "spellbookPageLabel": "Page {page}",
+      "hideKeyboard": "Hide keyboard",
+      "chatPlaceholder": "Say something..."
+    },
+    "tutorial": {
+      "moveBodyTouch": "Use the movement stick to move and drag the screen to look around. Take a few steps to begin.",
+      "talkBodyTouch": "Stand close to Marshal Redbrook and tap the Use button to speak, then accept his task.",
+      "returnBodyTouch": "Your task is done. Return to Marshal Redbrook and tap the Use button to turn it in.",
+      "doneBodyTouch": "You have the basics, {name}. The Vale is yours to explore. Tap More, then Quests, to review your quest log anytime. Good hunting."
     },
     "widgets": {
       "clockTitle": "Local time - click to toggle 12/24-hour",
@@ -351,6 +485,44 @@ export const en: EnTranslations = {
       "coordinates": "Coordinates",
       "heading": "Heading",
       "minimapZoom": "Minimap zoom"
+    },
+    "nativeUpdate": {
+      "title": "Update Available",
+      "body": "A new version of World of ClaudeCraft is available. Update now for the latest fixes and improvements.",
+      "bodyWithVersion": "Version {version} of World of ClaudeCraft is available. Update now for the latest fixes and improvements.",
+      "notNow": "Not now",
+      "update": "Update"
+    },
+    "castBar": {
+      "playerAria": "Your Cast Bar",
+      "targetAria": "Unit Cast Bar"
+    },
+    "leaderboard": {
+      "close": "Close",
+      "tabsLabel": "High-score boards",
+      "tabPlayers": "Players",
+      "tabGuilds": "Guilds",
+      "tabDevs": "Developers",
+      "guildName": "Guild",
+      "members": "Members",
+      "topLevel": "Top",
+      "guildXp": "Total XP",
+      "guildEmpty": "No ranked guilds yet.",
+      "devName": "Contributor",
+      "devTierCol": "Badge",
+      "mergedPrs": "Merged PRs",
+      "devEmpty": "No ranked contributors yet."
+    },
+    "raidLockout": {
+      "title": "Raid Lockouts",
+      "allReady": "All raids ready",
+      "daysHours": "{d}d {h}h",
+      "hoursMinutes": "{h}h {m}m",
+      "minutes": "{m}m",
+      "lessThanMinute": "<1m",
+      "lockedToast": "You are locked to {raid}. Unlocks in {time}.",
+      "heroicName": "Heroic {name}",
+      "heroicLocked": "You are locked to Heroic {name}."
     },
     "compass": {
       "N": "N",
@@ -371,14 +543,196 @@ export const en: EnTranslations = {
     "keybinds": {
       "emoteWheel": "Emote Wheel",
       "targetFriendly": "Target Nearest Friendly",
-      "targetFriendlyNext": "Cycle Friendly Target"
+      "targetFriendlyNext": "Cycle Friendly Target",
+      "discord": "Discord",
+      "valecup": "Vale Cup"
+    },
+    "vcup": {
+      "title": "The Vale Cup",
+      "shootPower": "POWER",
+      "close": "Close the Vale Cup window",
+      "offlineNote": "The fixture book is closed. The Vale Cup is not available right now.",
+      "recordLine": "Your record: {wins} wins, {losses} losses, {draws} draws.",
+      "bracketsAria": "Match bracket",
+      "bracketLabel": "{n}v{n}",
+      "waitingCount": "{count} waiting",
+      "nationsHeading": "Banner nation",
+      "nation": {
+        "vale": "Eastbrook Vale",
+        "mirefen": "The Mirefen",
+        "thornpeak": "Thornpeak",
+        "coliseum": "The Ashen Coliseum",
+        "choir": "The Pale Choir",
+        "ogre": "The Ogre Clans",
+        "moon": "The Pale Moon",
+        "copperdig": "The Copper Dig"
+      },
+      "awayNote": "If both sides fly the same banner, the away side plays the inverted palette.",
+      "rolesHeading": "Sport role",
+      "role": {
+        "allrounder": {
+          "name": "All-Rounder",
+          "desc": "A bit of everything: kick, boot, and a fair shoulder."
+        },
+        "striker": {
+          "name": "Striker",
+          "desc": "Lives for the long boot and the quick sidestep."
+        },
+        "sweeper": {
+          "name": "Sweeper",
+          "desc": "Bumps runners off the ball and hoofs it clear."
+        },
+        "keeper": {
+          "name": "Keeper",
+          "desc": "Guards the goal box with grip, dive, and punt."
+        }
+      },
+      "queue": "Join the Queue",
+      "leaveQueue": "Leave the Queue",
+      "queueNote": "Queue from anywhere; the whistle calls you to the Sowfield.",
+      "queuedStatus": "Queued for {bracket}: position {position} of {count}.",
+      "blockNation": "Pick a banner nation first.",
+      "blockPartySize": "That bracket needs a smaller party.",
+      "blockNotLeader": "Only the party leader can queue the team.",
+      "inMatchNote": "Your team is on the pitch. Play on!",
+      "deserterNote": "The Groundskeeper remembers. You may queue again in {seconds} sec.",
+      "liveHeading": "Now at the Sowfield",
+      "liveAria": "Vale Cup: {nationA} {scoreA}, {nationB} {scoreB}",
+      "walkUp": "Walk up to the Sowfield to watch from the stands.",
+      "noLive": "The pitch is quiet. No match is being played.",
+      "boardHeading": "Winners board",
+      "boardEmpty": "No winners recorded yet. The Copper Pail waits.",
+      "boardWins": "{count} wins",
+      "enterAsGuild": "Enter under the banner of {guild}",
+      "guildRecordLine": "Your guild record: {wins} wins, {losses} losses.",
+      "guildBoardHeading": "Guild banners",
+      "guildBoardEmpty": "No guild has taken the field yet. Fly your banner!",
+      "guildBoardWl": "{wins} W, {losses} L",
+      "practice": "Practice vs. Bots",
+      "practiceNote": "Starts a private bot match on your own practice pitch right away.",
+      "practicingNow": "Practicing now ({count}):",
+      "clock": "{minutes}:{seconds}",
+      "indicatorQueued": "Vale Cup queue: {bracket}, position {position} of {count}",
+      "indicatorLive": "Vale Cup",
+      "indicatorOpen": "Open the Vale Cup window",
+      "phaseCountdown": "Kickoff in {seconds}",
+      "phaseGoal": "GOAL!",
+      "phaseGolden": "GOLDEN GOAL",
+      "phaseOver": "FULL TIME",
+      "bannerFound": "The Vale Cup calls: {nationA} vs {nationB}!",
+      "bannerCountdown": "Kickoff in {seconds}...",
+      "bannerKickoff": "KICKOFF!",
+      "bannerGoal": "GOAL! {nation} scores!",
+      "bannerSave": "{name} SAVES!",
+      "bannerGolden": "GOLDEN GOAL: next score wins!",
+      "bannerEnd": "Full time: {nationA} {scoreA}, {nationB} {scoreB}",
+      "bannerWin": "Victory at the Sowfield!",
+      "bannerDraw": "A draw at the Sowfield.",
+      "bannerLoss": "Defeat at the Sowfield.",
+      "logQueued": "You join the Vale Cup queue for {bracket} (position {position}).",
+      "logUnqueued": "You leave the Vale Cup queue.",
+      "logFound": "Your Vale Cup match is ready: {nationA} vs {nationB}.",
+      "logRoster": "Your side: {allies}. Their side: {enemies}.",
+      "logGoal": "{name} scores for {nation}! {nationA} {scoreA}, {nationB} {scoreB}.",
+      "logSave": "{name} makes the save!",
+      "logWin": "You win the bout at the Sowfield.",
+      "logDraw": "The bout at the Sowfield ends in a draw.",
+      "logLoss": "You lose the bout at the Sowfield.",
+      "gossipOpen": "The book of fixtures",
+      "gossipOpenAria": "Open the Vale Cup window",
+      "mobileLabel": "Cup",
+      "briefing": {
+        "subtitle": "Pre-match briefing",
+        "vs": "vs",
+        "rulesHeading": "How to play",
+        "rule1": "Kick or pass the ball into the enemy goal to score.",
+        "rule2": "First to 5 goals wins, or the most goals when full time blows.",
+        "rule3": "A level match at full time goes to golden goal: the next score wins.",
+        "rule4": "Tackles only tumble you over. Nobody gets hurt under the harvest truce.",
+        "rule5": "Anyone can walk up and cheer you on from the stands.",
+        "kitHeading": "Your kit",
+        "kitNote": "These moves replace your class abilities for the match.",
+        "rosterHeading": "The team sheet",
+        "you": "You",
+        "bot": "Bot",
+        "ready": "I'm ready",
+        "readyDone": "Ready",
+        "readyAria": "Ready up for kickoff",
+        "waiting": "Waiting for the other side to ready up...",
+        "whistle": "The whistle blows in {seconds}s.",
+        "readyCount": "{ready} of {total} ready"
+      },
+      "bet": {
+        "title": "Match Bets",
+        "aria": "Vale Cup match betting",
+        "closesIn": "Bets close in {seconds}s",
+        "closed": "Betting closed",
+        "prize": "Pool {amount}",
+        "splitAria": "Share of the betting pool on each team",
+        "expand": "View bets and wager",
+        "collapse": "Hide bets",
+        "oddsLabel": "Pays",
+        "back": "Back {team}",
+        "form": "{wins}W-{losses}L",
+        "mine": "Your bet: {amount} on {team}",
+        "none": "You have no bet on this match yet.",
+        "record": "Betting record: {wins}W-{losses}L, {sign}{net}",
+        "wonBanner": "Your bet won!",
+        "wonLog": "Your Vale Cup bet won: {amount} returned.",
+        "lostLog": "Your Vale Cup bet lost: {amount}.",
+        "refundLog": "Bets voided, your {amount} stake was returned."
+      }
     },
     "options": {
       "clickMoveLeft": "Left Click",
       "clickMoveRight": "Right Click",
+      "version": "v{version} ({build})",
+      "browserEffects": "Browser Effects",
+      "browserEffectsAuto": "Auto",
+      "browserEffectsFull": "Full",
+      "browserEffectsReduced": "Reduced",
+      "browserEffectsMinimal": "Minimal",
+      "browserEffectsNote": "Auto tones down heavy CSS effects (blur, glow, background motion) based on your browser and device. Lower it manually if the interface feels sluggish.",
+      "interfaceMode": "Interface Mode",
+      "interfaceModeAuto": "Auto",
+      "interfaceModeDesktop": "Desktop",
+      "interfaceModeTouch": "Touch",
+      "interfaceModeNote": "Auto picks desktop or touch controls from your device. Choose Desktop to force keyboard and mouse (useful on a tablet with a keyboard), or Touch for the on-screen controls.",
       "footstepSounds": "Footstep Sounds",
+      "clickFeedback": "Click Marker",
+      "lockCursorOnRotate": "Lock Cursor While Rotating",
+      "keybindHelpLockCursorOnRotate": "Keeps the mouse cursor inside the window while you drag to rotate the camera, so it cannot reach the screen edge or move to another monitor. Turn off if you prefer a free cursor.",
       "showWalletOnCharacterScreen": "Show Wallet on Character Screen",
-      "showWalletOnPlayerCard": "Show Wallet on Player Card"
+      "showWalletOnPlayerCard": "Show Wallet on Player Card",
+      "showDevBadges": "Show Developer Badges",
+      "showOwnNameplate": "Show My Nameplate",
+      "uiScale": "UI Scale",
+      "playerFrameScale": "Player Frame Scale",
+      "targetFrameScale": "Target Frame Scale",
+      "aurasOnPlayerFrame": "Buffs on the Player Frame",
+      "highContrastBackground": "High-Contrast Background",
+      "startAttackOnAbility": "Auto-Attack on Ability Use",
+      "walkByAutoloot": "Walk-by Autoloot",
+      "groundReticle": "Ground-Targeting Reticle",
+      "showItemLevel": "Show Item Level",
+      "itemLevelLine": "Item Level {level}",
+      "itemScoreLine": "Score {score}",
+      "showSecondaryActionBar": "Show Secondary Action Bar",
+      "showDailyRewardsChest": "Show Daily Rewards Chest",
+      "mobileCameraJoystick": "Camera joystick",
+      "mobileLeftHanded": "Left-handed layout"
+    },
+    "controller": {
+      "title": "Controller",
+      "enable": "Enable Controller",
+      "invertY": "Invert Camera (Y)",
+      "deadzone": "Stick Deadzone",
+      "cameraSpeed": "Camera Speed",
+      "vibration": "Vibration",
+      "buttons": "Button Layout",
+      "resetButtons": "Reset Button Layout",
+      "menuAction": "Game Menu",
+      "help": "Left stick moves, right stick looks. Open a window to use the on-screen pointer."
     },
     "perf": {
       "title": "Performance Overlay",
@@ -407,7 +761,8 @@ export const en: EnTranslations = {
         "frame": "Frame & Timing",
         "network": "Network",
         "renderer": "Renderer",
-        "system": "System"
+        "system": "System",
+        "input": "Input"
       },
       "labels": {
         "fps": "FPS",
@@ -416,7 +771,9 @@ export const en: EnTranslations = {
         "fps01Low": "0.1% Low",
         "ping": "Ping",
         "jitter": "Jitter",
+        "predLead": "Prediction Lead",
         "snapshot": "Snapshot Rate",
+        "serverTick": "Server Tick Rate",
         "connection": "Connection",
         "drawCalls": "Draw Calls",
         "triangles": "Triangles",
@@ -427,7 +784,8 @@ export const en: EnTranslations = {
         "gpu": "GPU",
         "memory": "Memory",
         "hitches": "Hitches",
-        "entities": "Entities"
+        "entities": "Entities",
+        "apm": "APM"
       },
       "themes": {
         "gold": "Gold",
@@ -451,8 +809,17 @@ export const en: EnTranslations = {
     "playerCard": {
       "showWalletBadge": "Show wallet badge"
     },
+    "landing": {
+      "highContrast": "High Contrast",
+      "highContrastAria": "Toggle high-contrast background: disables the moving trailer so start-screen text stays legible"
+    },
     "statInfo": {
       "fromYour": "From your {value} {stat}:",
+      "names": {
+        "spellPower": "Spell Power",
+        "critRating": "Crit Rating",
+        "hasteRating": "Haste Rating"
+      },
       "desc": {
         "str": "Increases your attack power, so your weapon strikes land harder.",
         "agi": "Sharpens your reflexes and aim, improving several of your combat stats.",
@@ -461,9 +828,12 @@ export const en: EnTranslations = {
         "spi": "Quickens how fast a spellcaster's mana returns while resting, out of combat.",
         "armor": "Softens incoming physical blows. The reduction is greater against lower-level attackers and is capped at 75%.",
         "attackPower": "Powers your weapon attacks. Every 14 attack power adds 1 damage per second.",
+        "spellPower": "Increases the damage of your spells and the strength of your heals. Each point of Intellect grants a little Spell Power, on top of any from gear or buffs.",
         "dps": "Your estimated weapon damage per second, combining your weapon's damage and speed with your attack power.",
         "critChance": "Your chance for an attack to strike critically, dealing double damage.",
-        "dodge": "Your chance to completely avoid an incoming melee attack, taking no damage."
+        "dodge": "Your chance to completely avoid an incoming melee attack, taking no damage.",
+        "critRating": "Crit rating from your gear and set bonuses, raising your critical strike chance. About 10 rating grants 1% crit.",
+        "hasteRating": "Haste rating from your gear and set bonuses, speeding up your attacks and spellcasting. About 10 rating grants 1% haste."
       },
       "effects": {
         "attackPower": "+{value} Attack Power",
@@ -483,13 +853,50 @@ export const en: EnTranslations = {
         "minorForClass": "Of little benefit to your class.",
         "baseChance": "Includes a 5% base chance shared by all adventurers.",
         "dpsApprox": "An estimate, it excludes critical strikes and ability damage."
+      },
+      "sources": {
+        "header": "Made up of:",
+        "base": "Base: {value}",
+        "attributes": "From your attributes: {value}",
+        "fromAttribute": "From {stat}: {value}",
+        "gear": "Equipped gear: {value}",
+        "buff": "{name}: {value}",
+        "talents": "Talents and effects: {value}"
       }
     },
     "talents": {
       "defaultBuildName": "Build {n}"
     },
     "tips": {
-      "joinChannels": "Tip: type /join world or /join lfg to chat with players across the realm."
+      "joinChannels": "Tip: type /join world or /join lfg to chat with players across the world."
+    },
+    "itemSet": {
+      "header": "{name} ({have}/{total})",
+      "bonusLine": "({pieces}) {bonus}"
+    },
+    "itemProc": {
+      "onMeleeHit": "Chance on hit ({chance}%): {effect}",
+      "onSpellDamage": "Chance on your damaging spells ({chance}%): {effect}",
+      "onHeal": "Chance on your heals ({chance}%): {effect}",
+      "chainArc": "blasts the target with a {school} {name} ({damage}) that leaps to {jumps} nearby foes for decaying damage",
+      "attackSlow": "and slows the target attack speed by {pct}% for {duration} sec",
+      "dot": "festers {name}, a {school} damage-over-time dealing {total} over {duration} sec",
+      "hot": "blooms {name}, a heal-over-time restoring {total} over {duration} sec"
+    },
+    "questShare": {
+      "notShareable": "This quest can't be shared.",
+      "notInSharerParty": "You must be in {name}'s party to accept that quest.",
+      "accepted": "{name} accepted your shared quest.",
+      "dialogTitle": "Shared Quest",
+      "viewOnlyHint": "Join the sharer's party to accept this quest.",
+      "alreadyOn": "You're already on this quest.",
+      "alreadyDone": "You've already completed this quest.",
+      "ineligible": "You don't meet the requirements for this quest.",
+      "noQuestSelected": "Select a quest in your log to share.",
+      "linkTitle": "Shift-click to link this quest in chat."
+    },
+    "itemShare": {
+      "linkHint": "Shift-click to link this item in chat."
     },
     "plurals": {
       "guildMembers": {
@@ -515,7 +922,35 @@ export const en: EnTranslations = {
         "few": "Who: {count} players online on {realm}.",
         "many": "Who: {count} players online on {realm}.",
         "other": "Who: {count} players online on {realm}."
+      },
+      "playersMatching": {
+        "one": "Who: {count} player matching \"{query}\" on {realm}.",
+        "few": "Who: {count} players matching \"{query}\" on {realm}.",
+        "many": "Who: {count} players matching \"{query}\" on {realm}.",
+        "other": "Who: {count} players matching \"{query}\" on {realm}."
       }
+    },
+    "bugReport": {
+      "menuButton": "Report a Bug",
+      "realm": "World",
+      "character": "Character",
+      "position": "Position",
+      "unknown": "Unknown",
+      "description": "What went wrong?",
+      "descriptionPlaceholder": "Describe the bug: what you did, what you expected, and what happened.",
+      "includeScreenshot": "Include Screenshot",
+      "screenshotAlt": "Screenshot of the current view attached to this bug report",
+      "submit": "Send Report",
+      "submitted": "Bug report sent. Thank you!",
+      "submittedNoShot": "Bug report sent, but the screenshot was too large to include.",
+      "describeFirst": "Please describe the bug before sending.",
+      "tooLarge": "That report is too large to send. Try again without the screenshot.",
+      "rateLimited": "You've sent several reports recently. Please wait a bit before sending another.",
+      "failed": "Could not send the bug report. Please try again."
+    },
+    "paperdoll": {
+      "unequipAria": "Unequip {item}",
+      "unequipHint": "Click ×, right-click, or drag to bags to unequip"
     },
     "wocSeason": {
       "menu": "$WOC Season",
@@ -563,7 +998,7 @@ export const en: EnTranslations = {
       "errPasswordUnchanged": "New password must be different from the current one.",
       "errPasswordConfirm": "New passwords do not match.",
       "emailLabel": "Email (optional)",
-      "emailHint": "Used only for account recovery. We never send marketing email.",
+      "emailHint": "Used only for account recovery. Use Change Email below to update it.",
       "saveEmail": "Save Email",
       "emailSaved": "Email saved.",
       "errEmailInvalid": "Enter a valid email address.",
@@ -584,7 +1019,2085 @@ export const en: EnTranslations = {
       "deactivateConfirm": "Deactivate My Account",
       "deactivated": "Your account has been deactivated.",
       "logOut": "Log Out",
-      "logOutSummary": "Sign out of this device."
+      "logOutSummary": "Sign out of this device.",
+      "sectionSecurity": "Security",
+      "changeEmailTitle": "Change Email",
+      "changeEmailHint": "We email a confirmation link to the new address and a notice to the old one. Your email only changes once you open the link.",
+      "changeEmailNew": "New email",
+      "changeEmailSubmit": "Send Confirmation Link",
+      "changeEmailSent": "Check your inbox: open the link we sent to confirm your new email.",
+      "errEmailUnchanged": "That is already your email address.",
+      "twoFactorTitle": "Two-Factor Authentication",
+      "twoFactorStatusOn": "Two-factor authentication is ON for your account.",
+      "twoFactorStatusOff": "Add an authenticator app for stronger account security.",
+      "twoFactorSetupBtn": "Set Up Two-Factor",
+      "twoFactorBeginHint": "Enter your password to begin setup.",
+      "twoFactorBegin": "Begin Setup",
+      "twoFactorScanHint": "Add this key to your authenticator app (Google Authenticator, Authy, 1Password, and similar), then enter the 6-digit code it shows.",
+      "twoFactorSecretLabel": "Setup key",
+      "twoFactorOpenApp": "Open in authenticator app",
+      "twoFactorCodeLabel": "6-digit code",
+      "twoFactorVerifyBtn": "Verify and Enable",
+      "twoFactorEnabledMsg": "Two-factor authentication is now on.",
+      "twoFactorRecoveryTitle": "Save your recovery codes",
+      "twoFactorRecoveryHint": "Each code works once. Store them somewhere safe: they are the only way back in if you lose your authenticator app.",
+      "twoFactorDownloadCodes": "Download Codes",
+      "twoFactorDone": "Done",
+      "twoFactorDisableHint": "Enter your password to turn two-factor off. Your recovery codes will be discarded.",
+      "twoFactorDisableBtn": "Turn Off Two-Factor",
+      "twoFactorDisabledMsg": "Two-factor authentication is off.",
+      "errTwoFactorCode": "That code is not valid, try again.",
+      "errTwoFactorState": "Two-factor setup is not in the expected state. Reload and try again.",
+      "exportTitle": "Export My Data",
+      "exportHint": "Download a copy of your account and characters as a JSON file. We also email you a confirmation.",
+      "exportBtn": "Download My Data",
+      "exportDone": "Your data was downloaded. We emailed you a confirmation.",
+      "exportFailed": "Could not export your data. Try again in a moment."
+    },
+    "masterLoot": {
+      "title": "Master Loot",
+      "enableLabel": "Master loot",
+      "enableAria": "Enable master loot",
+      "looterLabel": "Master looter",
+      "leaderOption": "Party leader",
+      "thresholdLabel": "Threshold",
+      "thresholdUncommon": "Uncommon and up",
+      "thresholdRare": "Rare and up",
+      "thresholdEpic": "Epic and up",
+      "assignPrompt": "Assign {item}",
+      "assignAria": "Assign {item} to {name}",
+      "rollButton": "Roll",
+      "selectAll": "Select all",
+      "methodMaster": "Loot method set to Master Loot. Master Looter: {name}.",
+      "methodGroup": "Loot method set to Group Loot.",
+      "assigned": "{looter} assigned {item} to {target}.",
+      "unassigned": "{item} was not assigned and is free for all.",
+      "leaderOnly": "Only the party leader can change the loot method.",
+      "rollingFor": "Rolling for {item}.",
+      "looterChanged": "Master Looter is now {name}.",
+      "thresholdSet": "Loot threshold set to {threshold}.",
+      "summaryMaster": "Loot Settings: Master Loot, Master Looter {name}, threshold {threshold}.",
+      "summaryGroup": "Loot Settings: Group Loot."
+    },
+    "corpseHarvest": {
+      "title": "Harvest",
+      "harvestButton": "Harvest",
+      "concentrateHint": "Fewer chosen components yield a higher tier each.",
+      "alreadyHarvested": "This corpse has already been harvested.",
+      "componentAria": "Harvest {component}",
+      "components": {
+        "hide": "Hide",
+        "fang": "Fang",
+        "silk": "Silk",
+        "venomSac": "Venom Sac",
+        "gills": "Gills",
+        "claw": "Claw",
+        "horn": "Horn",
+        "tusk": "Tusk"
+      }
+    },
+    "townFocus": {
+      "title": "Town Focus",
+      "hint": "Focus points add a bonus on top of every component's baseline yield. Unfocused components stay at baseline.",
+      "budgetLabel": "Points remaining: {remaining} / {budget}",
+      "saveButton": "Save Focus",
+      "notInTownHint": "You must be in town to set your focus.",
+      "increaseAria": "Increase focus on {component}",
+      "decreaseAria": "Decrease focus on {component}"
+    },
+    "party": {
+      "promoteLeader": "Promote to Leader",
+      "inviteUsage": "Invite whom? Usage: /invite <name>."
+    },
+    "lootSettings": {
+      "title": "Loot Settings",
+      "close": "Close loot settings",
+      "menuItem": "Loot Settings",
+      "method": "Loot Method",
+      "rollThreshold": "Roll Threshold",
+      "groupLoot": "Group Loot",
+      "valueMaster": "Master Loot",
+      "leaderOption": "Master Looter: Leader (You)",
+      "masterOption": "Master Looter: {name}"
+    },
+    "dungeonDifficulty": {
+      "setHeroic": "Set Dungeon Difficulty: Heroic",
+      "setNormal": "Set Dungeon Difficulty: Normal"
+    },
+    "bags": {
+      "cannotDestroy": "This item cannot be destroyed.",
+      "rightClickDestroy": "Right-click to destroy",
+      "filterGroupAria": "Filter bags by category",
+      "filterAll": "All",
+      "filterWeapon": "Weapons",
+      "filterArmor": "Armor",
+      "filterConsumable": "Consumables",
+      "filterMaterial": "Materials",
+      "filterQuest": "Quest",
+      "sortAria": "Sort bag items",
+      "sortRecent": "Recent",
+      "sortQuality": "Quality",
+      "sortName": "Name",
+      "searchPlaceholder": "Search items",
+      "searchAria": "Search bag items by name",
+      "noMatch": "No items match your filters.",
+      "capacity": "{used}/{total}",
+      "capacityAria": "Bag slots used: {used} of {total}",
+      "backpack": "Backpack",
+      "bagSocketAria": "{name}: {slots}",
+      "socketEmpty": "Empty bag slot",
+      "unequipHint": "Click to remove this bag"
+    },
+    "raidConvert": {
+      "toPartyDone": "Your raid has converted back to a party.",
+      "notRaid": "Your group is not a raid.",
+      "leaderOnly": "Only the raid leader may convert to a party.",
+      "tooLarge": "A raid with more than five members cannot convert back to a party."
+    },
+    "itemArmorType": {
+      "cloth": "Cloth",
+      "leather": "Leather",
+      "mail": "Mail"
+    },
+    "auraEffect": {
+      "dot": "Deals {value} {school} damage every {interval} sec",
+      "hot": "Restores {value} health every {interval} sec",
+      "absorb": "Absorbs {value} damage",
+      "healAbsorb": "Absorbs {value} incoming healing",
+      "thorns": "Deals {value} {school} damage to attackers",
+      "slow": "Reduces movement speed by {pct}%",
+      "speed": "Increases movement speed by {pct}%",
+      "attackSpeedSlow": "Slows attack speed by {pct}%",
+      "attackSpeedFast": "Increases attack speed by {pct}%",
+      "haste": "Increases attack and casting speed by {pct}%",
+      "tongues": "Increases casting time by {pct}%",
+      "increase": {
+        "ap": "Increases attack power by {value}",
+        "armor": "Increases armor by {value}",
+        "int": "Increases Intellect by {value}",
+        "agi": "Increases Agility by {value}",
+        "sta": "Increases Stamina by {value}",
+        "spi": "Increases Spirit by {value}",
+        "allStats": "Increases all attributes by {value}"
+      },
+      "reduce": {
+        "ap": "Reduces attack power by {value}",
+        "armor": "Reduces armor by {value}",
+        "int": "Reduces Intellect by {value}",
+        "agi": "Reduces Agility by {value}",
+        "sta": "Reduces Stamina by {value}",
+        "spi": "Reduces Spirit by {value}",
+        "allStats": "Reduces all attributes by {value}"
+      },
+      "allStatsPctReduce": "Reduces all attributes by {pct}%",
+      "increasePct": {
+        "ap": "Increases attack power by {pct}%",
+        "armor": "Increases armor by {pct}%",
+        "int": "Increases Intellect by {pct}%",
+        "sta": "Increases Stamina by {pct}%",
+        "allStats": "Increases all attributes by {pct}%"
+      },
+      "dodge": "Increases dodge chance by {pct}%",
+      "dodgeReduce": "Reduces dodge chance by {pct}%",
+      "armorFlat": "Reduces armor by {value}",
+      "armorFlatStacks": "Reduces armor by {value} ({stacks} stacks)",
+      "armorPct": "Reduces armor by {pct}%",
+      "armorPctStacks": "Reduces armor by {pct}% ({stacks} stacks)",
+      "mortalWound": "Reduces healing received by {pct}%",
+      "vulnerability": "Increases damage taken by {pct}%",
+      "physVuln": "Increases physical damage taken by {pct}%",
+      "spellVuln": "Increases magic damage taken by {pct}%",
+      "critVuln": "Increases chance to be critically hit by {pct}%",
+      "costTax": "Increases ability costs by {pct}%",
+      "stun": "Stunned: unable to act",
+      "root": "Rooted: unable to move",
+      "incapacitate": "Incapacitated: unable to act",
+      "polymorph": "Polymorphed: unable to act",
+      "hex": "Reduces damage and healing dealt by {pct}%",
+      "blind": "Blinded: unable to act",
+      "silence": "Silenced: unable to cast spells",
+      "disarm": "Disarmed: cannot use weapon attacks",
+      "lockout": "Spell school locked out",
+      "imbue": "Weapon imbued with bonus effects",
+      "imbueRange": "Weapon imbued: {min} to {max} bonus damage on Verdict",
+      "stealth": "Concealed; movement speed reduced by {pct}%",
+      "formBear": "Bruin Form: increased health and armor",
+      "formCat": "Cat Form: melee damage and energy",
+      "formTravel": "Fleet Form: movement speed increased by {pct}%",
+      "defensiveStance": "Guarded Stance: reduced damage taken, more threat",
+      "righteousFury": "Burning Oath: greatly increased threat from Holy damage",
+      "scale": "Size increased by {pct}%",
+      "jump": "Jump height increased by {pct}%",
+      "school": {
+        "physical": "Physical",
+        "fire": "Fire",
+        "frost": "Frost",
+        "arcane": "Arcane",
+        "shadow": "Shadow",
+        "holy": "Holy",
+        "nature": "Nature"
+      }
+    },
+    "worldBoss": {
+      "spawn": "{name} rises over Thornpeak Heights!"
+    },
+    "loot": {
+      "chestTitle": "Chest"
+    },
+    "spellbook": {
+      "addToBarAria": "Add {name} to action bar",
+      "removeFromBarAria": "Remove {name} from action bar"
+    },
+    "nameplate": {
+      "mob": "[{level}] {name}",
+      "mobElite": "[{level}+] {name}"
+    },
+    "mobTooltip": {
+      "levelFamily": "Level {level} {family}",
+      "familyDemon": "Demon",
+      "hostile": "Hostile",
+      "friendly": "Friendly"
+    },
+    "targetFrame": {
+      "unlock": "Move target frame",
+      "lock": "Lock target frame"
+    },
+    "playerFrame": {
+      "unlock": "Move player frame",
+      "lock": "Lock player frame"
+    },
+    "frameReset": {
+      "label": "Reset Frame Positions"
+    },
+    "itemTooltip": {
+      "requiresLevel": "Requires Level {level}"
+    },
+    "discord": {
+      "title": "Discord",
+      "panelTitle": "World of ClaudeCraft",
+      "open": "Discord",
+      "close": "Close",
+      "keybind": "Discord Panel",
+      "disabled": "Discord integration is not available right now.",
+      "tiers": {
+        "none": "Unranked",
+        "initiate": "Initiate",
+        "squire": "Squire",
+        "footman": "Footman",
+        "knight": "Knight",
+        "champion": "Champion",
+        "warlord": "Warlord",
+        "legend": "Legend",
+        "mythic": "Mythic"
+      },
+      "loginCta": "Continue with Discord",
+      "orEmail": "or use email",
+      "cta": {
+        "title": "Link your Discord to earn points and rank up",
+        "stats": "{online} online · {total} members in the server",
+        "statsLoading": "Join the community and earn rewards",
+        "button": "Link in one click",
+        "dismiss": "Dismiss"
+      },
+      "link": {
+        "cta": "Link Discord",
+        "relink": "Relink Discord",
+        "connecting": "Opening Discord...",
+        "benefits": "Link your Discord to earn points from play and community activity, and climb the status tiers.",
+        "error": "Could not link Discord. Please try again.",
+        "success": "Discord linked."
+      },
+      "choice": {
+        "title": "Continue with Discord",
+        "intro": "Create a new account, or link your Discord to one you already have.",
+        "greeting": "Welcome, {name}!",
+        "createCta": "Create a new account",
+        "haveAccount": "Already have an account?",
+        "linkCta": "Link an existing account",
+        "linkSubmit": "Link account",
+        "error": "Could not continue. Please try again.",
+        "expired": "That Discord sign-in expired. Please sign in with Discord again."
+      },
+      "keep": {
+        "title": "Set a password",
+        "body": "Your account signs in with Discord. Set a password so you can still log in with your username after unlinking.",
+        "usernameLabel": "Your username",
+        "confirmLabel": "Confirm password",
+        "submit": "Set password and unlink",
+        "cancel": "Cancel",
+        "mismatch": "Passwords do not match.",
+        "tooShort": "Password must be at least 6 characters."
+      },
+      "linkedAs": "Linked as {name}",
+      "linkedTitle": "Discord: {name}",
+      "viewCharacter": "View {name}",
+      "viewProfile": "Open this character's public profile",
+      "unlink": "Unlink",
+      "visit": "Visit Discord",
+      "unlinkConfirm": "Unlink your Discord account from this game account?",
+      "statusLabel": "Status",
+      "rank": "Rank",
+      "points": "Points",
+      "lifetime": "Lifetime",
+      "toNext": "{points} to next rank",
+      "maxRank": "Top rank reached",
+      "tiersTitle": "Status Tiers",
+      "tierLocked": "Locked",
+      "tierCurrent": "Current",
+      "earnTitle": "How to earn points",
+      "earnBody": "Earn points from time played in game and from staying active in the Discord. Points raise your status tier.",
+      "memberSince": "Member since",
+      "memberSinceDays": "{days}d in the Discord",
+      "roleTag": {
+        "levyst": "Levy St",
+        "admin": "Admin",
+        "coredevs": "Core Dev",
+        "devs": "Dev",
+        "mods": "Mod",
+        "artists": "Artist"
+      },
+      "guildMember": "Verified member",
+      "notMember": "Not in the server yet",
+      "joinCta": "Join the Discord",
+      "online": "{count} online",
+      "community": "Community",
+      "rewards": "Rewards",
+      "voice": {
+        "title": "Voice",
+        "channel": "In {channel}",
+        "empty": "No one is in voice right now.",
+        "speaking": "Speaking",
+        "muted": "Muted",
+        "join": "Join voice",
+        "connect": "Connect to voice channel"
+      },
+      "swag": {
+        "title": "Swag",
+        "claim": "Claim",
+        "claimed": "Claimed",
+        "locked": "Locked",
+        "free": "Free",
+        "cost": "{points} pts",
+        "needTier": "Reach a higher rank to claim this.",
+        "needPoints": "Not enough points.",
+        "claimError": "Could not claim that reward. Please try again.",
+        "claimedToast": "Claimed: {name}",
+        "titleDiscordian": "Title: Discordian",
+        "titleSquire": "Title: Squire of the Realm",
+        "chromaBlurple": "Blurple Mech Chroma",
+        "titleChampion": "Title: Champion of Claudemoon",
+        "swagStickers": "Sticker Pack (shipped)",
+        "swagTee": "T-Shirt (shipped)"
+      },
+      "relay": {
+        "tooFast": "You are posting too fast. Wait a moment and try again.",
+        "lfg": {
+          "label": "Looking for Group",
+          "hint": "Find players for a dungeon or quest"
+        },
+        "wts": {
+          "label": "Want to Sell",
+          "hint": "Advertise an item or service for sale"
+        },
+        "wtb": {
+          "label": "Want to Buy",
+          "hint": "Request an item you want to buy"
+        },
+        "recruit": {
+          "label": "Guild Recruiting",
+          "hint": "Recruit players for your guild"
+        },
+        "event": {
+          "label": "Event / Raid",
+          "hint": "Announce a raid, meetup or event"
+        },
+        "help": {
+          "label": "Need Help",
+          "hint": "Ask the community for help"
+        }
+      }
+    },
+    "devBadge": {
+      "title": "Developer",
+      "tiers": {
+        "tinkerer": "Tinkerer",
+        "artificer": "Artificer",
+        "runesmith": "Runesmith",
+        "architect": "Architect",
+        "worldwright": "Worldwright"
+      },
+      "flavors": {
+        "tinkerer": "Your first pull request landed in the realm.",
+        "artificer": "Five pull requests in, and the world bends to your code.",
+        "runesmith": "Fifteen pull requests forged into the running game.",
+        "architect": "An architect of the realm: 30 pull requests merged.",
+        "worldwright": "A wright of worlds: 70 pull requests shape the game."
+      },
+      "badgeTitle": "Developer: {tier}",
+      "prsLanded": "{count} pull requests merged",
+      "contributor": "Open-source contributor",
+      "link": {
+        "cta": "Link GitHub",
+        "relink": "Relink GitHub",
+        "benefits": "Link your GitHub to earn a developer badge for the pull requests you have had merged into the open-source repo.",
+        "error": "Could not link GitHub. Please try again."
+      },
+      "linkedAs": "Linked as {login}",
+      "unlink": "Unlink GitHub"
+    },
+    "mailbox": {
+      "title": "Mailbox",
+      "subtitle": "The Ravenpost",
+      "close": "Close mailbox",
+      "tabInbox": "Inbox",
+      "tabInboxWithCount": "Inbox ({count})",
+      "tabSend": "Send",
+      "empty": "Your mailbox is empty.",
+      "truncated": "Showing the newest {shown} of {total} letters.",
+      "attachmentsBadge": "Parcel attached",
+      "unreadBadge": "Unread",
+      "back": "Back",
+      "take": "Take attachments",
+      "delete": "Delete letter",
+      "deleteAria": "Delete the letter {subject}",
+      "openAria": "Read the letter {subject} from {name}",
+      "noSubject": "(no subject)",
+      "toLabel": "To",
+      "toPlaceholder": "Character name",
+      "subjectLabel": "Subject",
+      "bodyLabel": "Message",
+      "coinLabel": "Attach coin",
+      "parcelsLabel": "Parcels",
+      "parcelsHint": "Click an item in your bags to attach it.",
+      "removeParcelAria": "Remove {item} from the letter",
+      "sendButton": "Send letter",
+      "postageNote": "Postage: {amount}. The raven flies for about {seconds}s.",
+      "arrivedBanner": "The raven has landed: mail from {name}.",
+      "arrivedLog": "You have new mail from {name}.",
+      "indicatorAria": "Unread mail: {count}",
+      "indicatorTip": "You have {count} unread letters. Visit a mailbox to read them.",
+      "clickAttach": "Click to attach to your letter.",
+      "cannotMail": "This cannot be mailed.",
+      "result": {
+        "sent": "A raven takes wing with your letter to {name} ({postage} postage).",
+        "collected": "You collect {amount} from the letter.",
+        "tooFar": "You must be at a mailbox to tend your post.",
+        "needRecipient": "Name a recipient for your letter.",
+        "noRecipient": "No one by that name holds a mailbox here.",
+        "tooManyParcels": "A letter carries at most {count} parcels.",
+        "noMailQuestItems": "You cannot mail quest items.",
+        "notEnoughItems": "You do not have that many to send.",
+        "cantAffordPostage": "You cannot afford the postage.",
+        "recipientBoxFull": "Their mailbox is full.",
+        "letterGone": "That letter is no longer in your box.",
+        "takeParcelsFirst": "Take the parcels out before discarding the letter."
+      }
+    },
+    "bank": {
+      "title": "Bank",
+      "subtitle": "The Gilded Strongbox",
+      "close": "Close bank",
+      "capacity": "{used}/{total}",
+      "capacityAria": "Bank slots used: {used} of {total}",
+      "empty": "Your bank is empty.",
+      "tooFar": "You must be at a banker to view your bank.",
+      "buySlots": "Buy {count} slots",
+      "buySlotsMaxed": "Fully expanded",
+      "buyConfirm": "Purchase {count} additional bank slots for {price}?",
+      "buyConfirmAccept": "Purchase",
+      "withdrawHint": "Click to withdraw",
+      "withdrawPartialHint": "Shift-click to withdraw a partial amount",
+      "depositHint": "Click to deposit",
+      "depositPartialHint": "Shift-click to deposit a partial amount",
+      "cannotDeposit": "Cannot be banked",
+      "depositQuantityTitle": "Deposit {item}",
+      "depositQuantityInput": "Quantity to deposit",
+      "depositQuantityConfirm": "Deposit",
+      "withdrawQuantityTitle": "Withdraw {item}",
+      "withdrawQuantityInput": "Quantity to withdraw",
+      "withdrawQuantityConfirm": "Withdraw",
+      "filterGroupAria": "Filter bank by category",
+      "sortAria": "Sort bank items",
+      "searchAria": "Search bank items by name",
+      "depositAll": "Deposit all materials",
+      "depositAllDone": "Materials deposited: {count}.",
+      "depositAllFull": "Materials deposited: {count}. Bank now full.",
+      "depositAllNone": "Bank full: nothing deposited.",
+      "bonusTitle": "Bonus slots",
+      "bonusEarned": "+{count}",
+      "bonusStatusEarned": "+{count}",
+      "bonusSourceEmail": "Verified email",
+      "bonusSourceDiscord": "Discord linked",
+      "bonusSourceWallet": "Wallet linked",
+      "bonusSourceReferral": "Referred friends",
+      "bonusAdvertEmail": "Verify your email to earn 2 slots.",
+      "bonusAdvertDiscord": "Link your Discord to earn 2 slots.",
+      "bonusAdvertWallet": "Link a wallet to earn 2 slots.",
+      "bonusReferralProgress": "{count}/{cap}",
+      "bonusReferralExplainer": "Invite a friend: when they reach level 10 you each earn 2 slots, up to 5 friends.",
+      "bonusSectionAria": "Bonus bank slots and how to earn more"
+    },
+    "calendar": {
+      "title": "Event Calendar",
+      "close": "Close calendar",
+      "keybindLabel": "Event Calendar",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "dayAria": "{date}: {count} events",
+      "noEvents": "Nothing planned for this day.",
+      "allDay": "All day",
+      "bookedBy": "Booked by {name}",
+      "deleteAria": "Remove the event {title}",
+      "bookTitle": "Book a guild event",
+      "titlePlaceholder": "Event title",
+      "notePlaceholder": "Note (optional)",
+      "hourLabel": "Hour (UTC)",
+      "hourAllDay": "All day",
+      "addButton": "Book event",
+      "guildOnlyNote": "Join a guild to plan events together.",
+      "result": {
+        "created": "The event is on the guild calendar.",
+        "removed": "The event was taken off the calendar.",
+        "notInGuild": "You are not in a guild.",
+        "notOfficer": "Only officers and the Guild Master may manage guild events.",
+        "badInput": "Give the event a title and a valid day.",
+        "calendarFull": "The guild calendar is full.",
+        "eventGone": "That event is no longer on the calendar."
+      },
+      "events": {
+        "raidCall": {
+          "title": "Raid Call",
+          "note": "Wardens sound the horn: gather a party for the crypts and the raid."
+        },
+        "marketDay": {
+          "title": "Market Day",
+          "note": "The Merchant expects fresh stock. A fine day to browse the World Market."
+        },
+        "fiestaNight": {
+          "title": "Fiesta Night",
+          "note": "The 2v2 Fiesta ring draws its loudest crowds tonight."
+        },
+        "arenaClash": {
+          "title": "Arena Clash",
+          "note": "Duelists flock to the Ashen Coliseum. Queue up and climb the ladder."
+        },
+        "fishingDerby": {
+          "title": "Fishing Derby",
+          "note": "Anglers line the lakes. Bring a pole and swap fishing tales."
+        },
+        "delveDay": {
+          "title": "Delve Day",
+          "note": "Brother Halven marks his charts: a fine day to brave the Collapsed Reliquary."
+        },
+        "moongateCommunion": {
+          "title": "Moongate Communion",
+          "note": "Pilgrims gather at the temple moongate under the mid-month moon."
+        }
+      }
+    },
+    "social": {
+      "lastSeen": "Last seen: {when}",
+      "lastSeenNever": "never"
+    },
+    "gathering": {
+      "title": "Gathering",
+      "mining": "Mining",
+      "logging": "Logging",
+      "herbalism": "Herbalism"
+    },
+    "archetypeTitle": {
+      "label": "Title",
+      "none": "None",
+      "hobbyLabel": "Hobby",
+      "armorcrafting": "Armorer",
+      "weaponcrafting": "Weaponsmith",
+      "jewelcrafting": "Jeweler",
+      "alchemy": "Alchemist",
+      "engineering": "Tinkerer",
+      "cooking": "Chef",
+      "inscription": "Scribe",
+      "enchanting": "Enchanter",
+      "tailoring": "Tailor",
+      "leatherworking": "Leathercrafter"
+    },
+    "crafting": {
+      "title": "Crafting",
+      "close": "Close crafting",
+      "craft": "Craft",
+      "reagentsNeeded": "Requires:",
+      "reagentLine": "{name} x{have}/{required}",
+      "empty": "No recipes known yet.",
+      "resultAria": "Craft {name}",
+      "craftedToast": "Crafted: {name}",
+      "insufficientMaterials": "You do not have the materials for that.",
+      "unknownRecipe": "That recipe does not exist.",
+      "comboRequirementUnmet": "You do not have both required crafts at the required tier for that recipe.",
+      "notAtHub": "You must be at the crafting hub, at the required level, to craft that.",
+      "throttled": "You are crafting too quickly. Wait a moment and try again.",
+      "recipeNotLearned": "You have not learned that recipe yet."
+    }
+  },
+  "apiError": {
+    "validation": {
+      "failed": "Some fields are invalid. Check the form and try again."
+    },
+    "json": {
+      "malformed": "That request could not be read. Please try again."
+    },
+    "body": {
+      "too_large": "That request is too large. Try again with less data.",
+      "unsupported_media_type": "Unsupported request format."
+    },
+    "db": {
+      "conflict": "That change conflicted with another update. Please try again."
+    },
+    "rate_limit": {
+      "exceeded": "Too many requests. Try again in {seconds}."
+    },
+    "internal": {
+      "error": "Something went wrong on our end. Please try again."
+    },
+    "auth": {
+      "token_missing": "You need to be signed in to do that.",
+      "token_invalid": "Your session has expired. Please sign in again.",
+      "forbidden": "You do not have permission to do that.",
+      "invalid_credentials": "Invalid username or password.",
+      "required": "Not authenticated.",
+      "web_login_only": "Logins are only allowed from the game client.",
+      "too_many_attempts": "Too many attempts. Wait a minute and try again.",
+      "too_many_failed_attempts": "Too many failed attempts. Wait a few minutes and try again.",
+      "current_password_incorrect": "Your current password is incorrect.",
+      "password_incorrect": "Your password is incorrect.",
+      "verification_failed": "Verification failed. Please try again."
+    },
+    "account": {
+      "username_invalid": "Username must be 3-24 characters and use letters, digits, or underscore.",
+      "username_not_allowed": "That username is not allowed.",
+      "username_taken": "That username is already taken.",
+      "username_mismatch": "That username does not match your account.",
+      "password_too_short": "Password must be at least 6 characters.",
+      "password_too_long": "New password must be at most 128 characters.",
+      "characters_online": "Log out all of your characters before deactivating.",
+      "deactivated": "This account has been deactivated. Contact an admin to restore it.",
+      "not_found": "Account not found."
+    },
+    "character": {
+      "name_invalid": "Invalid character name. Use 2-16 letters.",
+      "name_not_allowed": "That character name is not allowed.",
+      "invalid_class": "Invalid class.",
+      "limit_reached": "Character limit reached.",
+      "name_taken": "That name is taken.",
+      "not_found": "Character not found.",
+      "online": "Character is currently online.",
+      "rename_not_permitted": "Renaming this character is not allowed.",
+      "delete_confirm": "Type the character name to confirm deletion.",
+      "already_in_world": "Character is already in world.",
+      "taken_over": "Your character was taken over by another session.",
+      "rename_required": "This character must be renamed before entering the world."
+    },
+    "moderation": {
+      "suspended_until": "This account is suspended until {date}.",
+      "suspended": "This account is suspended.",
+      "banned": "This account has been banned.",
+      "force_rename": "A moderator requires one of your characters to be renamed."
+    },
+    "email": {
+      "invalid": "Enter a valid email address.",
+      "unchanged": "That is already your email address."
+    },
+    "two_factor": {
+      "code_invalid": "That code is not valid, try again.",
+      "setup_required": "Start two-factor setup first.",
+      "already_enabled": "Two-factor is already enabled.",
+      "not_enabled": "Two-factor is not enabled."
+    },
+    "origin": {
+      "cross_site": "Request blocked for security reasons."
+    },
+    "discord": {
+      "not_configured": "Discord integration is not available right now.",
+      "expired": "That Discord sign-in expired. Please sign in with Discord again.",
+      "already_linked": "That Discord account is already linked to another account.",
+      "password_required": "Set a password before unlinking your Discord account.",
+      "unknown_swag": "That reward is not available.",
+      "link_required": "Link your Discord account first.",
+      "swag_claimed": "You have already claimed this reward.",
+      "swag_tier": "Reach a higher rank to claim this.",
+      "swag_points": "Not enough points."
+    }
+  },
+  "guide": {
+    "brand": "World of ClaudeCraft",
+    "brandShort": "ClaudeCraft",
+    "tagline": "A classic-style MMO you play free in your browser.",
+    "skipToContent": "Skip to main content",
+    "loading": "Loading...",
+    "docTitle": "{page} - {brand}",
+    "related": "Related",
+    "nav": {
+      "overview": "Overview",
+      "howToPlay": "How to Play",
+      "classes": "Classes",
+      "bestiary": "Bestiary",
+      "models": "3D Models",
+      "gear": "Gear & Items",
+      "professions": "Professions",
+      "economy": "Economy & Trade",
+      "social": "Social & Groups",
+      "stats": "Character & Stats",
+      "progression": "Leveling & Progression",
+      "world": "World",
+      "quests": "Quests",
+      "dungeons": "Dungeons & Raids",
+      "delves": "Delves",
+      "reference": "Reference",
+      "controls": "Controls",
+      "settings": "Settings & Performance",
+      "combat": "Combat",
+      "talents": "Talents",
+      "arena": "Arena & PvP",
+      "valeCup": "Vale Cup",
+      "glossary": "Glossary",
+      "wishIKnew": "Things I Wish I Knew",
+      "faq": "FAQ",
+      "playNow": "Play Now",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "primary": "Guide sections",
+      "topics": "Topics",
+      "onThisPage": "On this page",
+      "backToGame": "Back to the game"
+    },
+    "groups": {
+      "start": "Get Started",
+      "compendium": "Compendium",
+      "reference": "Reference"
+    },
+    "breadcrumb": {
+      "label": "Breadcrumb",
+      "home": "Guide"
+    },
+    "seq": {
+      "label": "Page navigation",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "toc": {
+      "heading": "On this page"
+    },
+    "footer": {
+      "blurb": "An open-source, classic-style micro-MMO. Quest, group up, and explore a hand-built world, right in your browser.",
+      "playNow": "Play Now",
+      "github": "Source on GitHub",
+      "discord": "Join the Discord",
+      "communityWiki": "Community Wiki",
+      "rights": "World of ClaudeCraft"
+    },
+    "language": {
+      "label": "Language",
+      "select": "Choose a language"
+    },
+    "search": {
+      "label": "Search",
+      "placeholder": "Search the guide",
+      "noResults": "No matches",
+      "typePage": "Page",
+      "typeClass": "Class",
+      "typeZone": "Zone",
+      "typeCreature": "Creatures",
+      "typeDungeon": "Dungeon",
+      "typeDelve": "Delve",
+      "typeTerm": "Term"
+    },
+    "home": {
+      "eyebrow": "Classic-style browser MMO",
+      "title": "World of ClaudeCraft",
+      "subtitle": "Quest, group up, and explore a hand-built world, free in your browser.",
+      "ctaPlay": "Play Now",
+      "ctaLearn": "How to Play",
+      "what": {
+        "heading": "A classic MMO, made to be picked up",
+        "pillarPlayTitle": "Play in your browser",
+        "pillarPlayBody": "No download, no launcher. Make a character and you are in the world in seconds, on desktop or phone.",
+        "pillarClassesTitle": "Nine classes, three roles",
+        "pillarClassesBody": "Tank, heal, or deal the damage. Every class plays the way its archetype should, with talents to make it yours.",
+        "pillarOpenTitle": "Free and open source",
+        "pillarOpenBody": "Free to play to the level cap, with the whole game open source. No pay to win, ever."
+      },
+      "classes": {
+        "heading": "Choose your class",
+        "sub": "Nine classic archetypes, each with its own feel and party role.",
+        "cta": "Explore the classes"
+      },
+      "world": {
+        "heading": "Explore the world",
+        "sub": "One continuous land, three zones, from quiet valleys to frozen peaks.",
+        "levels": "Levels {min} to {max}",
+        "cta": "See the world",
+        "valeName": "Eastbrook Vale",
+        "valeBlurb": "Green hills and old woods where every adventure begins.",
+        "marshName": "Mirefen Marsh",
+        "marshBlurb": "Sunken fens and tide-worn ruins, home to mudfins and worse.",
+        "peaksName": "Thornpeak Heights",
+        "peaksBlurb": "Wind-scoured ridges climbing toward the realm's coldest dangers."
+      },
+      "group": {
+        "heading": "Group up for the hard parts",
+        "sub": "The world is soloable, but the best loot waits behind a good party.",
+        "dungeonsTitle": "Dungeons",
+        "dungeonsBody": "Instanced dives for a party of five, scaling with the zones around them.",
+        "raidTitle": "The raid",
+        "raidBody": "A ten-player capstone for those who reach the top of the world.",
+        "arenaTitle": "The arena",
+        "arenaBody": "Step into the Ashen Coliseum and prove yourself against other players.",
+        "cta": "Dungeons and Raids"
+      },
+      "faq": {
+        "heading": "Good to know",
+        "q1": "Is it free to play?",
+        "a1": "Yes. The whole game is free to the level cap, and it is open source on GitHub.",
+        "q2": "Do I need a crypto wallet?",
+        "a2": "No. The game is fully playable without one. The optional community token only unlocks cosmetic flair and never affects power.",
+        "q3": "Can I play offline?",
+        "a3": "Yes. There is an instant single-player mode in your browser, plus the shared online world.",
+        "q4": "How long to reach max level?",
+        "a4": "The cap is level {cap}, reached across three zones of quests, dungeons, and exploration."
+      },
+      "community": {
+        "heading": "Join the world",
+        "body": "Jump in now, or come say hello. The world is better with company.",
+        "play": "Play Now",
+        "discord": "Join the Discord",
+        "github": "Star on GitHub"
+      }
+    },
+    "howToPlay": {
+      "intro": "New to this kind of game? You will be questing in minutes. Here is the short version, one step at a time.",
+      "firstHeading": "Your first 15 minutes",
+      "step1Title": "Make a character",
+      "step1Body": "Pick a class and a look, give your hero a name, and enter the world. You can make more characters later.",
+      "step2Title": "Find your first quest",
+      "step2Body": "Marshal Redbrook is waiting in the starting town. Talk to him and accept Wolves at the Door.",
+      "step3Title": "Move and look around",
+      "step3Body": "Move with W, A, S, D. Hold the right mouse button and drag to look around. That is most of it.",
+      "step4Title": "Fight something",
+      "step4Body": "Press Tab to target the nearest enemy, then press your abilities on the bar (keys 1 through 0) to attack.",
+      "step5Title": "Turn it in",
+      "step5Body": "Finish the objective, return to the quest giver (look for the marker on your map), and collect your reward.",
+      "step6Title": "Keep going",
+      "step6Body": "You just hit level 2. Follow the quest trail out of town and the world opens up from there.",
+      "basicsHeading": "The basics",
+      "resourcesTitle": "Resources",
+      "resourcesBody": "Spells and abilities cost a resource. Warriors build Rage by fighting, rogues spend Energy that refills on its own, and everyone else casts from a pool of Mana.",
+      "targetingTitle": "Targeting and your bar",
+      "targetingBody": "Tab cycles enemies, F interacts and loots, and your action bar holds the abilities you have learned. Drag spells onto it from your spellbook.",
+      "questsTitle": "Quests",
+      "questsBody": "Accept quests from people with a marker over their head, complete the objective, and turn them in for experience, coin, and gear. The tracker on screen keeps your goals in view.",
+      "deathTitle": "Death is not the end",
+      "deathBody": "If you fall, you release your spirit and revive at the nearest graveyard, back to full health, then make your way to where you were. No experience is lost.",
+      "groupingTitle": "Playing together",
+      "groupingBody": "Invite others to a party to share quest credit and take on dungeons. Most of the world is soloable, so grouping is a choice, not a chore.",
+      "onlineTitle": "Online or offline",
+      "onlineBody": "Play the shared online world with everyone else, or start an instant offline world in your browser to learn the ropes.",
+      "reassure": "Talents unlock at level 10 and can be reset at any time, so your early choices are never permanent. Experiment freely.",
+      "controlsLink": "See the full controls reference"
+    },
+    "controls": {
+      "intro": "Default keys for desktop. Every binding can be changed in the game's options.",
+      "keyHeader": "Key",
+      "actionHeader": "Action",
+      "groupMovement": "Movement",
+      "groupCombat": "Targeting and combat",
+      "groupInterface": "Interface",
+      "groupCamera": "Camera",
+      "talents": "Talents",
+      "arena": "Arena",
+      "leaderboard": "Leaderboard",
+      "abilities": "Use action bar abilities (the number row; a second bar sits on the numpad)",
+      "targetFriendly": "Target nearest friendly",
+      "cycleFriendly": "Cycle friendly target",
+      "gameMenu": "Open game menu and options",
+      "mobileHeading": "On mobile",
+      "mobileBody": "Touch controls appear automatically on phones and tablets: a movement stick on the left, drag anywhere on the right to look, and on-screen buttons for your abilities and menus.",
+      "controllerHeading": "On a controller",
+      "controllerBody": "Gamepads work too, and controller support is on by default. The left stick moves, the right stick aims the camera, and the face and shoulder buttons cover your abilities, jumping, and interacting. Open any window to bring up an on-screen pointer for menus. You can remap the buttons and adjust stick deadzone, camera speed, vibration, and inverted look from the controller settings in the options."
+    },
+    "settingsPage": {
+      "heading": "Settings & Performance",
+      "intro": "Make the game look its best or run its fastest. Three ready-made loadouts, plus what every graphics option really does.",
+      "wherePath": "Everything on this page lives in the game: press Esc and look in Graphics, Interface, and Performance Overlay.",
+      "fairnessTitle": "Fair by design",
+      "fairnessBody": "No option here trades beauty for power. Lower settings shed cosmetic polish only, never information you fight with: your debuffs, cast bars, party health, and damage numbers are identical from Low to Ultra. Playing on a modest machine is never a handicap.",
+      "loadoutsHeading": "Three ready-made loadouts",
+      "loadoutsIntro": "Start from the loadout that sounds like your machine, then adjust one option at a time until it feels right.",
+      "recommended": "Recommended",
+      "whyLabel": "Why it works:",
+      "tagReload": "after reload",
+      "fpsTitle": "Best FPS",
+      "fpsTagline": "For older laptops, integrated graphics, and battery play.",
+      "fpsWhy": "Graphics Quality is the master switch, and Render Quality is the strongest slider: at 70% the world draws roughly half the pixels while the interface stays perfectly sharp.",
+      "balancedTitle": "Balanced",
+      "balancedTagline": "The sweet spot for most machines, and our default advice.",
+      "balancedWhy": "Medium brings real shadows and full materials; High adds ambient occlusion and bloom. Below Ultra a built-in safety net absorbs sudden dips in busy fights, so Balanced stays smooth without babysitting.",
+      "visualsTitle": "Best Visuals",
+      "visualsTagline": "Screenshot mode for powerful desktop machines.",
+      "visualsWhy": "Ultra renders at the highest resolution your display offers with the richest lighting. It also switches the safety net off, and it is desktop-only: phones and the app top out at High.",
+      "value50to70": "50 to 70%",
+      "value90to100": "90 to 100%",
+      "value100": "100%",
+      "valueHighOrMedium": "High on a gaming PC, Medium on a laptop",
+      "valueOnOptional": "On (optional)",
+      "howHeading": "How the options behave",
+      "factDetectTitle": "The game tunes itself first",
+      "factDetectBody": "On your first launch the game reads your device and picks a sensible tier, from Low on a modest phone to Ultra on a strong desktop. Any choice you make yourself always wins.",
+      "factReloadTitle": "Two kinds of options",
+      "factReloadBody": "Graphics Quality and the Advanced pickers take effect after a reload, and the panel offers a Reload Now button when needed. Every other option applies the moment you change it.",
+      "factGovernorTitle": "A built-in safety net",
+      "factGovernorBody": "On every tier below Ultra, the game quietly thins grass, effects, and lighting for a moment when a big fight spikes, then restores them. Choosing Ultra tells it you would rather keep every detail.",
+      "advancedHeading": "The Advanced preset: mix your own",
+      "advancedBody": "Advanced starts from the High tier and unlocks four extra pickers, so you can spend your frames where you actually notice them: Terrain Detail, Foliage Density, Effects & Lighting, and Shadow Quality. Like Graphics Quality, they apply after a reload.",
+      "advancedMixes": "Two favorite mixes: keep Shadow Quality on High and set Effects & Lighting to Low for a crisp, glow-free look that runs light, or do the reverse to keep the bloom and soften the shadows.",
+      "tableHeading": "Every option, explained",
+      "colSetting": "Setting",
+      "colDoes": "What it does",
+      "colImpact": "FPS impact",
+      "impactNone": "None",
+      "impactLight": "Light",
+      "impactModerate": "Moderate",
+      "impactHeavy": "Heavy",
+      "rowGraphicsQuality": "The master switch. Each step changes resolution, shadows, materials, foliage, and lighting effects together. The biggest single difference you can make.",
+      "rowRenderQuality": "Draws the 3D world at a lower internal resolution and scales it up; the interface stays sharp. The strongest instant slider on weaker machines and high-resolution screens.",
+      "rowFieldOfView": "How much of the world fits on screen, from a zoomed 55 to a sweeping 100 degrees. A comfort choice; wider views draw slightly more.",
+      "rowBrightness": "Scene exposure, darker or brighter. Pure preference.",
+      "rowWeather": "Ambient rain and snow. Atmosphere only, and switching it off saves a little during storms.",
+      "rowBrowserEffects": "How fancy the interface itself is allowed to be: glass blur, glow, animated menus. Auto matches your browser; the 3D world is untouched either way.",
+      "rowTerrainDetail": "Rich, blended ground textures versus a simpler, faster terrain look.",
+      "rowFoliageDensity": "How far and how thick the grass grows around your character.",
+      "rowEffectsQuality": "Bloom, ambient occlusion, and how many torches and spells cast real light. The single biggest saving among the Advanced pickers.",
+      "rowShadowQuality": "Shadow crispness. Low keeps shadows but softens their edges.",
+      "rowFrostedPanels": "A frosted-glass blur behind windows. Pretty, and exactly the kind of effect a weaker browser feels; leave it off for the classic crisp look.",
+      "rowReduceMotion": "Removes interface animations so windows appear instantly. An accessibility option first, with a small performance bonus.",
+      "rowPerfOverlay": "An on-screen readout of FPS, frame time, and more. Turn it on while you tune this page, then hide it again.",
+      "tableFoot": "Looking for a draw-distance slider or an FPS cap? There is nothing to hunt for: view distance is part of each quality tier, and frame pacing follows your display.",
+      "mobileTitle": "On phones and tablets",
+      "mobileBody": "Mobile manages more for you: the game picks the tier, holds resolution a touch lower to protect battery and heat, and keeps the highest tiers desktop-only. The loadouts above still apply; phones simply top out at High."
+    },
+    "combat": {
+      "intro": "Combat follows familiar classic-MMO rules. You never need to study any of it to play well, this is just the shape of how fights work.",
+      "hitTitle": "Not every blow lands",
+      "hitBody": "Attacks can miss or be dodged, and so can the enemy's, while spells can be resisted outright. Fighting close to your own level is what keeps your hits connecting; the wider the level gap, the more you swing at air.",
+      "mitigationTitle": "Armor and health keep you standing",
+      "mitigationBody": "Armor softens physical hits, so better armor is your main source of staying power in melee. Magic is another matter: you weather spells with a deeper health pool and the chance to resist one outright, not with armor. Heavier armor classes shrug off more, but nothing makes you untouchable.",
+      "resourcesTitle": "Every class has its own rhythm",
+      "resourcesBody": "Warriors build Rage in the thick of a fight, rogues spend Energy that steadily returns, and casters manage a pool of Mana. Learning your resource is half of playing your class well.",
+      "growTitle": "You grow stronger every level",
+      "growBody": "Each level makes you tougher and unlocks new abilities, all the way to the cap of level {cap}. Questing is the fastest way up; dungeons and exploration round it out.",
+      "effectsTitle": "Buffs, debuffs, and crowd control",
+      "effectsBody": "Many abilities apply an effect that lingers. Helpful ones (buffs) raise your stats, shield you, or heal you a little at a time; harmful ones (debuffs) drain your health with damage over time or weaken you. Watch the small icons near your action bar to see what is on you and how long it lasts.",
+      "ccBody": "Crowd control is a special kind of debuff that limits what a target can do: stuns, roots and slows, silences that stop spellcasting, disarms, fears, and transformations that turn a foe harmless for a moment. Some of these, like roots, fears, and transforms, lose their hold when they are reapplied too quickly, so they cannot be chained forever.",
+      "deathTitle": "When you fall",
+      "deathBody": "If your health reaches zero you are downed. Release your spirit to revive at the nearest graveyard at full health, then make your way back, so a death costs you a little time, not your progress. Between fights, sit to eat and drink so you start the next one at full strength."
+    },
+    "glossary": {
+      "intro": "A quick reference for the terms used across this guide and in chat.",
+      "aggroTerm": "Aggro",
+      "aggroDef": "An enemy's attention. The player generating the most threat holds aggro and gets attacked.",
+      "threatTerm": "Threat",
+      "threatDef": "How much an enemy wants to attack you. The tank's job is to hold more threat than everyone else.",
+      "gcdTerm": "Global cooldown",
+      "gcdDef": "The short, shared pause after using most abilities, so you cannot fire everything at once.",
+      "dpsTerm": "DPS",
+      "dpsDef": "Damage per second, a rough measure of how fast something deals damage. Also used for the damage-dealing role itself, as in a tank, a healer, and three DPS.",
+      "buffTerm": "Buff",
+      "buffDef": "A helpful effect on you or an ally, like a blessing that raises a stat for a while.",
+      "debuffTerm": "Debuff",
+      "debuffDef": "A harmful effect on a target, like a slow, a bleed, or weakened armor.",
+      "dotTerm": "DoT and HoT",
+      "dotDef": "Damage over time and healing over time: effects that tick in steady pulses instead of all at once.",
+      "ccTerm": "Crowd control",
+      "ccDef": "Abilities that stun, root, or otherwise take an enemy out of the fight for a moment.",
+      "procTerm": "Proc",
+      "procDef": "A chance-based effect that fires off something else, like a bonus that sometimes triggers when you attack.",
+      "eliteTerm": "Elite",
+      "eliteDef": "A tougher-than-normal enemy, usually meant for a group. Dungeon and rare enemies are often elite.",
+      "rareTerm": "Rare",
+      "rareDef": "An uncommon named enemy that wanders a zone and drops better loot.",
+      "mobTerm": "Mob",
+      "mobDef": "Any computer-controlled creature in the world, friendly or hostile. Short for mobile.",
+      "tankTerm": "Tank",
+      "tankDef": "The party member who holds enemy aggro and absorbs the damage so others can fight safely.",
+      "healerTerm": "Healer",
+      "healerDef": "The party member who keeps everyone alive with healing spells.",
+      "specTerm": "Spec",
+      "specDef": "A specialization: the path you lean your class toward, like healing or damage, as you spend talents.",
+      "pullTerm": "Pull",
+      "pullDef": "To draw an enemy or group into a fight, usually deliberately and one batch at a time.",
+      "instanceTerm": "Instance",
+      "instanceDef": "A private copy of a dungeon or raid made just for your party.",
+      "raidTerm": "Raid",
+      "raidDef": "A larger group, up to ten players here, formed for the toughest endgame encounter; a party converts into one once it is full.",
+      "delveTerm": "Delve",
+      "delveDef": "A short, replayable instanced descent for one or two players, run from a keeper's board with a companion at your side.",
+      "augmentTerm": "Augment",
+      "augmentDef": "A temporary boost you draft during a two-on-two Fiesta arena match that reshapes your kit for that match only."
+    },
+    "faqPage": {
+      "intro": "The questions new players ask most often.",
+      "q1": "Is it really free?",
+      "a1": "Yes. The whole game is free to play to the level cap, and the source code is open on GitHub.",
+      "q2": "Do I need a crypto wallet or any tokens?",
+      "a2": "No. The game is fully playable without one. The optional community token only unlocks cosmetic flair and never affects power or progression.",
+      "q3": "Can I play on my phone?",
+      "a3": "Yes. The game runs in a mobile browser with touch controls, and there is a desktop launcher as well.",
+      "q4": "Can I play offline or solo?",
+      "a4": "Yes. There is an instant single-player offline mode, and the online world is fully soloable apart from dungeons and the raid.",
+      "q5": "How many classes are there?",
+      "a5": "Nine, covering the classic tank, healer, and damage roles, each with a resource system (rage, mana, or energy) and its own signature abilities.",
+      "q6": "What is the level cap?",
+      "a6": "Level {cap}, reached across three connected zones of quests, dungeons, and exploration.",
+      "q7": "Will my character be saved?",
+      "a7": "Online characters are saved on the server automatically. Offline characters live in your browser for quick sessions and testing.",
+      "q8": "Can I host my own copy?",
+      "a8": "Yes. The project is open source, so you can run your own server. See the GitHub repository.",
+      "q9": "Is there PvP?",
+      "a9": "Yes. Duel anyone for fun, or step into the Ashen Coliseum to fight other players. PvP is opt in, so you are never forced into it.",
+      "q10": "What is there to do at max level?",
+      "a10": "The cap is level {cap}. From there you run the five-player dungeons and the ten-player raid, chase better gear, and test yourself in the arena.",
+      "q11": "How do I find a group?",
+      "a11": "Invite anyone you meet to a party, ask in chat, or team up at a dungeon. Most of the world is soloable, so grouping is a choice, not a requirement."
+    },
+    "classList": {
+      "heading": "The nine classes",
+      "sub": "Tank, heal, or deal the damage. Pick the fantasy that calls to you, then make it your own with talents."
+    },
+    "role": {
+      "tank": "Tank",
+      "healer": "Healer",
+      "damage": "Damage"
+    },
+    "resourceName": {
+      "rage": "Rage",
+      "mana": "Mana",
+      "energy": "Energy"
+    },
+    "classPage": {
+      "back": "All classes",
+      "roleLabel": "Plays as",
+      "resourceLabel": "Resource",
+      "specsHeading": "Specializations",
+      "abilitiesHeading": "Signature abilities",
+      "abilitiesNote": "A taste of the kit. You learn more as you level, and talents reshape how it all plays.",
+      "masteryLabel": "Mastery",
+      "fullKitHeading": "The full kit",
+      "fullKitNote": "Every ability this class can learn, in the order it comes online. Talents decide which ones carry your build.",
+      "petsHeading": "Demons",
+      "petsNote": "Warlocks summon demons to fight beside them, each suited to a different job."
+    },
+    "classHook": {
+      "warrior": "A relentless front-line fighter who turns every blow taken into fuel for the next.",
+      "paladin": "A holy warrior who can shield allies, mend their wounds, or bring the hammer down.",
+      "hunter": "A ranged marksman with a loyal beast at their side and a trick for every foe.",
+      "rogue": "A master of stealth and poisons who strikes from the shadows and never fights fair.",
+      "priest": "A devoted healer whose light keeps the party standing, or whose shadow unmakes the enemy.",
+      "shaman": "A spirit-caller who bends storm, fire, and water, and mends allies between the lightning.",
+      "mage": "A spellweaver of fire, frost, and arcane who controls the battlefield from afar.",
+      "warlock": "A dark conjurer who commands demons and curses, trading life for devastating power.",
+      "druid": "A shapeshifter who tanks as a bear, savages foes as a cat, or heals in the thick of it."
+    },
+    "tag": {
+      "melee": "Melee",
+      "ranged": "Ranged",
+      "both": "Melee or ranged",
+      "solo": "Solo friendly",
+      "group": "Group oriented",
+      "flexible": "Flexible",
+      "simple": "Simple",
+      "moderate": "Moderate",
+      "complex": "Complex",
+      "goodFirst": "Great first class"
+    },
+    "chooser": {
+      "heading": "Find your class",
+      "intro": "Filter by how you like to play. Every class is viable, so this only narrows the field, it does not rank them.",
+      "role": "Role",
+      "style": "Style",
+      "resource": "Resource",
+      "complexity": "Complexity",
+      "goodFirst": "Good for beginners",
+      "clear": "Clear",
+      "results": "Showing {count} of {total}",
+      "none": "No class matches every filter. Clear one to see more."
+    },
+    "abilityHook": {
+      "heroic_strike": "Queues a heavier swing that spends rage on your next hit.",
+      "battle_shout": "A rallying cry that raises attack power for the party.",
+      "commanding_shout": "Bolsters stamina so everyone has more staying power in a fight.",
+      "charge": "Rushes a distant enemy to open the fight with a brief stun.",
+      "rend": "Opens a bleed that wears the target down over time.",
+      "thunder_clap": "Hits everything around you and slows their attacks.",
+      "seal_of_righteousness": "Imbues your swings with Holy damage, then spend it with Verdict.",
+      "holy_light": "A steady, sizable heal for topping off an ally or yourself.",
+      "devotion_aura": "A lasting self-buff that raises armor so hits land softer.",
+      "judgement": "Spends your active Seal to strike an enemy from short range.",
+      "blessing_of_might": "Raises a friendly target's attack power, good to cast before a pull.",
+      "divine_protection": "A quick protective ward to soak damage when things get rough.",
+      "raptor_strike": "A hard melee swing for when something closes the gap on you.",
+      "aspect_of_the_hawk": "A stance you keep up to sharpen your ranged attack power.",
+      "serpent_sting": "Lands a venom that bleeds nature damage over time.",
+      "arcane_shot": "An instant shot from range for quick extra damage.",
+      "concussive_shot": "Dazes the target and slows it so it cannot reach you.",
+      "mongoose_bite": "A counterstrike that opens up right after the enemy dodges.",
+      "sinister_strike": "Your reliable strike that builds combo points to spend later.",
+      "eviscerate": "Spends your combo points to finish a target with a burst.",
+      "garrote": "Open from stealth with a wire that bleeds the target over time.",
+      "backstab": "Slip behind a target with a dagger for a hard-hitting builder.",
+      "gouge": "Incapacitates the target briefly so you can reposition or peel.",
+      "cheap_shot": "Open from stealth with a stun and a head start on combo points.",
+      "smite": "A holy bolt for chipping down a target from range.",
+      "lesser_heal": "A steady cast to top up an ally when there is time to stand still.",
+      "power_word_fortitude": "Raises an ally's health pool, so cast it before the pull and keep it up.",
+      "shadow_word_pain": "Sticks a shadow rot on a foe, then you move on while it ticks.",
+      "power_word_shield": "Wraps an ally in a shield that soaks hits before they land.",
+      "renew": "A heal that ticks over time, good to cast and keep moving.",
+      "lightning_bolt": "A ranged cast of Nature damage, your go-to from afar.",
+      "rockbiter_weapon": "Imbues your weapon so each swing lands harder in melee.",
+      "healing_wave": "Your main heal, a direct mend for yourself or an ally.",
+      "earth_shock": "An instant shock for quick Nature damage when you need it now.",
+      "lightning_shield": "Charges you so attackers take Nature damage when they hit you.",
+      "flame_shock": "An instant burn that hits up front and keeps searing over time.",
+      "fireball": "Your main fire nuke, lands a hit and leaves the target burning.",
+      "frost_armor": "A lasting self-buff that hardens your armor before a fight.",
+      "arcane_intellect": "Raises Intellect to deepen an ally's mana pool, cast it before the pull.",
+      "frostbolt": "Strikes from range and slows the target so it cannot close on you.",
+      "conjure_water": "Conjures drinks that restore mana, so you can refill between pulls.",
+      "conjure_food": "Conjures food that restores health when you sit down to eat.",
+      "shadow_bolt": "A bolt of shadow you cast at a target, your go-to nuke.",
+      "summon_imp": "Calls up an Emberkin that flings firebolts at enemies from range.",
+      "demon_skin": "A lasting self-buff that toughens your skin and adds armor.",
+      "immolate": "Sets a target alight for an opening hit and a burn that lingers.",
+      "corruption": "Rots a target with shadow that ticks while you do other things.",
+      "life_tap": "Trades some of your own health back into mana when you run dry.",
+      "wrath": "A nature bolt thrown at a target from range, your go-to nuke.",
+      "healing_touch": "A big single-target heal with a long cast, for topping someone off.",
+      "mark_of_the_wild": "A lasting blessing you put on yourself or an ally before a fight.",
+      "moonfire": "Hits instantly and leaves the target burning, good while moving.",
+      "rejuvenation": "Casts instantly and heals an ally over time, so you can keep acting.",
+      "thorns": "Wards an ally so melee attackers hurt themselves for striking."
+    },
+    "petHook": {
+      "emberkin": "A ranged firebolt demon that chips at enemies from a safe distance.",
+      "gloomshade": "A sturdy demon that taunts and soaks hits so you can cast in peace.",
+      "duskborn": "A fast melee demon that hits hard but folds under pressure.",
+      "spellhound": "A shadow skirmisher that hounds enemy casters.",
+      "warfiend": "A durable melee bruiser, the all-rounder once you can summon it.",
+      "pyre_colossus": "A hulking juggernaut with crushing melee, summoned for raw power.",
+      "wraithborn": "An elite caster that rains heavy shadow from afar."
+    },
+    "bestiary": {
+      "heading": "Bestiary",
+      "intro": "The creatures of the world, grouped by family. These are the foes you meet out in the open. The deadliest things wait, unlisted, behind dungeon doors.",
+      "rare": "Rare",
+      "levels": "Levels {min} to {max}",
+      "levelsSame": "Level {min}",
+      "notedLabel": "Of note",
+      "flavor": {
+        "old_greyjaw": "A scarred old wolf no trap has held, blamed for three hounds and a stable boy's arm. He hunts the deep woods alone, and turns savage the longer a fight wears on.",
+        "grubjaw": "A fen troll so greedy the other trolls will not dig beside him, said to have eaten a trader's last two pack-mules, harness and all.",
+        "shardlord_kazzix": "A storm elemental given shoulders, walking the far crags above Stormcrag with a heartshard worth braving the lightning for.",
+        "mirejaw_frenzy": "A marsh mudfin that whips itself into a thrashing frenzy mid-fight, the loudest thing in a loud, territorial pack.",
+        "gravecaller_cultist": "Robed servants of the death-cult whose work fouls the graves from the Vale to the peaks. Where they gather, the dead do not rest."
+      }
+    },
+    "family": {
+      "beast": {
+        "name": "Beasts",
+        "desc": "Wild animals of forest and field, from wolves and boars to the things that prey on them. Hunters can tame many of them."
+      },
+      "spider": {
+        "name": "Spiders",
+        "desc": "Web-spinners and venomous lurkers that nest in dark, tangled places. Hunters can tame them, the same as beasts."
+      },
+      "mudfin": {
+        "name": "Mudfins",
+        "desc": "Amphibious marsh-dwellers that swarm the shallows in noisy, territorial packs."
+      },
+      "burrower": {
+        "name": "Burrowers",
+        "desc": "Dirt-caked diggers that infest mines and burrows, fiercely guarding their ore."
+      },
+      "humanoid": {
+        "name": "Humanoids",
+        "desc": "Bandits, cultists, and others who took up the wrong trade. They fight with tactics, not just teeth."
+      },
+      "troll": {
+        "name": "Trolls",
+        "desc": "Hulking brutes that lair in the marshes of the fen."
+      },
+      "ogre": {
+        "name": "Ogres",
+        "desc": "Enormous, slow-witted, and dangerous. They camp the high passes and hit like a landslide."
+      },
+      "undead": {
+        "name": "Undead",
+        "desc": "The restless dead, raised by darker hands. They do not tire and they do not flee."
+      },
+      "elemental": {
+        "name": "Elementals",
+        "desc": "Living storm and stone, bound to the wild places where the elements run strong."
+      },
+      "dragonkin": {
+        "name": "Dragonkin",
+        "desc": "Scaled, serpentine things of the old depths. Rare, proud, and far stronger than they look."
+      }
+    },
+    "worldPage": {
+      "heading": "The world",
+      "intro": "World of ClaudeCraft is one continuous land you cross on foot, three zones laid south to north. There is no fast travel, so the journey is part of the adventure.",
+      "hub": "Home base",
+      "mapHeading": "The road north",
+      "mapSub": "Three zones, south to north, each a step higher in level. Follow the quest trail and the land carries you from the valley to the peaks.",
+      "places": "Notable places",
+      "residents": "Who you will meet",
+      "valeBlurb": "The green starting valley, where new heroes cut their teeth on wolves and bandits around the town of Eastbrook.",
+      "marshBlurb": "A drowned country of fog and ruins. Mudfins swarm the shallows and something older stirs beneath the water, watched from the bridge-town of Fenbridge.",
+      "peaksBlurb": "Wind-scoured ridges and old mine-works climbing to the realm's coldest, highest dangers, held by the outpost of Highwatch.",
+      "valeGreeting": "Keep your blade close. The Vale is not what it was.",
+      "valeGreeter": "Marshal Redbrook, Eastbrook",
+      "marshGreeting": "Hold at the gate. Past those reeds, the fen does the killing for us.",
+      "marshGreeter": "Warden Fenwick, Fenbridge",
+      "peaksGreeting": "Two hundred years this wall has held. It will not break on my watch, but it groans.",
+      "peaksGreeter": "Captain Thessaly, Highwatch",
+      "valePlaceNotes": "Eastbrook is your first home base. Wolf Run and Boar Meadow are gentle hunting ground; Mirror Lake is quiet water to fish; the Sableweb and the Copper Dig hide spiders and ore-greedy diggers; a Bandit Camp and the Fallen Chapel hold rougher work; Reliquary Hill drops into the Collapsed Reliquary, the realm's first delve; and Brightwood Glade is a quiet, sunlit grove to the north.",
+      "marshPlaceNotes": "Fenbridge guards the only dry road. The Prowler Reeds and Deepfen Shallows teem with marsh beasts and mudfins; the Widow Thicket is spun thick with web; the Drowned Chapel and the Troll Mounds keep older dangers; the Gravecaller Encampment is the cult dug in, and the Sunken Bastion is the marsh's instanced heart.",
+      "peaksPlaceNotes": "Highwatch holds the wall. Stalker Ridge and the Deeprock Burrows belong to ridge cats and burrowers; the Ogre Foothills and Drogmar's War-Camp to brutes for hire; Stormcrag crackles with elementals and the Glimmermere glows below it; the Wyrmcult Tents and Revenant Fields ring the cult's high ground, with Gravewyrm Sanctum at its peak.",
+      "gladeTitle": "A quiet corner: Brightwood Glade",
+      "gladeBody": "Not every story in the Vale is about the dead. In the north, a sunlit grove called Brightwood Glade keeps its own gentler rhythm, all quiet paths and dappled light beneath the boughs. It is a soft counterpoint to the trail you are following, and worth seeing when the road gives you room to wander."
+    },
+    "questsPage": {
+      "heading": "Quests",
+      "intro": "Quests are the heart of the world and the fastest way to level. Here is how they work.",
+      "acceptTitle": "Finding and accepting",
+      "acceptBody": "People with a marker over their head have work for you. Talk to them to accept a quest. Your very first is Wolves at the Door, from Marshal Redbrook in Eastbrook.",
+      "objectivesTitle": "Objectives",
+      "objectivesBody": "Slay certain enemies, gather items, or interact with something in the world. The on-screen tracker counts your progress as you go. If you change your mind, you can drop a quest from your quest log and pick it up again from its giver later.",
+      "turninTitle": "Turning in",
+      "turninBody": "Take a finished quest to its turn-in marker, the map shows you where, for experience, coin, and often a piece of gear chosen to suit your class. That is usually the one who gave it to you, though some quests send you on to someone else.",
+      "partyTitle": "Questing in a group",
+      "partyBody": "Party members nearby share kill and objective credit, so questing together is faster, never slower. You can also share a quest with your group: post it to chat as a clickable link with the /share command, and any nearby member who qualifies can pick up the same quest in one click.",
+      "storyTitle": "A thread runs through it all",
+      "storyBody": "From your first errands in Eastbrook, something is wrong with the dead. A cult is at work, and the trail leads north through every zone. Follow it to learn who stands behind it.",
+      "soloNote": "The main story is soloable right up to each chapter's finale, which is a five-player dungeon.",
+      "typesTitle": "The kinds of quest you will see",
+      "typesBody": "Most quests are one of a few familiar shapes. The on-screen tracker spells out exactly what each one wants, so you are never left guessing.",
+      "typeSlayTitle": "Slay",
+      "typeSlayBody": "Thin out a pack of beasts or break a cult's hold by defeating a set number of a marked enemy. The first quest in the game, clearing wolves off the Eastbrook road, is one of these.",
+      "typeGatherTitle": "Gather",
+      "typeGatherBody": "Collect items from the world or from what enemies drop: herbs, ore, lost letters, a cult's grim reagents. Some pieces only fall from a particular foe, so the hunt and the haul go together.",
+      "typeInteractTitle": "Interact",
+      "typeInteractBody": "Use, cleanse, or read something fixed in the world: a defiled grave, a warning carved on a shore-rock, a sealed crypt door. Walk up to the marker and act on it.",
+      "typeMusterTitle": "Muster the defense",
+      "typeMusterBody": "Some quests have you rally a town before a push north: thin the threat at the gates and gather what the defenders need. These are slay and gather objectives in service of the people whose story you are in, and they keep you moving with them.",
+      "typeGroupTitle": "Group finales",
+      "typeGroupBody": "Each chapter of the main story ends at a dungeon door. The lead-in is soloable, but the final blow against a chapter's villain is meant for a party of five.",
+      "sagaTitle": "Follow the trail north",
+      "sagaBody": "The main story is one long chase. A death-cult is at work on the realm's graves, and every chapter you close points one zone further up the road. You never fight the whole conspiracy at once; you pull one thread, and it leads to the next hand holding it.",
+      "sagaValeTitle": "The Vale: a name on a sigil",
+      "sagaValeBody": "In Eastbrook the dead will not rest, and the mark behind it belongs to a sect long thought gone. Trace it to a Gravecaller working the chapel crypt, and his own papers point you toward the fen in the north.",
+      "sagaMarshTitle": "The marsh: a tithe of souls",
+      "sagaMarshBody": "In Mirefen the drownings are no accident. Someone is filling the fen like a tithing box, raising obedient dead from every traveler the water takes. Chase the orders up the chain to a Fogbinder in the drowned bastion, whose last words name something older still, stirring beneath the peaks.",
+      "sagaPeaksTitle": "The peaks: what the tithe was for",
+      "sagaPeaksBody": "On Thornpeak the whole scheme comes clear. Every soul stolen since the Vale was a tithe poured toward the cult's grim work in the mountain's heart. The trail that began in a chapel yard ends here, in a five-player descent to face the hand behind it all. We will let you find out who waits at the bottom.",
+      "sideTitle": "Threads off the main road",
+      "sideWardenTitle": "Earning your name",
+      "sideWardenBody": "Alongside the story, the marshals and wardens of the Vale and the fen hand out a standing bounty ladder. Work your way up it, foe by foe, the way every bounty hunter before you earned their place. It is honest leveling and a tour of each zone's worst troublemakers.",
+      "sideCryptTitle": "The forgotten king",
+      "sideCryptBody": "High on the peaks runs a quieter mystery: old graves marked with a crown no record remembers. Read the dead, gather what they guarded, and unseal a tomb that was meant to stay shut. It is a detective's trail that opens the way to the realm's ten-player endgame raid.",
+      "sideTempleTitle": "The drowned temple",
+      "sideTempleBody": "A gate of pale light on a high tarn in the peaks opens onto a sunken shrine where a drowned cult still sings. Its short chain stands apart from the main story, a self-contained mystery for anyone who climbs to the shore, reads the warnings carved on the rocks, and goes down to see what they were for."
+    },
+    "lore": {
+      "figuresTitle": "Faces you will come to know",
+      "figuresBody": "A handful of people walk the whole road with you. Watch for these names from the valley to the peaks.",
+      "aldricRole": "Priest of the Vale",
+      "aldricBody": "A humble village priest who first names the cult over a defiled grave in Eastbrook, then follows its trail in person through the marsh and up to the wall at Highwatch. He is the steady heart of the whole campaign.",
+      "marenRole": "The Marshal's Scout",
+      "marenBody": "A low-talking tracker you meet in the reeds of Mirefen, all quiet feet and a short blade. She follows the trail north too, and it is her ear that catches the words that send you to the peaks."
+    },
+    "dungeonsPage": {
+      "heading": "Dungeons and Raids",
+      "intro": "When the open world is not enough, gather a party and step into an instance: a private copy of a dungeon made just for your group.",
+      "party": "Dungeons are built for a party of five. The endgame raid is for ten.",
+      "soloLead": "Every dungeon opens with a soloable lead-in quest, so you always know why you are going in.",
+      "levelAround": "Around level {n}",
+      "levelExact": "Level {n}",
+      "levelBand": "Levels {min} to {max}",
+      "partySize": "{n} players",
+      "raidSize": "Ten players, level {n}",
+      "hollowName": "The Hollow Crypt",
+      "hollowBody": "A grave-robbed chapel crypt where the newly dead refuse to rest. The first real test of a new party.",
+      "bastionName": "The Sunken Bastion",
+      "bastionBody": "A flooded fortress lost to the marsh, held by drowned defenders and the rising tide itself.",
+      "templeName": "The Drowned Temple",
+      "templeBody": "A moonlit shrine sunk beneath a glowing tarn high in the peaks, reached through a gate of cold light. A drowned cult still sings down there in its rotted vestments, and the warnings carved on the shore say something below only sleeps. A self-contained mystery, set apart from the main story, for the curious and the well-prepared.",
+      "sanctumName": "Gravewyrm Sanctum",
+      "sanctumBody": "The dark heart of Thornpeak, where the cult's long work reaches its terrible peak.",
+      "raidName": "The endgame raid",
+      "raidBody": "Beyond a sealed royal door waits a ten-player trial: a multi-phase fight and a deathless power the whole raid must shut down together. Earn your way in, then bring nine friends.",
+      "templeLoreTitle": "The Drowned Temple, a little deeper",
+      "templeLoreBody": "The temple has its own legend, older than the cult you chase elsewhere. On the shore of the Glimmermere, a tarn that drinks the moonlight and gives back the drowned, a lone watcher keeps a gate of pale light. Beneath the surface, a stair of cold stone runs down to it. The folk who sank there did not drown by misadventure: they were the Pale Choir, who went under in worship and never stopped singing. The old wardens scratched a single warning into the rocks before the water took them, a prayer to something they called the Drowned Moon, with a steadier hand adding two words beneath it: it only sleeps.",
+      "cryptLeadTitle": "A door the dead were meant to keep shut",
+      "cryptLeadBody": "High on the peaks, away from the main fight, lies a colder mystery. Old graves bear a crown no record remembers, and the dead who guard them once served a forgotten king. Read their stones, gather the keystones they kept, and you can unseal a tomb that three loyal souls died to hold closed, the optional trial that opens the realm to its ten-player raid for those who follow the clues to the end."
+    },
+    "delvesPage": {
+      "heading": "Delves",
+      "intro": "Delves are short, replayable descents for one or two, with a loyal companion at your side whenever you go down alone. Find the board, choose a run, and climb back out with the spoils.",
+      "fromLevel": "From level {n}",
+      "partyLabel": "For one or two",
+      "keeperLabel": "Keeper",
+      "keeperFmt": "{name}, {title}",
+      "companionLabel": "Companion",
+      "companionFmt": "{name}, {role}",
+      "tiersLabel": "Difficulties",
+      "affixesLabel": "Possible modifiers",
+      "whatHeading": "What a delve is",
+      "whatBody": "A delve is a small instanced dungeon made just for you and up to one ally, a private copy you cannot be disturbed in. You start it from a board kept by a delve keeper out in the world, drop in, fight down through a handful of rooms, and finish on a single guardian. Runs are quick and meant to be repeated, so a delve is a reliable bit of progress whenever the open world runs dry.",
+      "howHeading": "How a run works",
+      "howBody": "Talk to the keeper to open the board, pick a difficulty, and descend. Each run strings together a few short chambers and ends at its guardian; clear it to claim your reward and return to the surface. Bring a friend if you have one, or lean on your companion if you do not.",
+      "companionHeading": "Your companion",
+      "companionBody": "A delve sends a companion down with you, so a solo run is never hopeless. She fights at your side, and as you invest in her between runs she grows steadily stronger, until she can pull an ally back from the brink once a descent. She is yours for the delve and waits at the board between runs.",
+      "lockpickHeading": "Locks and what they hide",
+      "lockpickBody": "Some doors and caches are sealed, and opening one is a small test of nerve rather than a stat check: solve the lock cleanly and steadily and you earn a better prize than a rushed, fumbled one. It is optional, but the careful delver is the richer one.",
+      "tiersHeading": "Difficulty",
+      "tiersBody": "A delve offers more than one difficulty. The higher one makes the enemies stronger and rolls in a run modifier, and pays out more in return. It also asks that you have a few levels under your belt before it will let you in.",
+      "affixesHeading": "Run modifiers",
+      "affixesBody": "Harder runs roll a modifier that changes how the descent plays, from restless dead to foul air to failing roof-work. They raise the danger and the reward together. A crypt-themed delve can roll any of these:",
+      "marksHeading": "Delve Marks",
+      "marksBody": "Clearing delves earns Delve Marks, a currency kept apart from your coin. Spend them at the keeper to strengthen your companion and pick up gear you will not find anywhere else.",
+      "whereHeading": "Where to find one",
+      "whereBody": "The first delve, the Collapsed Reliquary, opens at Reliquary Hill in the starting valley of Eastbrook Vale. Brother Halven keeps the board there, and he will send you down once you are ready."
+    },
+    "talentsPage": {
+      "heading": "Talents and specializations",
+      "intro": "Talents are how you make a class your own. They are optional, forgiving, and easy to change, so you can experiment without fear.",
+      "whatHeading": "What talents do",
+      "whatBody": "As you level, you earn talent points to spend on small, permanent upgrades to your abilities and stats. They shape how a class feels, leaning it toward more damage, sturdier defense, or stronger healing.",
+      "howHeading": "How they work",
+      "howBody": "Talents open up at level 10, and you keep earning points as you climb to the cap. You spend them in your class's talent panel, and you can save more than one layout to swap between builds.",
+      "shareNote": "A finished build can be copied to a short shareable code and handed to a friend, who pastes it straight into their own talent panel to load it.",
+      "resetTitle": "Nothing is permanent",
+      "resetNote": "You can reset your talents any time you are out of combat, so an early pick is never a trap. Try things, see what you like, and change your mind freely.",
+      "specsHeading": "Specializations by class",
+      "specsBody": "Every class has a handful of specializations, each with its own role and a signature focus. Here is the shape of all of them. Open a class for its full kit."
+    },
+    "arenaPage": {
+      "heading": "Arena and PvP",
+      "intro": "Want to test yourself against other players? Player versus player is built in, and it is always something you choose, never something forced on you.",
+      "duelsHeading": "Duels",
+      "duelsBody": "Challenge any player you meet to a friendly duel. Nothing is on the line but pride, so it is the easiest way to learn a matchup or settle a friendly argument.",
+      "coliseumHeading": "The Ashen Coliseum",
+      "coliseumBody": "The Coliseum is the realm's arena, where you face other players in ranked matches, one on one or two on two. Each bracket keeps its own standing, so a win lifts you up that ladder for the whole realm to see.",
+      "fiestaHeading": "Two versus two Fiesta",
+      "fiestaBody": "Fiesta is a fast, two-on-two mode played in short rounds. Between rounds you draft augments, quick boosts that reshape your kit on the fly, so no two matches play quite the same.",
+      "augmentsNote": "Augments and power-ups last only for the match. They are about playful, on-the-spot builds, not lasting power, so nobody buys their way to a win.",
+      "wavesTitle": "Augments arrive in waves",
+      "wavesBody": "Each round of a Fiesta hands you a fresh pick, and the picks grow bolder as the match goes on. You build from one wave to the next, choosing one of a few options each time and keeping it for the rest of the bout.",
+      "waveSilverTitle": "Silver",
+      "waveSilverBody": "The opening wave: clean, single-stat boosts that sharpen the basics of your class.",
+      "waveGoldTitle": "Gold",
+      "waveGoldBody": "The middle wave: two-edged combos where your build starts to take shape and sing.",
+      "wavePrismaticTitle": "Prismatic",
+      "wavePrismaticBody": "The final wave: build-defining, screen-melting spikes meant to feel ridiculous in the best way.",
+      "yumiHeading": "Protect Yumi",
+      "yumiBody": "Protect Yumi is a team objective mode played in a maze: each side guards its own cat familiar while hunting the other. Every so often both cats blink to new corners of the maze, so the fight swings between defending, hunting, and racing to find them again. Queue as three versus three or five versus five; falling in battle only benches you for a moment.",
+      "powerupsTitle": "Power-ups in the ring",
+      "powerupsBody": "Glowing orbs also drop into the arena mid-fight, free for whoever reaches them first. They are deliberately over the top and last only a short while: Speed Demon for a blink of blinding pace, Colossus to swell up into a lumbering giant, Moon Boots for a bouncing, low-gravity leap, and Berserker for a sudden surge of fury.",
+      "ladderHeading": "Climbing the ladder",
+      "ladderBody": "Ranked play tracks your standing over time. Check the leaderboard to see where you sit and who holds the top of the realm."
+    },
+    "valeCupPage": {
+      "heading": "The Vale Cup",
+      "intro": "Boarball at the Sowfield: pick a banner, pick a role, and kick a stuffed boar hide past a keeper for the Copper Pail. No blood, no loot, just the roar of the stands.",
+      "loreHeading": "Boarball and the harvest truce",
+      "loreOldSow": "Long before the dead woke, Eastbrook's farmhands played boarball on the stubble fields after harvest: two mobs, one boar's hide stuffed with straw, and two wagon gates dragged to either end of the green. The first ball, the Old Sow, hangs bronzed above the tavern hearth.",
+      "loreTruce": "When the Ashen Coliseum began sanctioning war games, Marshal Redbrook answered with something gentler: a standing harvest truce on the old green. The wagon gates became goalposts, the green got walls, stands, and a name, the Sowfield, and the prize was always the same dented milk pail the winners drank from: the Copper Pail.",
+      "howHeading": "How to play",
+      "howQueue": "Queue from anywhere through the Vale Cup window, or talk to Groundskeeper Bram at the Sowfield gate. Pick a bracket from one-a-side up to five-a-side, a banner nation, and a sport role; queue solo or bring your party.",
+      "howMatch": "On kickoff your class kit is swapped for a sport kit and restored exactly afterward. Kicks aim at the ground reticle, the ball banks off the boards, and dribbling is just running with the ball. Score more goals than the other side before full time; a draw goes to golden goal.",
+      "howTruce": "Nobody bleeds at the Sowfield: tackles tumble, nothing hurts, and pets sit the match out.",
+      "spectateBody": "One match plays at a time at the stadium, and anyone can walk up and watch from the stands.",
+      "nationsHeading": "The eight banner nations",
+      "nationsBody": "Every team plays under a banner. The captain picks the nation, and if both sides fly the same one, the away side plays the inverted palette.",
+      "nationVale": "Green and gold, flying the wheat sheaf: the home side, farmhands to the bone.",
+      "nationMirefen": "Teal and grey under the heron: patient, long-legged, never hurried.",
+      "nationThornpeak": "Ice blue and white under the mountain peak: sure-footed and stubborn.",
+      "nationColiseum": "Red and black with crossed swords: they play like it is still a war game.",
+      "nationChoir": "Pale blue and silver under the bell: eerie, precise, and very quiet.",
+      "nationOgre": "Orange and umber behind the fist: shoulder-first and proud of it.",
+      "nationMoon": "Violet and silver under the crescent: night players, light on their feet.",
+      "nationCopperdig": "Copper and brown with the pickaxe: diggers who never stop running.",
+      "rolesHeading": "Sport roles",
+      "rolesBody": "Your role decides the kit you carry onto the pitch. Everyone kicks; the rest is temperament.",
+      "rewardsHeading": "Truce rules",
+      "rewardsBody": "Truce rules mean no experience and no loot: a decided match counts toward your record and the winners board, and daily-reward points come with it. Deserting a match benches your slot, and the Groundskeeper remembers."
+    },
+    "wishPage": {
+      "heading": "Things I wish I knew",
+      "intro": "A few honest truths that save new players a lot of second-guessing. None of it is required reading, but all of it helps.",
+      "i1Title": "You cannot pick a wrong class",
+      "i1Body": "Every class can hold its own and reach the cap. Choose the fantasy you like, not the one someone else calls best.",
+      "i2Title": "Dying barely costs you",
+      "i2Body": "When you fall, you release your spirit and revive at the nearest graveyard, then make your way back. No experience is lost, so it is safe to take risks and learn.",
+      "i3Title": "Talents are not a trap",
+      "i3Body": "They unlock at level 10 and reset whenever you want, so your early choices are never permanent.",
+      "i4Title": "Follow the quest trail",
+      "i4Body": "Quests are the fastest way to level and they lead you across the world. When you are unsure where to go, find the next marker.",
+      "i5Title": "Keep your gear current",
+      "i5Body": "A fresh upgrade does more for you than perfect play in old gear. Take the quest rewards that suit your class.",
+      "i6Title": "Grouping is a choice, not a chore",
+      "i6Body": "Most of the world is soloable. Team up for dungeons and the raid, or just when you want some company.",
+      "i7Title": "Learn your resource",
+      "i7Body": "Rage, mana, or energy, managing it well is half of playing your class. Watch that bar, not only your cooldowns.",
+      "i8Title": "Rest between fights",
+      "i8Body": "Eat and drink to recover quickly, especially as a caster. A few seconds now saves a death later."
+    },
+    "viewer": {
+      "view3d": "View {name} in 3D",
+      "view3dShort": "View in 3D",
+      "loading": "Loading model...",
+      "error": "The 3D model could not be loaded. The art above still shows this {name}.",
+      "dragHint": "Drag to turn the model. Use the left and right arrow keys when it is focused.",
+      "canvasLabel": "Rotatable 3D model of {name}",
+      "posterAlt": "{name}"
+    },
+    "models": {
+      "title": "3D Model Viewer",
+      "lead": "Inspect the heroes, monsters, and demons of the world up close. Choose a model, then drag to turn it.",
+      "intro": "Every figure here is the same model you meet in the game, rendered live in your browser. Pick one to load it.",
+      "groupClasses": "Classes",
+      "groupCreatures": "Creatures",
+      "groupPets": "Warlock Demons",
+      "pickerLabel": "Choose a model to view",
+      "count": "{count} models",
+      "noWebgl": "This browser cannot display 3D models. Everything is still listed on the class and bestiary pages."
+    },
+    "gear": {
+      "intro": "Gear is the equipment your character wears and the items you carry. Better gear is the steadiest way to grow stronger, and you pick most of it up just by playing.",
+      "slotsTitle": "What you can equip",
+      "slotsBody": "You have a weapon slot and seven armor slots. Each class can use only certain weapons and wears armor up to its own weight, cloth, leather, or mail, so the upgrades that fit you are the ones made for your class. Within that, fill every slot with the best piece you find.",
+      "slotMainhand": "Weapon",
+      "slotHelmet": "Head",
+      "slotShoulder": "Shoulders",
+      "slotChest": "Chest",
+      "slotWaist": "Waist",
+      "slotLegs": "Legs",
+      "slotGloves": "Hands",
+      "slotFeet": "Feet",
+      "qualityTitle": "Quality, at a glance",
+      "qualityBody": "Every item has a quality, and its name is colored to match so you can read its worth at a glance. From most common to most prized:",
+      "qualityPoor": "Poor",
+      "qualityCommon": "Common",
+      "qualityUncommon": "Uncommon",
+      "qualityRare": "Rare",
+      "qualityEpic": "Epic",
+      "qualityLegendary": "Legendary",
+      "qualityNote": "Higher quality usually means better stats, but quality is a hint, not a rule. A well-matched piece for your class and level can beat a flashier one.",
+      "upgradeTitle": "Keep your gear current",
+      "upgradeBody": "Replacing an old piece with a fresh upgrade does more for you than playing perfectly in gear you have outgrown. When something better drops or a quest offers it, take it. Do not save your good items for later.",
+      "itemLevelBody": "If you want a quick way to compare two pieces, turn on Show Item Level in the options. Each weapon and armor piece then shows an item level, a single figure for roughly how powerful it is based on where it came from, so you can tell at a glance which upgrade pulls more weight, even across different slots.",
+      "sourcesTitle": "Where gear comes from",
+      "sourcesBody": "Most of your early upgrades are quest rewards, so it pays to finish quests rather than grind. Enemies drop gear when you defeat them, vendors in town sell solid basics, and the player market lets you buy from other adventurers.",
+      "setsTitle": "Sets and set bonuses",
+      "setsBody": "The rarest armor comes in matched families, several pieces cut to look and fight as one. Wear enough of a family at once and the set wakes up, granting bonuses on top of each piece's own stats, and the more pieces you wear the stronger it gets. These drop from the toughest group content near the level cap, so chasing a full set is a classic endgame goal.",
+      "consumablesTitle": "Consumables",
+      "consumablesIntro": "Some items are used once for a quick benefit. They are cheap insurance, so keep a few on hand.",
+      "consumablesPotions": "Potions restore health or mana the moment you use them, even mid-fight, which makes them a clutch save when a pull goes wrong. They share a short cooldown, so plan one good moment to use them.",
+      "consumablesFood": "Food and drink restore you while you sit and rest between fights. Eating recovers health, drinking recovers mana, and resting this way is free. Sit down for a few seconds after a tough fight instead of running into the next one half-healed.",
+      "consumablesElixirs": "Elixirs grant a temporary buff while you adventure, a small edge that helps when you want to push a little further.",
+      "fishingTitle": "Fishing",
+      "fishingBody": "Fishing is a calm change of pace. Equip a fishing pole, cast into open water, and reel in what bites. You mostly catch fish that are food you can eat, the odd bit of junk to sell for a few coins, and now and then a prized rare catch. What you find depends on the water you fish in.",
+      "fishingFood": "The fish you reel in are food: eat one while you sit to rest and it restores health, with the heartier fish coming from the colder, deeper waters in the north. A line in the lake is a quiet way to keep your pack stocked between fights.",
+      "fishingRare": "Now and then your line catches something far better than supper: a shimmering prized fish that any angler might luck into in any water. Hook one and your log lights up with the catch. It is the kind of lucky pull that makes an idle afternoon at the lake worth telling people about.",
+      "cosmeticsTitle": "Looks and cosmetics",
+      "cosmeticsBody": "Some rewards change only how your character looks, never how strong you are. These cosmetic skins let you stand out without affecting the game, so wear whichever you like.",
+      "cosmeticsRanks": "Cosmetics come in rarity tiers of their own, and the rarer ones are a fun thing to chase. Earning a higher tier also unlocks the looks below it.",
+      "cosmeticsSkins": "There are two cosmetic lines to collect. Most classes have several alternate appearances, a fresh take on the class look that is yours to wear. Alongside them sit chromas: named two-tone color schemes that repaint a look entirely, from sober metals to bright imperial colors.",
+      "cosmeticsCache": "A few of these come from a mysterious cosmetic cache, a sealed prize that rolls one of three quality grades when you open it and grants the appearance to match. It is purely for looks: nothing inside it makes you stronger, only finer to look at.",
+      "cosmeticsApply": "Set your active look from the appearance row on your character screen, and switch freely among everything you have unlocked."
+    },
+    "professions": {
+      "intro": "Beyond combat and quests, the world rewards you for working the land and the forge: gathering raw materials, turning them into gear at the crafting stations of ten different trades, and settling into an identity as one of the ten archetypes those trades represent.",
+      "gatherTitle": "Gathering: Mining, Logging, and Herbalism",
+      "gatherIntro": "Three gathering trades let you pull raw materials straight out of the world: Mining strikes ore and stone from veins, Logging fells timber from stands of trees, and Herbalism collects herbs and plants growing wild. Each is tracked separately, so working one never slows your progress in another.",
+      "gatherWhatTitle": "Resource nodes",
+      "gatherWhatBody": "Ore veins, wood stands, and herb patches are placed out in the zones as visible, unowned fixtures. Walk up to one and interact with it to harvest whatever it holds. Once you have harvested a node, it needs time to recover before you personally can harvest it again, though it never blocks anyone else: another player can harvest the very same node in the meantime.",
+      "gatherProficiencyTitle": "Proficiency and material quality",
+      "gatherProficiencyBody": "Every successful harvest builds your proficiency in that gathering trade. A higher proficiency shifts what you pull out of a node toward rarer grades of material, from common on up, though the rarest grades stay rare even at high proficiency. More practice never hurts your odds, it only ever improves them.",
+      "gatherToolsTitle": "Tools of the trade",
+      "gatherToolsBody": "Vendors sell basic tools for each gathering trade, and better ones can be crafted, so working a resource node is meant to feel more capable as you gear up for it rather than staying static. Higher-tier tools are the intended way to unlock access to richer nodes and to work them more efficiently over a long session.",
+      "craftTitle": "The ten crafts",
+      "craftIntro": "Ten crafting trades turn gathered materials into finished gear and goods: Armorcrafting, Weaponcrafting, and Jewelcrafting shape raw matter into wearable gear; Alchemy and Engineering are driven by trial and error; Cooking, Inscription, and Enchanting each touch other crafts' output; Tailoring and Leatherworking work from exact patterns. Together they form a wheel, with each craft sitting next to two neighbors and opposite one other.",
+      "craftRingTitle": "A wheel of specialties",
+      "craftRingBody": "The ten crafts are arranged in a fixed ring, and where a craft sits on that ring matters: crafts next to each other on the wheel share more in common with each other than crafts on opposite sides do. Committing to one craft is meant to feel like joining a family of related trades, not picking an isolated skill.",
+      "craftRecipesTitle": "Recipes and reagents",
+      "craftRecipesBody": "Every craft has its own recipes, each calling for specific reagents you gather or buy. The most basic recipes in each craft ask for nothing but common materials and are craftable from the very start, so you can begin working a trade the moment you pick it up rather than waiting to unlock it.",
+      "craftMasteryTitle": "Skill and mastery",
+      "craftMasteryBody": "Crafting successfully builds skill in that trade, and richer recipes are gated behind higher skill: the basic recipes are open to everyone, while progressively more advanced ones ask for progressively more mastery to attempt. Growing your skill in a craft is the path from simple starter goods to its more ambitious recipes.",
+      "craftComboTitle": "Combination recipes",
+      "craftComboBody": "Beyond a single craft's own recipe list, the wheel also supports combination recipes that call on two neighboring crafts at once, rewarding a character (or a pair of trading partners) who has invested in adjacent trades on the ring rather than one in isolation.",
+      "archetypeTitle": "The ten archetypes",
+      "archetypeIntro": "Each of the ten crafts also stands for an archetype, a broader identity you can adopt beyond just working that trade. Your active archetype is a single choice at a time, not a checklist: you carry one, and can change which one later if you choose to.",
+      "archetypeChooseTitle": "Choosing your archetype",
+      "archetypeChooseBody": "You declare your first archetype through an early, zone one story quest that formally accepts you into that identity. Until you complete that quest, you have not yet chosen an archetype at all.",
+      "archetypeSwitchTitle": "Changing your mind",
+      "archetypeSwitchBody": "Having declared an archetype once does not lock you into it forever. Changing to a different archetype means first completing a repeatable \"make amends\" quest for your old one, and each time you switch, the amends expected of you the next time grow a little steeper, so switching stays meaningful rather than costless.",
+      "archetypeIdentityTitle": "What your archetype means",
+      "archetypeIdentityBody": "Your active archetype is a statement about who your character is in the world, recognized in how others and the world address you. The exact rewards and recognition that come with it are still being finalized; check back as the system fills in."
+    },
+    "economy": {
+      "intro": "Coin oils the whole world: it buys your gear, supplies, and travel kit, and changes hands between players. You pick all of this up just by playing, so think of this page as a map of where your money comes from and goes.",
+      "coinTitle": "Gold, silver, and copper",
+      "coinBody": "Money comes in three coins. A hundred copper make a silver, and a hundred silver make a gold, so your purse fills up from the smallest coin first. You earn it from quest rewards, from looting fallen enemies, and from selling what you no longer need.",
+      "vendorsTitle": "Vendors and what they keep",
+      "vendorsBody": "Towns and outposts are dotted with merchants, each with their own trade. Provisioners stock food and drink, weaponsmiths and armorers carry gear, and a quartermaster keeps practical travel kit. Walk up to one to see what they sell.",
+      "marksTitle": "A second currency: Delve Marks",
+      "marksBody": "Coin is not the only thing you bank. Delves pay out Delve Marks, a separate currency you spend only at the delve keeper, on companion upgrades and gear you will not find elsewhere. They never mix with your coin.",
+      "bankTitle": "The bank",
+      "bankBody": "Every hub town keeps a branch of The Gilded Strongbox, the banking house of the realm. Speak to the bursar there to open your vault, a private store of room beyond your bags that your character keeps for life. Whatever you leave with them waits safely, whichever branch you visit next.",
+      "bankHow": "With the vault open, click an item in your bags to deposit it and click it in the vault to take it back. The vault holds goods only, never coin, and quest items stay with you. When your bags fill up mid-journey, one button sweeps all your crafting materials in at once.",
+      "bankSlots": "A fresh vault starts small and grows with you. The bursar sells further slots for coin at ever-steeper prices, and playing online earns bonus room on top, for things like a verified email, linked accounts, and friends you bring into the game.",
+      "buyingTitle": "Buying and selling",
+      "buyingBody": "Stand near a merchant to open their window. You can buy anything they stock if you can afford it, and sell most of what is in your bags for coin. If you sell something by mistake, a vendor will hold your recent sales so you can buy them back.",
+      "junkTitle": "Clearing out junk",
+      "junkBody": "Drops you have no use for still sell to any vendor, so empty your bags whenever you pass through town rather than letting them fill up. Truly worthless odds and ends can also be discarded outright to make room.",
+      "tradeTitle": "Trading with other players",
+      "tradeBody": "You can trade face to face with anyone standing near you. Both of you put items and coin into a shared window and the swap only happens once you both confirm it, so neither side can be caught out. It is the simple way to hand a friend a drop or settle a deal.",
+      "marketTitle": "The World Market",
+      "marketBody": "The Merchant runs the World Market, a player-driven exchange where you can buy and sell with people you may never meet. Speak to the Merchant to open it. The Merchant also keeps a standing stock of their own goods listed there, so there is always something to buy even when no other players have posted.",
+      "marketBrowse": "Browsing: scroll the listings or search by name to find what is for sale. Each listing shows the goods, the seller, and the asking price for the whole stack.",
+      "marketPost": "Posting: choose a stack from your bags, set your price, and list it. The goods are held by the Merchant until someone buys them. Unsold listings come back to you after a while, and you can reclaim one early if you change your mind.",
+      "marketCollect": "Collecting: when your goods sell, your proceeds wait for you at the Merchant. Return to collect the coin, along with anything that came back unsold. The Merchant takes a small cut of every completed sale.",
+      "marketPricing": "Pricing is up to you. Listing a little under what others are asking tends to sell faster, while a steep price may sit untouched. Browse first to see what the going rate looks like before you post."
+    },
+    "social": {
+      "intro": "Most of the world is soloable, but the game is built to be played with other people. Here is how to talk, team up, and find your crowd.",
+      "chatHeading": "Chat channels",
+      "chatBody": "Chat is split into channels, each shown on its own tab. Type a message to send it on the active channel, or use a slash command to direct one line elsewhere. These are the channels you can talk on:",
+      "chanSay": "Say.",
+      "chanSayBody": "Your default voice. It reaches players close to you and is the one to use while questing side by side.",
+      "chanYell": "Yell.",
+      "chanYellBody": "A louder version of Say that carries a bit farther, enough to reach across a camp.",
+      "chanWhisper": "Whisper.",
+      "chanWhisperBody": "A private message to one player by name, wherever they are. Use it for a quiet word.",
+      "chanParty": "Party.",
+      "chanPartyBody": "Talk to everyone in your group, no matter how spread out you are.",
+      "chanGeneral": "General.",
+      "chanGeneralBody": "An always-on realm-wide channel that reaches everyone online, good for asking a question or general chatter. Unlike World and Looking for Group, you never have to opt in.",
+      "chanWorld": "World.",
+      "chanWorldBody": "A realm-wide channel you opt into. Open its tab to join, and you will see and reach everyone online.",
+      "chanLfg": "Looking for Group.",
+      "chanLfgBody": "An opt-in realm-wide channel for finding people to run a dungeon. Open its tab to join.",
+      "chanGuild": "Guild and Officer.",
+      "chanGuildBody": "Channels for your guild. Guild chat reaches every member; the officer channel is just for officers.",
+      "partyHeading": "Forming a party",
+      "partyBody": "Invite another player by right-clicking their name and choosing to invite. A party holds up to five players, and one of you is the leader.",
+      "partyCredit": "Group members near each other share kill and quest credit, so questing together is faster, never slower. A party is also how you step into a dungeon as a team.",
+      "raidBody": "Once you have a full party of five, the leader can convert it into a raid of up to ten, for the endgame raid.",
+      "lootHeading": "Party loot",
+      "lootBody": "When you group up, the party leader sets how loot is shared. The rules cover coin and items separately:",
+      "lootCoinTitle": "Coin.",
+      "lootCoinBody": "Money from a kill can go to whoever loots it, or be split evenly across the party.",
+      "lootCommonTitle": "Items.",
+      "lootCommonBody": "Ordinary drops can go to the looter, while better drops are put up for a roll so everyone gets a fair shot.",
+      "lootRollTitle": "Need, Greed, or Pass.",
+      "lootRollBody": "When an item goes to a roll, each eligible member chooses Need if they want it, Greed if they would only take it spare, or Pass to bow out. The highest roll wins.",
+      "lootMasterTitle": "Master looter.",
+      "lootMasterBody": "The leader can instead take charge of the better drops, handing each one out to the member who should get it. It keeps prized gear from going to a stray roll, the way an organized group runs a dungeon.",
+      "friendsHeading": "Friends and ignore",
+      "friendsBody": "Add players to your friends list to see when they are online and where they are, so you can group up the moment they log in.",
+      "ignoreBody": "If someone is bothering you, add them to your ignore list and you will stop seeing their chat.",
+      "guildHeading": "Guilds",
+      "guildBody": "A guild is a lasting group of players you belong to between sessions. Create one or accept an invite to join, and you can be in one guild at a time. Members hold a rank: a leader, officers, and members.",
+      "guildChatBody": "Belonging to a guild gives you a private guild chat channel and shows your guildmates on a shared roster, so there are always familiar faces online.",
+      "etiquetteHeading": "Grouping etiquette",
+      "etiquetteBody": "Grouping is a choice, not a chore. Say hello when you join, roll Need only on gear you will actually use, and let the group know before you head off. A little courtesy goes a long way, and most players are glad of the company."
+    },
+    "stats": {
+      "intro": "Your character is described by a handful of attributes. You never have to memorize them to play well, but knowing roughly what each one does helps you read your character sheet and pick the right upgrades.",
+      "primaryHeading": "Primary attributes",
+      "primaryBody": "Five attributes shape your character: Strength, Agility, Stamina, Intellect, and Spirit. Each class leans on a different mix, so the ones that matter most depend on what you play.",
+      "strTitle": "Strength",
+      "strBody": "Strength raises your melee attack power, so your weapon swings hit harder. It does the most for the heavy melee classes that fight up close.",
+      "agiTitle": "Agility",
+      "agiBody": "Agility sharpens you in several ways: it raises your chance to land a critical hit and your chance to dodge, and it adds a little armor. For rogues and hunters it also feeds attack power, and it drives a hunter's ranged shots.",
+      "staTitle": "Stamina",
+      "staBody": "Stamina is your staying power. More Stamina means a larger health pool, and it speeds the health you recover while resting out of combat. Every class wants some.",
+      "intTitle": "Intellect",
+      "intBody": "Intellect grows a spellcaster's mana pool, raises their spell power so their spells hit harder, and improves the chance their spells crit. It matters to the classes that cast from mana; for a Rage or Energy class it does little.",
+      "spiTitle": "Spirit",
+      "spiBody": "Spirit governs how quickly a caster's mana returns while out of combat. Like Intellect, it serves the mana classes and means little to the others.",
+      "armorTitle": "Armor",
+      "armorBody": "Armor reduces the physical damage you take. It comes mostly from what you wear, and the heavier armor classes carry far more of it. More armor against a foe near your level means each of its hits lands softer.",
+      "apTitle": "Attack power",
+      "apBody": "Attack power measures how hard your weapon strikes. Your primary attributes feed it, and stronger weapons and gear raise it further, which is why an upgrade can be a real jump in damage.",
+      "spTitle": "Spell power",
+      "spBody": "Spell power is a caster's counterpart to attack power: it raises the damage your spells deal. Intellect feeds it, and caster gear and buffs add more on top, so a spellcaster watches spell power the way a melee fighter watches attack power.",
+      "critTitle": "Critical strike",
+      "critBody": "Your critical strike chance is how often an attack lands for extra damage. Everyone starts with a small base chance, and Agility (plus some talents and gear) builds on it.",
+      "dodgeTitle": "Dodge",
+      "dodgeBody": "Dodge is your chance to avoid an incoming melee attack entirely. You begin with a small base chance, and Agility raises it, so nimble classes slip more blows.",
+      "dpsTitle": "Damage per second",
+      "dpsBody": "Your sheet also shows a damage-per-second estimate: roughly what your weapon, its swing speed, and your attack power add up to over time. It is a quick way to compare two weapons at a glance.",
+      "sheetHeading": "Reading your character sheet",
+      "sheetBody": "Open the character window in game to see all of this in one place: your five attributes on one side and the stats they feed on the other. Hover any value and a tooltip breaks down what it does for your class, so you can see at a glance which numbers an upgrade actually moved.",
+      "growHeading": "How your stats grow",
+      "growBody": "Two things raise your stats. Every level adds a fixed amount of each attribute to suit your class, and the gear you equip adds more on top. Keeping your gear current is the steadiest way to grow stronger, all the way to the level cap."
+    },
+    "progression": {
+      "intro": "Every fight, quest, and step north makes your hero stronger. Here is how leveling works and what keeps you growing once you reach the top.",
+      "xpTitle": "How you gain experience",
+      "xpBody": "You earn experience by completing quests and by defeating enemies. Quests give the most by far, so following the quest trail is the fastest way to climb. Killing things along the way fills in the rest.",
+      "capBody": "Each level makes you tougher and brings new abilities, all the way to the cap of level {cap}.",
+      "journeyTitle": "The journey north",
+      "journeyBody": "The world is one continuous land, three zones laid south to north, each a step higher in level. You start in the green valley, press on through the marsh, and finish in the cold high peaks. Follow the quest trail and the land carries you from one to the next.",
+      "bandLabel": "Levels {min} to {max}",
+      "restedTitle": "Rested experience",
+      "restedBody": "Rest in a safe spot like an inn, out of combat, and your character builds up rested experience while you sit there. The next time you go out and fight, that pool gives your kills an extra boost until it runs dry. A pause at the inn is never wasted time; it speeds your next stretch of leveling.",
+      "capTitle": "Reaching level {cap}",
+      "capJourneyBody": "Level {cap} is the cap, the end of leveling but not of growing. From there you run dungeons and the raid, chase better gear, and test yourself in the arena.",
+      "prestigeBody": "Experience keeps counting even after the cap. It feeds a cosmetic virtual level, so your experience bar keeps climbing, and a long-term prestige rank you can earn for the recognition. Passing big lifetime-experience milestones also unlocks cosmetic titles and nameplate borders that show on your character sheet. All of it is purely optional and never grants power, just a mark of the road you have walked.",
+      "noRush": "There is no rush. The world is there to enjoy at your own pace, so wander, take the quests that catch your eye, and let your hero grow along the way."
+    },
+    "placeholder": {
+      "note": "This part of the guide is on its way."
+    },
+    "notFound": {
+      "title": "We could not find that page",
+      "body": "The page you were looking for does not exist or may have moved.",
+      "home": "Back to the overview"
+    }
+  },
+  "editor": {
+    "appTitle": "Map Editor",
+    "docTitle": "Map Editor - World of ClaudeCraft",
+    "untitledMap": "Untitled Map",
+    "playtestPlayerName": "Mapmaker",
+    "topbar": {
+      "label": "Editor actions",
+      "mapNameLabel": "Map name",
+      "dirty": "Unsaved changes",
+      "dirtyDot": "This map has unsaved changes",
+      "clean": "All changes saved",
+      "savedLocal": "Saved in this browser",
+      "savedServer": "Saved to server (v{version})",
+      "saving": "Saving...",
+      "neverSaved": "Not saved yet",
+      "new": "New",
+      "newTitle": "Start a new map from the built-in world",
+      "open": "Open",
+      "openTitle": "Open a saved map (browser or server)",
+      "save": "Save",
+      "saveTitle": "Save to this browser, and to the server when signed in (Ctrl+S)",
+      "saveAs": "Save As",
+      "saveAsTitle": "Save a copy under a new name",
+      "fork": "Fork",
+      "forkTitle": "Create your own server-side copy of this map",
+      "forkDisabledTitle": "Open a server map first to fork it",
+      "import": "Import",
+      "importTitle": "Import a map from a JSON file",
+      "export": "Export",
+      "exportTitle": "Download this map as a JSON file",
+      "uploadAsset": "Upload Asset",
+      "uploadAssetTitle": "Upload a GLB model (up to 8 MiB) to place in your maps",
+      "uploadAssetDisabledTitle": "Sign in from the game to upload assets",
+      "playtest": "Playtest",
+      "playtestTitle": "Boot the game on this map (offline, current edits included)",
+      "viewLabel": "View mode",
+      "view3d": "3D",
+      "view3dTitle": "Edit in the rendered world",
+      "view2d": "2D",
+      "view2dTitle": "Edit on the symbolic overhead map",
+      "undoCount": "Undo: {count}",
+      "undoCountTitle": "{count} undoable steps (Ctrl+Z to undo, Ctrl+Y to redo)",
+      "autosave": "Autosave",
+      "autosaveTitle": "Automatically save the map while there are unsaved changes. Turns itself off if a save fails.",
+      "undo": "Undo",
+      "undoTitle": "Undo the last change (Ctrl+Z)",
+      "redo": "Redo",
+      "redoTitle": "Redo the last undone change (Ctrl+Y)",
+      "offline": "Offline",
+      "offlineTitle": "Not signed in: maps save to this browser only. Sign in from the game to save online.",
+      "signIn": "Sign in",
+      "signInTitle": "Open the game login screen in a new tab",
+      "help": "Help",
+      "helpTitle": "Editor guide: tools, shortcuts, and the tutorial"
+    },
+    "tool": {
+      "listLabel": "Editor tools",
+      "keyHint": "{name} ({key})",
+      "select": "Select",
+      "raise": "Raise",
+      "lower": "Lower",
+      "smooth": "Smooth",
+      "flatten": "Flatten",
+      "paint": "Paint Biome",
+      "water": "Water",
+      "place": "Place Asset",
+      "blocker": "Blocker Wall",
+      "camp": "Camp",
+      "spawn": "Spawn Point",
+      "region": "Region",
+      "erase": "Erase"
+    },
+    "inspector": {
+      "label": "Tool options"
+    },
+    "brush": {
+      "title": "Brush",
+      "size": "Brush size",
+      "strength": "Strength",
+      "sizeHint": "Keys: [ and ] resize the brush; Shift+[ and Shift+] change strength.",
+      "editCount": "Terrain edits: {count} / {max}"
+    },
+    "biome": {
+      "title": "Biome",
+      "paletteLabel": "Biome to paint",
+      "vale": "Vale",
+      "marsh": "Marsh",
+      "peaks": "Peaks",
+      "beach": "Beach",
+      "desert": "Desert",
+      "volcano": "Volcano",
+      "cave": "Cave",
+      "erase": "Erase paint",
+      "hint": "Painted cells override the zone biome for terrain shape and color.",
+      "clear": "Clear all biome paint",
+      "clearConfirm": "Remove every painted biome cell from this map?"
+    },
+    "flatten": {
+      "hint": "Flatten levels the ground to the height under the cursor when the drag starts.",
+      "hardEdge": "Hard edge"
+    },
+    "water": {
+      "title": "Water Level",
+      "level": "Water level",
+      "hint": "Sets each declared lake's water surface height, from {min} to {max} yards.",
+      "reset": "Reset to the built-in level"
+    },
+    "place": {
+      "title": "Place Asset",
+      "scale": "Scale",
+      "collide": "Blocks movement",
+      "collideHint": "A blocking asset gets a collision footprint players cannot walk through.",
+      "randomRotation": "Random rotation",
+      "chosen": "Placing: {name}",
+      "none": "Pick an asset from the browser below, then click the ground to place it."
+    },
+    "blockerTool": {
+      "title": "Blocker Wall",
+      "hint": "Drag along the ground to draw an invisible wall players cannot walk or jump through. Release to place it; a wall shorter than half a yard is discarded.",
+      "count": "Blocker walls: {count} / {max}"
+    },
+    "camp": {
+      "title": "Mob Camp",
+      "mob": "Mob",
+      "count": "Count",
+      "radius": "Radius",
+      "delete": "Delete camp",
+      "hint": "Click open ground to add a camp, or click an existing camp to edit it.",
+      "playtestNote": "Mobs spawn only in playtest, never in the editor view.",
+      "selected": "Camp: {mob}",
+      "none": "No camp selected."
+    },
+    "spawn": {
+      "title": "Spawn Point",
+      "hint": "Click the ground to set where playtest drops the player.",
+      "position": "Spawn: {x}, {z}",
+      "unset": "Using the built-in start position.",
+      "clear": "Clear spawn point"
+    },
+    "region": {
+      "title": "Region",
+      "hint": "Drag a box to select placements and terrain edits. Copy, then click to paste.",
+      "hint3d": "Region boxes draw in the 2D view; copy and paste work in both views.",
+      "copy": "Copy region",
+      "pasteBeside": "Paste beside",
+      "copied": "Copied {assets} assets and {edits} terrain edits.",
+      "pasted": "Pasted {count} items.",
+      "needBox": "Draw a region box first.",
+      "needClipboard": "Copy a region first."
+    },
+    "eraseTool": {
+      "title": "Erase",
+      "hint": "Click a placed asset to remove it, or click sculpted ground to remove the newest stamp under the cursor.",
+      "blockerHint": "Clicking near a blocker wall removes that wall instead."
+    },
+    "selection": {
+      "title": "Selection",
+      "none": "Nothing selected. Use Select and click a placed asset.",
+      "asset": "Asset: {name}",
+      "x": "X",
+      "z": "Z",
+      "rotation": "Rotation",
+      "scale": "Scale",
+      "collide": "Blocks movement",
+      "radius": "Collision radius",
+      "radiusAuto": "Auto",
+      "radiusAutoTitle": "Reset the collision radius to follow the asset scale",
+      "radiusHint": "Auto derives the collision radius from the asset scale; drag the slider to override it.",
+      "footprints": "Show collision footprints",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "deleteHint": "Delete removes the selection; Ctrl+Z restores it.",
+      "moveHint": "Move: drag the asset along the ground in the 3D view, or nudge it with the arrow keys (0.5 yd, Shift for 2 yd).",
+      "wheelHint": "Shift+scroll rotates the asset, Alt+scroll scales it, Ctrl+D duplicates it."
+    },
+    "marker": {
+      "title": "Marker",
+      "reset": "Reset position",
+      "moved": "{count} markers moved from the built-in layout."
+    },
+    "layers": {
+      "title": "Layers",
+      "hub": "Hubs",
+      "graveyard": "Graveyards",
+      "lake": "Lakes",
+      "poi": "Points of interest",
+      "camp": "Camps",
+      "npc": "NPCs",
+      "object": "Objects",
+      "blocker": "Blocker walls"
+    },
+    "frame": {
+      "title": "Frame",
+      "all": "All"
+    },
+    "procgen": {
+      "title": "Procedural",
+      "count": "Count",
+      "scatter": "Scatter category assets",
+      "hills": "Generate rolling hills",
+      "scattered": "Scattered {count} assets from {category}.",
+      "hillsAdded": "Added {count} hills.",
+      "noAssets": "No assets in that category."
+    },
+    "assets": {
+      "title": "Asset Browser",
+      "label": "Asset browser",
+      "search": "Search assets",
+      "searchPlaceholder": "Search assets...",
+      "empty": "No matching assets.",
+      "uploadedTab": "Uploaded",
+      "uploadedEmpty": "No uploaded assets yet. Use Upload Asset to add a GLB model (up to 8 MiB).",
+      "uploadedSignIn": "Sign in from the game to upload and place your own GLB models.",
+      "uploadedLoadFailed": "Could not load your uploaded assets.",
+      "deleteAsset": "Delete uploaded asset",
+      "deleteAssetConfirm": "Delete the uploaded asset \"{name}\"? Maps that use it lose the model.",
+      "pick": "Place {name}",
+      "categoryTab": "{category} ({count})",
+      "category": {
+        "biome": "Biome",
+        "chars": "Characters",
+        "creatures": "Creatures",
+        "dungeon": "Dungeon",
+        "foliage": "Foliage",
+        "props": "Props",
+        "quest": "Quest",
+        "resources": "Resources",
+        "tools": "Tools",
+        "weapons": "Weapons"
+      }
+    },
+    "upload": {
+      "notGlb": "Pick a .glb file.",
+      "tooLarge": "That file is over the 8 MiB limit.",
+      "uploading": "Uploading asset...",
+      "uploaded": "Asset uploaded: {name}",
+      "uploadedExisting": "That model was already on the server; reusing it.",
+      "deleted": "Uploaded asset deleted."
+    },
+    "openDrawer": {
+      "title": "Open Map",
+      "close": "Close",
+      "tabLocal": "This Browser",
+      "tabMine": "My Server Maps",
+      "tabPublic": "Public Maps",
+      "colName": "Name",
+      "colUpdated": "Updated",
+      "colStatus": "Status",
+      "statusPublic": "Public",
+      "statusPrivate": "Private",
+      "open": "Open",
+      "fork": "Fork",
+      "publish": "Publish",
+      "unpublish": "Unpublish",
+      "delete": "Delete",
+      "draft": "Autosaved draft",
+      "emptyLocal": "No maps saved in this browser yet. Save one and it appears here.",
+      "emptyMine": "No maps on the server yet. Save while signed in to create one.",
+      "emptyPublic": "No public maps yet.",
+      "loading": "Loading maps...",
+      "loadFailed": "Could not load maps from the server.",
+      "signInHint": "Sign in from the game to browse, save, and fork server maps.",
+      "deleteLocalConfirm": "Delete the local map \"{name}\"?",
+      "deleteServerConfirm": "Delete the server map \"{name}\"? This cannot be undone.",
+      "prev": "Previous page",
+      "next": "Next page",
+      "page": "Page {page}"
+    },
+    "status": {
+      "savedLocal": "Saved \"{name}\" to this browser.",
+      "savedServer": "Saved \"{name}\" to the server (v{version}).",
+      "savedLocalOnly": "Saved \"{name}\" to this browser. Sign in to save online.",
+      "saveFailedLocal": "Local save failed (storage blocked).",
+      "opened": "Opened \"{name}\".",
+      "imported": "Imported \"{name}\".",
+      "importFailed": "Import cancelled, or the file is not a valid map.",
+      "exported": "Downloaded \"{name}\".",
+      "newMap": "New map started from the built-in world.",
+      "forked": "Forked to \"{name}\". You are editing your own copy now.",
+      "published": "Map published. Anyone can now find and fork it.",
+      "unpublished": "Map unpublished.",
+      "deleted": "Map deleted.",
+      "assetPlacedFirst": "Pick an asset in the browser first.",
+      "loading3d": "Loading the world...",
+      "playtestLaunch": "Launching playtest...",
+      "playtestFailed": "Could not start the playtest (storage blocked).",
+      "draftSaved": "Draft autosaved.",
+      "draftRestored": "Restored the autosaved draft.",
+      "autosaveFailed": "Autosave failed (browser storage is full or blocked). Export the map to keep a backup.",
+      "terrainCapReached": "Terrain edit limit reached ({max}). Extra sculpt stamps were not added.",
+      "placementCapReached": "Placement limit reached ({max}). Extra assets were not added.",
+      "blockerCapReached": "Blocker wall limit reached ({max}). The new wall was not added.",
+      "autosaveOff": "Autosave turned off: {reason} Save manually, then turn it back on."
+    },
+    "confirm": {
+      "ok": "OK",
+      "cancel": "Cancel",
+      "discardTitle": "Discard changes?",
+      "discardBody": "You have unsaved changes on \"{name}\". Discard them?",
+      "discard": "Discard",
+      "conflictTitle": "Save conflict",
+      "conflictBody": "This map changed on the server since you opened it (now v{version}). Save your version as a new copy?",
+      "conflictSaveCopy": "Save As Copy"
+    },
+    "prompt": {
+      "saveAsTitle": "Save As",
+      "nameLabel": "New map name"
+    },
+    "serverError": {
+      "invalid_map_name": "That map name is not allowed. Use letters, numbers, spaces, apostrophes, or hyphens.",
+      "map_name_not_allowed": "That map name is not allowed.",
+      "invalid_map_doc": "The server rejected the map document.",
+      "invalid_version": "The save request was malformed. Reload and try again.",
+      "map_limit_reached": "You have reached the server map limit. Delete a map to save more.",
+      "map_not_found": "That map no longer exists on the server.",
+      "version_conflict": "The map changed on the server since you opened it.",
+      "slug_unavailable": "The server could not make a link for that name. Try a different name.",
+      "map_too_large": "The map document is too large to save on the server.",
+      "invalid_glb": "That file is not a valid GLB model.",
+      "asset_blocked": "That asset has been blocked by moderation.",
+      "asset_limit_reached": "You have reached the uploaded asset limit. Delete one to upload more.",
+      "asset_storage_limit_reached": "You are out of asset storage space. Delete an asset first.",
+      "asset_too_large": "That model is over the upload size limit.",
+      "asset_not_found": "That asset no longer exists on the server.",
+      "rate_limited": "Slow down a little and try again.",
+      "unauthorized": "Your session has expired. Sign in from the game again.",
+      "network": "Could not reach the server. Check your connection and try again.",
+      "timeout": "The server took too long to respond. Try again.",
+      "unknown": "Something went wrong talking to the server."
+    },
+    "hints": {
+      "nav3d": "Drag to orbit, scroll to zoom. While dragging, WASD flies and Q/E changes height.",
+      "nav2d": "Drag to pan, scroll to zoom."
+    },
+    "help": {
+      "title": "Editor Help",
+      "toolsTitle": "Tools",
+      "shortcutsTitle": "Keyboard shortcuts",
+      "mouseTitle": "Mouse and navigation",
+      "flowTitle": "Saving and playtesting",
+      "beginTutorial": "Begin tutorial",
+      "close": "Close",
+      "tool": {
+        "select": "Pick placed assets to move, rotate, and scale them; click a 2D marker to edit it.",
+        "raise": "Raise the terrain under the brush.",
+        "lower": "Lower the terrain under the brush.",
+        "smooth": "Smooth bumps toward the local average height.",
+        "flatten": "Level the ground to the height where the drag starts.",
+        "paint": "Paint biome ground cover over the zone default.",
+        "water": "Set a declared lake's water level.",
+        "place": "Place catalog or uploaded assets on the ground.",
+        "blocker": "Drag invisible walls that block movement in playtest.",
+        "camp": "Add and edit mob camps that spawn in playtest.",
+        "spawn": "Set where playtest drops the player.",
+        "region": "Box-select terrain and assets to copy and paste.",
+        "erase": "Remove placed assets or sculpt stamps under the cursor."
+      },
+      "key": {
+        "tools": "Every tool has a single-letter shortcut, shown on its button in the tool rail.",
+        "brush": "[ and ] resize the brush; Shift+[ and Shift+] change its strength.",
+        "undo": "Ctrl+Z undoes the last change; Ctrl+Y or Ctrl+Shift+Z redoes it.",
+        "save": "Ctrl+S saves the map.",
+        "duplicate": "Ctrl+D duplicates the selected asset.",
+        "nudge": "Arrow keys nudge the selected asset by 0.5 yards; hold Shift for 2 yards.",
+        "wheel": "Shift+scroll rotates the selected asset; Alt+scroll scales it.",
+        "delete": "Delete removes the selected asset or camp.",
+        "escape": "Esc clears the selection first, then returns to the Select tool."
+      },
+      "mouse": {
+        "orbit3d": "3D view: drag to orbit and scroll to zoom; middle-drag or Shift+drag pans.",
+        "fly3d": "While holding a drag in 3D, WASD flies the camera and Q/E changes height.",
+        "move": "With Select active, drag a placed asset to move it across the ground.",
+        "pan2d": "2D view: drag to pan and scroll to zoom."
+      },
+      "flow": {
+        "save": "Save keeps the map in this browser, and on the server when you are signed in.",
+        "draft": "While you have unsaved changes, a draft is autosaved every 30 seconds; Open restores it.",
+        "playtest": "Playtest boots the real game on this map, including your unsaved edits."
+      }
+    },
+    "tutorial": {
+      "title": "Editor tutorial",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish",
+      "skip": "Skip tour",
+      "counter": "Step {current} of {total}",
+      "steps": {
+        "toolbar": {
+          "title": "The tool rail",
+          "body": "Every editing tool lives here: sculpting brushes, biome paint, water, asset placement, camps, and more. Each one has a single-key shortcut, shown in its corner."
+        },
+        "stage": {
+          "title": "The world",
+          "body": "This is your map, rendered with the real game engine. Drag to orbit, scroll to zoom, and middle-drag or Shift+drag to pan. Click the ground with a tool to edit."
+        },
+        "inspector": {
+          "title": "Tool options",
+          "body": "The options for the active tool appear here: brush size, the biome palette, asset scale, camp settings, and the properties of whatever you select."
+        },
+        "viewToggle": {
+          "title": "3D and 2D",
+          "body": "Switch between the rendered 3D world and the symbolic overhead 2D map. The 2D view is best for moving zone markers and framing large areas."
+        },
+        "save": {
+          "title": "Save your work",
+          "body": "Save stores the map in this browser, and on the server when you are signed in. Export downloads a JSON backup, and Open brings back saved maps and drafts."
+        },
+        "playtest": {
+          "title": "Playtest",
+          "body": "Boot the real game on your map at any time, with your current edits included. Close the playtest tab to come back and keep editing."
+        },
+        "help": {
+          "title": "Help is here",
+          "body": "That is the whole loop. Open Help any time for the full tool list and every shortcut, or to run this tour again."
+        }
+      }
+    },
+    "a11y": {
+      "stage": "Map viewport",
+      "toasts": "Editor notifications",
+      "dialog": "Editor dialog"
     }
   },
   "skinEvent": {
@@ -634,15 +3147,16 @@ export const en: EnTranslations = {
     "donate": "Donate"
   },
   "stats": {
-    "title": "Realm Status",
+    "title": "World Status",
     "accountsCreated": "Players",
     "playersOnline": "Players Online",
-    "realmName": "Realm Name"
+    "realmName": "World Name"
   },
   "footer": {
     "copyright": "2026 World of ClaudeCraft",
     "githubLink": "https://github.com/levy-street/world-of-claudecraft",
     "githubLabel": "Open Source Project",
+    "whitepaper": "Whitepaper",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
     "discordLabel": "Join the Discord"
@@ -654,7 +3168,7 @@ export const en: EnTranslations = {
   },
   "highscores": {
     "title": "High Scores Leaderboard",
-    "desc": "Track the realm's greatest champions and compare your progress."
+    "desc": "Track the world's greatest champions and compare your progress."
   },
   "wiki": {
     "title": "Game Wiki & Guide",
@@ -672,16 +3186,20 @@ export const en: EnTranslations = {
   },
   "download": {
     "title": "Download Desktop Launcher",
-    "desc": "Get the standalone launcher for optimized performance and full-screen play."
+    "desc": "Get the standalone launcher for optimized performance and full-screen play.",
+    "macCta": "Download for macOS",
+    "linuxCta": "Download for Linux",
+    "linuxHint": "AppImage: make it executable, then run it. No install needed.",
+    "windowsPending": "Windows build pending."
   },
   "comingSoon": {
     "placeholder": "Coming Soon...",
-    "featureComingSoon": "This feature is coming soon to the realm."
+    "featureComingSoon": "This feature is coming soon to the world."
   },
   "mode": {
     "onlineTitle": "Play Online",
-    "onlineDesc": "Log in to the realm. Your characters live on the server and you share the world with everyone else who's on.",
-    "onlineAria": "Play Online: log in to the persistent shared realm",
+    "onlineDesc": "Log in to the world. Your characters live on the server and you share the world with everyone else who's on.",
+    "onlineAria": "Play Online: log in to the persistent shared world",
     "offlineTitle": "Play Offline",
     "offlineDesc": "Instant single-player world in your browser. Nothing is saved: perfect for a quick brawl or testing.",
     "offlineAria": "Play Offline: start an instant local single-player session",
@@ -691,36 +3209,39 @@ export const en: EnTranslations = {
     "serverOffline": "Offline",
     "play": "Play",
     "playAria": "Play World of ClaudeCraft",
-    "serverLabel": "Choose your realm",
-    "serverAria": "Select realm: Online or Offline",
+    "serverLabel": "Choose your world",
+    "serverAria": "Select world: Online or Offline",
     "serverOfflineSub": "Instant local world",
     "caLabel": "$WOC Contract Address",
     "caCopyAria": "Copy contract address",
     "caNote": "WOC is our community token. It is not needed to play. Join Discord to discuss the WOC utility and flywheel."
   },
   "auth": {
-    "enterRealm": "Enter the Realm",
+    "enterRealm": "Enter the World",
     "username": "Username",
     "usernameError": "Please enter your username.",
     "usernamePlaceholder": "Enter username",
     "password": "Password",
     "passwordError": "Please enter your password.",
     "passwordPlaceholder": "Enter password",
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "emailError": "Please enter a valid email address.",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
     "logIn": "Log In",
     "createAccount": "Create Account",
     "back": "Back",
-    "realmList": "Realm List",
-    "loadingRealms": "Loading realms...",
-    "changeRealm": "Change Realm",
-    "realm": "Realm",
+    "realmList": "World List",
+    "loadingRealms": "Loading worlds...",
+    "changeRealm": "Change World",
+    "realm": "World",
     "newCharacter": "New Character",
     "appearance": "Appearance",
     "class": "Class",
     "name": "Name",
     "chromaOption": "Chroma {n}",
-    "noAccountPrompt": "New to the realm?",
+    "noAccountPrompt": "New to the world?",
     "haveAccountPrompt": "Already have an account?",
     "characters": "Characters:",
     "createCharacter": "Create Character",
@@ -728,7 +3249,18 @@ export const en: EnTranslations = {
     "characterNamePlaceholder": "Character name",
     "enterWorld": "Enter World",
     "offlineCharacter": "Offline Character",
-    "create": "Create"
+    "create": "Create",
+    "twoFactorLabel": "Authentication code",
+    "twoFactorPlaceholder": "6-digit or recovery code",
+    "twoFactorHint": "Enter the code from your authenticator app, or one of your recovery codes.",
+    "recovery": {
+      "title": "Add a recovery email",
+      "body": "Set an email address so you can recover your account. We only use it to confirm you own this account if you ever need to reset your password.",
+      "save": "Save email",
+      "logOut": "Log out",
+      "invalid": "Please enter a valid email address.",
+      "failed": "Could not save your email. Please try again."
+    }
   },
   "wallet": {
     "label": "$WOC Wallet",
@@ -782,6 +3314,7 @@ export const en: EnTranslations = {
     "helpLinkedWithBalance": "Holder perks are active. Wallet app connected on this browser.",
     "helpLinkedDisconnected": "Holder perks are active. Connect the app when you need to sign or spend.",
     "helpLinkedDisconnectedWithBalance": "Holder perks are active. Connect the app when you need to sign or spend.",
+    "extensionHelp": "To see a wallet here, keep a browser wallet extension such as Solflare Wallet active.",
     "flowConnect": "Choose a wallet. Verification continues automatically.",
     "flowSign": "Sign the verification message in your wallet app. No transaction or SOL required.",
     "flowVerify": "Verifying wallet ownership...",
@@ -880,7 +3413,7 @@ export const en: EnTranslations = {
     "renderFailedStatus": "Card render failed.",
     "levelClass": "Level {level} - {className}",
     "topPercent": "TOP {percent}%",
-    "realmSubtitle": "{realm} Realm",
+    "realmSubtitle": "{realm} World",
     "defaultRealm": "World of ClaudeCraft",
     "brandWordmark": "WORLD OF CLAUDECRAFT",
     "recruited": "{count} recruited",
@@ -889,7 +3422,7 @@ export const en: EnTranslations = {
     "footerCta": "Forge your legend: {siteUrl}",
     "arenaStat": "Arena",
     "shareTierBit": ", {tier}-rank $WOC holder",
-    "shareText": "I'm forging my legend in World of ClaudeCraft: Level {level} {className}{tierBit}. Join my realm:",
+    "shareText": "I'm forging my legend in World of ClaudeCraft: Level {level} {className}{tierBit}. Join my world:",
     "nativeShareTitle": "World of ClaudeCraft",
     "fileNameFallback": "player",
     "actionShareX": "Share to X",
@@ -954,6 +3487,395 @@ export const en: EnTranslations = {
     "emoteWheel": "Hold Emote Wheel",
     "friends": "Friends & Guild",
     "chat": "Open Chat"
+  },
+  "sim": {
+    "delve": {
+      "cannotEnterNow": "You cannot enter a delve right now.",
+      "leaveDungeonFirst": "Leave the dungeon first.",
+      "leaveArenaFirst": "Leave the arena first.",
+      "alreadyInDelve": "You are already in a delve.",
+      "whileTrading": "You cannot enter a delve while trading.",
+      "duringDuel": "You cannot enter a delve during a duel.",
+      "duringArena": "You cannot enter a delve during an arena match.",
+      "unknownTier": "Unknown delve tier.",
+      "levelRequired": "You must be level {level} to enter {name}.",
+      "levelRequiredTier": "You must be level {level} to enter {name} on {tier}.",
+      "partyTooLarge": "{name} is meant for solo or duo delves. Parties of {max} or more may not enter.",
+      "instancesBusy": "All instances of {name} are busy. Try again soon.",
+      "runFailed": "{name} run failed.",
+      "complete": "{name} complete.",
+      "mechanismOpen": "A mechanism clicks open nearby. A passage opens to the north. Find the exit portal ahead.",
+      "raiseDead": "{name} begins Raise Dead.",
+      "graveFalters": "The grave rite falters.",
+      "doorAlreadyOpen": "The door is already open.",
+      "companionRankUp": "{name} reaches rank {rank}.",
+      "bossChest": "The boss falls. A warded reliquary chest rises on the dais. Pick its lock to claim your spoils.",
+      "drownedLitanyReliquaryRise": "Sister Nhalia falls silent. The Drowned Reliquary rises from the blackwater. Approach it to begin the rite.",
+      "riteSequenceReady": "The shrines fall dark. Repeat the sequence.",
+      "riteSequencePlaying": "The shrines replay the rite. Wait.",
+      "riteCorrect": "A soft chime answers your touch.",
+      "riteWrong": "A harsh bell crack. Black water splashes at your feet.",
+      "riteReliquaryOpen": "The Drowned Reliquary opens.",
+      "riteReliquaryLocked": "Complete the shrine rite to open the reliquary.",
+      "riteReliquaryEmpty": "The reliquary is empty.",
+      "surfaceStairs": "A stairway to the surface opens. Press F at the stairs to leave.",
+      "moduleEnter": "{name}: {objective}",
+      "objectiveClearRoom": "Clear the room.",
+      "objectiveDefeatBoss": "Defeat the boss.",
+      "tombstoneHint": "A tombstone passage opens to the north when the room is cleared.",
+      "tombstoneOpen": "A sealed tombstone passage grinds open to the north. Walk into it to continue.",
+      "tombstoneInto": "You pass through the tombstone into {name}.",
+      "bellRopeShock": "The bell rope snaps taut. Drowned Cantors reel from the shock.",
+      "eggSacBurst": "The egg-sac bursts. Spiderlings skitter free across the baptistry rim.",
+      "baptistryEggs": "The baptistry falls quiet. Spider egg-sacs cling wetly to the rim.",
+      "baptistrySpidersSealed": "You should try to destroy the spider sacs.",
+      "puzzleSealed": "You need to open the seal by applying pressure somewhere in the room.",
+      "ropesSealed": "You should try pulling the bell ropes.",
+      "baptistryWave": "Something stirs in the black baptistry water.",
+      "chestEmpty": "The chest is empty.",
+      "notInDelve": "You are not in a delve.",
+      "cannotInteract": "You cannot interact with that.",
+      "tooFar": "You are too far away.",
+      "graveSilent": "The grave is silent for now.",
+      "doorLocked": "The door is locked.",
+      "strikeWall": "Strike the wall to break through.",
+      "nothingHappens": "Nothing happens.",
+      "unknownCompanion": "Unknown companion.",
+      "companionMaxRank": "This companion is already fully upgraded.",
+      "companionMarksRequired": "You need {marks} Delve Marks to upgrade {name}.",
+      "cannotAffordCompanionUpgrade": "You cannot afford this upgrade.",
+      "shopItemLocked": "You have not unlocked that item yet.",
+      "shopMarksRequired": "You need {marks} Delve Marks to buy {name}.",
+      "shopSealPremiumOnly": "This seal yields only to a master's hand. Only the Premium ante can open it.",
+      "passageSealed": "The passage is sealed.",
+      "moveCloserPassage": "Move closer to the passage.",
+      "moveCloserChest": "Move closer to the chest.",
+      "moveCloserReliquary": "Move closer to the reliquary.",
+      "nothingToTake": "There is nothing left to take.",
+      "wayOutNotOpen": "The way out is not yet open.",
+      "moveCloserStairs": "Move closer to the stairs.",
+      "nhaliaCantorShield": "Cantors, hold the note!",
+      "nhaliaBlackwaterMark": "{name} marks {player} with Blackwater!"
+    },
+    "lockpick": {
+      "lockYields": "The lock yields! {tier} spoils.",
+      "tierPremium": "Premium",
+      "tierMedium": "Medium",
+      "tierLow": "Modest",
+      "alreadyInProgress": "Someone is already working the lock.",
+      "cannotPickThat": "You cannot pick that.",
+      "chooseAnte": "Choose 1, 2, or 3 picks.",
+      "noAttempt": "No lock attempt in progress.",
+      "notYours": "That is not your lock.",
+      "toolSlips": "That tool slips off this lock.",
+      "lockJammed": "The lock is jammed beyond picking. Clear the delve again for another attempt.",
+      "lastPickSnaps": "The last pick snaps. The lock jams. The chest is lost unless you clear the delve again."
+    }
+  },
+  "lockpickUi": {
+    "pickTitle": "Pick the Lock",
+    "cofferTitle": "Bountiful Coffer",
+    "cache": "{tier} Cache",
+    "pickBlurb": "A richer cache is sealed behind more locks. Easier locks give you more tries and more time; a failed try resets the lock until your tries run out.",
+    "cofferBlurb": "This seal yields only to a master's hand: the Hard, Premium path alone can open it. Solve all three locks for the signature prize.",
+    "pagesAria": "{count} locks",
+    "tries": "{count} tries",
+    "triesOne": "1 try",
+    "perMove": "{seconds}s / move",
+    "seconds": "{seconds}s",
+    "boardTitle": "Tumbler's Path: {tier} cache",
+    "closeAria": "Close",
+    "withdrawAria": "Withdraw",
+    "timerAria": "Time remaining",
+    "lockOf": "Lock {page}/{total}",
+    "lockOfAria": "Lock {page} of {total}",
+    "triesOf": "Tries {tries}/{total}",
+    "triesOfAria": "{tries} of {total} tries left",
+    "ward": "Ward {col} / {total}",
+    "depthKeys": "Hotkeys set pick depth (Q/W/E/A/Z), not the ward number.",
+    "withdraw": "Withdraw (Esc)",
+    "action": {
+      "hardSet": "Hard Set",
+      "set": "Set",
+      "steady": "Steady",
+      "ease": "Ease",
+      "drop": "Drop"
+    },
+    "feedback": {
+      "advanced": "The pin gives...",
+      "slip": "A ward bites, the pick slips!",
+      "bind": "The tumbler binds: wrong depth!",
+      "trap": "A false ward snaps shut, the lock jams!",
+      "retry": "The lock resets. Line up a fresh attempt.",
+      "pageCleared": "A tumbler bank falls. The next lock turns up.",
+      "success": "The bolt throws, the cache is yours!",
+      "fail": "The lock seizes. It won't budge again."
+    },
+    "summary": {
+      "success": "Lock sprung, {tier} cache claimed.",
+      "successGeneric": "Lock sprung, the cache is claimed.",
+      "fail": "The lock is ruined. Clear the delve again for another attempt.",
+      "abandoned": "You ease the picks back out. The lock waits."
+    }
+  },
+  "delveRiteUi": {
+    "title": "The Drowned Reliquary Rite",
+    "blurb": "The shrines will light in order. Repeat the sequence by activating each shrine in turn. A wrong touch fails the attempt and replays the sequence, a flawless attempt earns the richest spoils, and running out of tries opens the reliquary on its meanest. Choose how the rite tests you.",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "guideWatch": "After you choose, the four shrines light up one at a time. Memorize the order.",
+    "guideRepeat": "When the shrines fall dark, walk to each shrine and press F (Interact) in that same order.",
+    "guideStakes": "A wrong shrine splashes you with blackwater and costs a try. Complete the sequence to open the reliquary.",
+    "showsTimes": "Sequence shown {count} times",
+    "showsOnce": "Sequence shown once",
+    "symbols": "{count} symbols",
+    "tries": "{count} tries",
+    "reward": {
+      "easy": "Modest spoils",
+      "medium": "Rich spoils",
+      "hard": "Premium spoils"
+    },
+    "closeAria": "Close"
+  },
+  "heroicShop": {
+    "balance": "Heroic Marks: {count}",
+    "buyAria": "Buy {item} for {marks} Heroic Marks"
+  },
+  "delveUi": {
+    "board": {
+      "title": "Delve Board",
+      "enter": "Enter Delve",
+      "enterAria": "Enter {delve} on {tier} difficulty",
+      "openDelve": "Collapsed Reliquary",
+      "openDelveAria": "Open Delve Board from {name}",
+      "marks": "Delve Marks: {count}",
+      "minLevel": "Requires Level {level}",
+      "partyTooLarge": "Solo or duo only ({max} players max)",
+      "tier": {
+        "normal": "Normal",
+        "heroic": "Heroic"
+      },
+      "companion": {
+        "pick": "Choose a companion",
+        "tessa": "Acolyte Tessa",
+        "edda": "Edda Reedhand",
+        "rank": "Rank {rank}",
+        "boon": "Heals the party between fights. Rank 3 revives a fallen ally once per run.",
+        "upgrade": "Upgrade to Rank {rank} ({marks} Marks)",
+        "upgradeAria": "Upgrade {name} to rank {rank} for {marks} Delve Marks",
+        "maxRank": "Fully upgraded"
+      },
+      "tabDelve": "Delve",
+      "tabShop": "Shop"
+    },
+    "shop": {
+      "price": "{marks} Marks",
+      "buy": "Buy",
+      "buyAria": "Buy {item} for {marks} Delve Marks",
+      "reqHeroic": "Requires a Heroic clear",
+      "reqClears": "Requires {count} clears",
+      "empty": "Nothing in stock."
+    },
+    "tracker": {
+      "title": "Delve",
+      "objective": "Objective",
+      "module": "Module {current} of {total}",
+      "affix": "Affixes",
+      "complete": "Complete",
+      "marks": "Delve Marks: {count}",
+      "exitHintOpen": "Walk into the tombstone passage (north)",
+      "exitHintLocked": "Clear trash mobs to open the passage north",
+      "riteChoose": "Approach the Drowned Reliquary and press F to begin the rite",
+      "ritePlayback": "Watch the shrines: memorize the order they light up",
+      "riteInput": "Press F at each shrine in the order they lit ({current}/{total})",
+      "riteOpen": "The reliquary is open: press F on it to claim your spoils"
+    },
+    "objective": {
+      "kill_boss": "Slay {boss}",
+      "recover_artifact": "Recover the burial ledger",
+      "clear_room": "Clear the room"
+    },
+    "summary": {
+      "title": "Delve Complete",
+      "marks": "{count} Delve Marks earned",
+      "loreUnlock": "Lore unlocked: {title}"
+    },
+    "death": {
+      "warning": "One more death will end this delve run."
+    },
+    "run": {
+      "failed": "The delve run has failed. You are returned to Brother Halven."
+    },
+    "npc": {
+      "halven": {
+        "greeting": "The reliquary below has shifted again. We hear chanting through the floor after midnight, and Acolyte Tessa swears the burial ledgers are changing their own ink. If you have courage enough, {playerName}, take a candle and go below. Do not trust every voice you hear down there. Some of them knew your name before you were born."
+      },
+      "halvenMarsh": {
+        "greeting": "The trail led north to the marsh, {playerName}. Another reliquary sings under the black water, and the drowned dead answer the bells. Acolyte Edda knows these reeds better than I do, stay close to her lantern. Choose your tier, and I will hold the rope until you return."
+      }
+    },
+    "intro": {
+      "normal": "The stairwell is cold and dark. Broken saint-stones litter the descent, and a soft bell note hangs in the damp air. Acolyte Tessa whispers, \"The reliquary should not be open this far. Stay close, {playerName}.\"",
+      "heroic": "The doors groan shut behind you. Names scrape across the stone like fingernails. Tessa's candle burns blue. \"They are not calling the dead now, {playerName}. They are answering something.\"",
+      "litanyNormal": "Reed-choked stairs drop beneath Fenbridge. Edda Reedhand lifts her lantern. \"The marsh remembers every name they drowned, {playerName}. Stay in the light.\"",
+      "litanyHeroic": "Blackwater laps the causeway stones. Edda's flame gutters green. \"They are singing again below, {playerName}. Do not answer the choir.\""
+    },
+    "module": {
+      "reliquary_sunken_ossuary": "Water seeps through burial shelves, carrying old ash in silver-black streams.",
+      "reliquary_bell_niche": "Dozens of handbells hang in silence, each tied with funeral cloth.",
+      "reliquary_saintless_hall": "Statues with faces chiseled away with careful hatred.",
+      "reliquary_finale": "The buried bell tolls once beneath your boots.",
+      "litany_sluice": "Moss-choked sluice gates drip blackwater into the old choir crypt.",
+      "litany_ledger": "Ledger islands rise from flooded channels, ink bleeding into the marsh.",
+      "litany_ring": "A reliquary ring loops around a sealed central font of black water.",
+      "litany_baptistry": "A sinkhole baptistry yawns beneath cracked saint-stones and egg-sacs.",
+      "litany_choir_loft": "Fanning choir lofts echo with rope-hung bells that never quite stop.",
+      "litany_causeway": "A Y-split causeway forks over waist-deep fen water.",
+      "litany_apse": "The drowned apse opens onto Sister Nhalia's altar island."
+    },
+    "moduleName": {
+      "reliquary_sunken_ossuary": "The Sunken Ossuary",
+      "reliquary_bell_niche": "The Bell Niche",
+      "reliquary_saintless_hall": "The Saintless Hall",
+      "reliquary_finale": "The Bell-Buried Chamber",
+      "litany_sluice": "The Crescent Sluice",
+      "litany_ledger": "The Island Ledger",
+      "litany_ring": "The Ring Reliquary",
+      "litany_baptistry": "The Sinkhole Baptistry",
+      "litany_choir_loft": "The Reedsong Gallery",
+      "litany_causeway": "The Y-Split Causeway",
+      "litany_apse": "The Drowned Apse"
+    },
+    "object": {
+      "sluice_valve": "Sluice Valve",
+      "grave_tablet": "Grave Tablet",
+      "corpse_candle": "Corpse-Candle",
+      "bell_rope": "Bell Rope"
+    },
+    "companion": {
+      "barkLine": "{name}: {line}",
+      "tessa": {
+        "run_start": "I have my candle and my ledger, {playerName}. Lead on.",
+        "ally_revive": "Up now. Tonight's ledger does not carry your name.",
+        "combat_start": "Keep your footing, {playerName}. The dead are restless here.",
+        "low_hp": "Breathe. I still have prayers left for you.",
+        "trap_spotted": "Hold. Something in the floor remembers footsteps.",
+        "boss_pull": "That bell knows your weight, {playerName}. Do not kneel.",
+        "completion": "The ledger can rest another night. Well done.",
+        "rank": {
+          "1": "Chapel Novice",
+          "2": "Candle-Bearer",
+          "3": "Reliquary Acolyte",
+          "4": "Gravecall Witness",
+          "5": "Chapel Warden"
+        }
+      },
+      "edda": {
+        "run_start": "Keep to the plank-line, {playerName}. The silt takes the proud-footed.",
+        "ally_revive": "Up, now. The marsh does not get you today.",
+        "combat_start": "Mind the blackwater, {playerName}. The marsh listens.",
+        "low_hp": "Steady. My lantern is not out yet.",
+        "trap_spotted": "Wait. The reeds are wrong here.",
+        "boss_pull": "That canticle knows your name, {playerName}. Do not sing back.",
+        "completion": "The fen can swallow its secrets for one more night.",
+        "rank": {
+          "1": "Lantern-Bearer",
+          "2": "Reed-Watcher",
+          "3": "Fenbridge Acolyte"
+        }
+      }
+    },
+    "boss": {
+      "varric": {
+        "bell": {
+          "emote": "Deacon Varric grips the buried bell with both hands!",
+          "log": "Deacon Varric begins to toll the burial bell.",
+          "warning": "Move away from Deacon Varric!",
+          "impact": "The bell's toll cracks the chamber floor!",
+          "lesson": "Bell Toll: a ground slam every twelve seconds. Move out before it lands."
+        },
+        "raise": {
+          "emote": "Deacon Varric calls names from the broken graves!",
+          "log": "Deacon Varric begins Raise Dead.",
+          "warning": "Stop the grave rite!",
+          "object": "The cracked grave shudders with stolen breath.",
+          "interrupt_ok": "The grave rite falters.",
+          "interrupt_fail": "The dead answer Deacon Varric's call!",
+          "lesson": "Interrupt the cracked grave within five seconds or the dead rise to his call."
+        },
+        "pull": "You step on hallowed dust with unclean purpose. Kneel, and be counted.",
+        "intro": "No soul is lost. Only misplaced.",
+        "mid60": "Deacon Varric reads names from the ledger with shaking triumph.",
+        "mid30": "The burial bell answers every name he speaks.",
+        "defeat": "No... I had the names... I had them all..."
+      }
+    },
+    "lore": {
+      "eastbrook_ledger": "A water-stained page from Eastbrook's burial ledger. Names crossed out and rewritten in a hand that is not human.",
+      "first_collapse": "Chapel records note the first sinkage: saint-stones cracked, shelves tilted, and a bell-note heard from below ground.",
+      "gravecaller_mark": "A sigil scraped into coffin wood, not Morthen's seal, but an older gravecaller mark predating the Hollow Crypt.",
+      "bell_below": "Tessa's margin note: \"There is a second bell under the reliquary. It tolls for the misplaced, not the dead.\"",
+      "tessa_note": "Folded scrap in Tessa's script: \"If the ledgers change while we are below, trust the candle, not the voices.\""
+    },
+    "affix": {
+      "restless_graves": "Restless Graves",
+      "bad_air": "Bad Air",
+      "candleblind": "Candleblind",
+      "old_mechanisms": "Old Mechanisms",
+      "flooded_paths": "Flooded Paths",
+      "grave_tax": "Grave Tax",
+      "unstable_roof": "Unstable Roof",
+      "cult_remnants": "Cult Remnants",
+      "high_water": "High Water",
+      "lively_choir": "Lively Choir",
+      "belligerent_dead": "Belligerent Dead"
+    },
+    "blessing": {
+      "chapel_candle": "Chapel Candle: safer run, one fewer Mark on completion."
+    },
+    "chest": {
+      "flavor": "The dead have surrendered what they can spare."
+    }
+  },
+  "yumi": {
+    "bracket3": "Yumi 3v3",
+    "bracket5": "Yumi 5v5",
+    "enterQueue": "Join Protect Yumi!",
+    "queue": {
+      "join": "You join the Protect Yumi queue. Guard your familiar…",
+      "leave": "You leave the Protect Yumi queue.",
+      "teamLeave": "Your team leaves the Protect Yumi queue."
+    },
+    "error": {
+      "partyTooBig3": "Protect Yumi 3v3 allows a party of up to three.",
+      "partyTooBig5": "Protect Yumi 5v5 allows a party of up to five."
+    },
+    "log": {
+      "start": "Protect Yumi! Defend your familiar and hunt theirs."
+    },
+    "hud": {
+      "title": "PROTECT YUMI",
+      "getReady": "Get ready…",
+      "teleportIn": "Yumis move in {s}",
+      "suddenDeath": "SUDDEN DEATH",
+      "yourYumi": "Your Yumi",
+      "enemyYumi": "Enemy Yumi",
+      "aria": "Your Yumi at {mine} of {max} health, enemy Yumi at {theirs}.",
+      "collapse": "Collapse the Protect Yumi bars",
+      "expand": "Expand the Protect Yumi bars"
+    },
+    "respawn": {
+      "title": "DOWNED!"
+    },
+    "banner": {
+      "sudden": "SUDDEN DEATH! The Yumis hold their ground!",
+      "teleport": "The Yumis teleport!"
+    },
+    "end": {
+      "win": "VICTORY! Yumi is safe!",
+      "loss": "DEFEAT! Your Yumi has fallen."
+    }
   },
   "fiesta": {
     "bracket": "Fiesta",
@@ -1029,7 +3951,7 @@ export const en: EnTranslations = {
         "desc": "Your physical strikes hit 15% harder."
       },
       "aug_spellfire": {
-        "name": "Spellfire",
+        "name": "Grimfire",
         "desc": "Your spells deal 15% more damage."
       },
       "aug_toughness": {
@@ -1073,7 +3995,7 @@ export const en: EnTranslations = {
         "desc": "+18% damage of all kinds and +12% move speed."
       },
       "aug_lightwell": {
-        "name": "Lightwell",
+        "name": "Gravelight",
         "desc": "+30% healing and +15% maximum health. Anchor your team."
       },
       "aug_bounty_hunter": {
@@ -1124,11 +4046,13 @@ export const en: EnTranslations = {
   },
   "seo": {
     "title": "World of ClaudeCraft: Classic-Style Web MMO",
-    "description": "Embark on an epic adventure in World of ClaudeCraft, a classic-style micro-MMO playable directly in your browser. Join a persistent shared realm, level up classes, and defeat enemies!",
+    "description": "Embark on an epic adventure in World of ClaudeCraft, a classic-style micro-MMO playable directly in your browser. Join a persistent shared world, level up classes, and defeat enemies!",
     "genre": "MMORPG",
     "playMode": "Multiplayer",
     "applicationCategory": "Game",
-    "operatingSystem": "Web browser"
+    "operatingSystem": "Web browser",
+    "officialLabel": "Official World of ClaudeCraft website",
+    "officialBody": "worldofclaudecraft.com is the official free browser MMO for the Claudemoon world. Play online with a persistent character, explore solo offline, read the wiki, and follow verified community links from this site."
   },
   "a11y": {
     "goHome": "Go to homepage",
@@ -1144,11 +4068,12 @@ export const en: EnTranslations = {
     "world": "Loading world...",
     "worldProgress": "Loading world... {done}/{total}",
     "enteringWorld": "Entering the world...",
-    "connectingRealm": "Connecting to realm...",
+    "connectingRealm": "Connecting to world...",
     "assetsFailed": "Asset loading failed: try reloading. {error}",
     "rendererFailed": "Could not start the renderer: try reloading. {error}",
     "enterTimeout": "Could not enter world. The connection timed out. Is the game server running?",
     "connectionLost": "Connection to the server was lost.",
+    "reconnecting": "Connection lost. Reconnecting...",
     "connectionRejected": "The server closed the connection."
   },
   "errors": {
@@ -1167,6 +4092,7 @@ export const en: EnTranslations = {
       "usernameTaken": "That username is already taken.",
       "invalidCredentials": "Invalid username or password.",
       "verificationFailed": "Verification failed. Please try again.",
+      "desktopCodeInvalid": "Desktop login code is invalid or expired. Please try again.",
       "invalidCharacterName": "Invalid character name. Use 2-16 letters.",
       "characterNameNotAllowed": "That character name is not allowed.",
       "invalidClass": "Invalid class.",
@@ -1180,24 +4106,49 @@ export const en: EnTranslations = {
       "webLoginOnly": "Logins are only allowed from the game client.",
       "accountSuspended": "This account is suspended until {date}.",
       "alreadyInWorld": "Character is already in world.",
-      "renameBeforeEntering": "This character must be renamed before entering the world."
+      "accountSessionLimit": "Too many characters on this account are already in the world.",
+      "takenOver": "Your character was taken over by another session.",
+      "renameBeforeEntering": "This character must be renamed before entering the world.",
+      "renameNotPermitted": "Renaming this character is not allowed.",
+      "unsupportedMediaType": "Unsupported request format.",
+      "crossSiteOrigin": "Request blocked for security reasons."
+    }
+  },
+  "desktop": {
+    "update": {
+      "downloading": "Downloading update {version}...",
+      "ready": "Update {version} is ready. It installs when you quit, or restart now.",
+      "restart": "Restart now",
+      "later": "Later"
+    },
+    "crash": {
+      "title": "World of ClaudeCraft",
+      "body": "The game view stopped working. Reload it?",
+      "reload": "Reload",
+      "quit": "Quit",
+      "fatalBody": "World of ClaudeCraft hit an unexpected error and needs to close."
     }
   },
   "realm": {
-    "noRealms": "No realms available.",
-    "loading": "Loading realms...",
+    "noRealms": "No worlds available.",
+    "loading": "Loading worlds...",
     "recommended": "Recommended",
     "checkingStatus": "Checking status...",
     "onlineNow": "{count} online now",
-    "down": "Realm is down",
+    "down": "World is down",
     "offline": "Offline",
     "full": "Full",
     "high": "High",
     "medium": "Medium",
     "low": "Low",
+    "popTipLow": "Low population: fewer than 15 players online right now. Plenty of room; great for a fresh start.",
+    "popTipMedium": "Medium population: 15 to 39 players online right now. A healthy, active world.",
+    "popTipHigh": "High population: 40 to 79 players online right now. Busy, with lots of players around.",
+    "popTipFull": "Full population: 80 or more players online right now. Very busy; you may wait in a login queue.",
+    "popTipOffline": "Offline: this world is unreachable right now and cannot be joined.",
     "characterCountOne": "{count} character",
     "characterCountOther": "{count} characters",
-    "selectedRealm": "Realm: {name}",
+    "selectedRealm": "World: {name}",
     "statsOffline": "Offline",
     "statsRealmOffline": "{realm} (Offline)"
   },
@@ -1206,6 +4157,9 @@ export const en: EnTranslations = {
     "noneYet": "No characters yet. Create one below.",
     "levelClass": "Level {level} {className}",
     "inWorld": "in world",
+    "takeOver": "Take Over",
+    "inWorldHint": "Already in world. Log out elsewhere, or take over.",
+    "takeOverConfirm": "This will disconnect this character from another session and bring it here. Continue?",
     "renameRequired": "rename required",
     "delete": "Delete",
     "rename": "Rename",
@@ -1215,7 +4169,14 @@ export const en: EnTranslations = {
     "portraitAlt": "Portrait of {name}",
     "viewProfile": "View Profile",
     "profile": "Profile",
-    "closeProfile": "Close profile"
+    "closeProfile": "Close profile",
+    "sortBy": "Sort",
+    "sortByLabel": "Sort characters",
+    "sortMenuLabel": "Sort options",
+    "sortLevel": "Level",
+    "sortName": "Name",
+    "sortRecent": "Recently Played",
+    "sortPlaytime": "Playtime"
   },
   "deleteCharacter": {
     "title": "Delete Character",
@@ -1271,13 +4232,13 @@ export const en: EnTranslations = {
     },
     "lore": {
       "warrior": "Warriors are battle-hardened melee fighters who build Rage as they deal or take damage. They absorb heavy hits or crush foes with powerful weapons.",
-      "paladin": "Paladins are holy crusaders who support allies with blessings, heal wounds with Holy Light, and protect the weak in heavy armor.",
-      "hunter": "Hunters master the wilderness, tracking enemies from afar with bows or guns and using traps to control the battlefield.",
+      "paladin": "Paladins are holy crusaders who support allies with blessings, heal wounds with Mending Light, and protect the weak in heavy armor.",
+      "hunter": "Hunters are ranged specialists who fight beside a tamed beast, peppering enemies with aimed and rapid shots, slowing them with stings and concussive fire, and shifting aspects to suit the moment.",
       "rogue": "Rogues are stealthy assassins who spend Energy and Combo Points on backstabs and finishing moves from the shadows.",
-      "priest": "Priests call on Holy Light to heal and shield allies, while Shadow magic lets them drain the life of their enemies.",
+      "priest": "Priests call on Mending Light to heal and shield allies, while Shadow magic lets them drain the life of their enemies.",
       "shaman": "Shaman command the elements, imbuing weapons with power, shocking enemies with lightning, and restoring allies.",
-      "mage": "Mages bend Fire, Frost, and Arcane power to destroy enemies, conjure water, and freeze threats in place.",
-      "warlock": "Warlocks summon demons, apply curses and damage-over-time magic, and drain life from enemies to endure.",
+      "mage": "Mages bend Fire, Frost, and arcane force to destroy enemies, summon water, and freeze threats in place.",
+      "warlock": "Warlocks summon demons, apply curses and damage-over-time magic, and leech life from enemies to endure.",
       "druid": "Druids channel nature, healing wounds, entangling foes, and shifting into animal forms for defense or damage."
     },
     "aria": "Class details for {className}: role {role}. Starting stats: Strength {str}, Agility {agi}, Stamina {sta}, Intellect {int}, Spirit {spi}.",
@@ -1302,10 +4263,10 @@ export const en: EnTranslations = {
     "otherInstallDetail": "Install or add this page to your Home screen for the best fullscreen mobile experience."
   },
   "serverUnavailable": {
-    "title": "World of ClaudeCraft - Realm Unavailable",
+    "title": "World of ClaudeCraft - World Unavailable",
     "logoAlt": "World of ClaudeCraft",
-    "eyebrow": "Realm maintenance",
-    "heading": "The realm is temporarily unavailable.",
+    "eyebrow": "World maintenance",
+    "heading": "The world is temporarily unavailable.",
     "body": "We are restarting the game service and expect Claudemoon to return shortly. This page will keep checking automatically.",
     "status": "Back soon"
   },
@@ -1362,12 +4323,15 @@ export const en: EnTranslations = {
       "mobileSocial": "Social",
       "mobileArena": "Arena",
       "mobileMenu": "Menu",
-      "mobileUse": "Use",
+      "mobileSettings": "Settings",
+      "mobileUse": "Interact",
       "mobileMeters": "Meters",
       "mobileMap": "Map",
       "closeMap": "Close map",
       "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out"
+      "zoomOut": "Zoom out",
+      "mapCanvasLabel": "Map",
+      "mapSummary": "Map of {zone}."
     },
     "options": {
       "gameMenu": "Game Menu",
@@ -1526,6 +4490,7 @@ export const en: EnTranslations = {
         "report": "Report Player",
         "removeParty": "Remove from Party",
         "convertToRaid": "Convert to raid",
+        "convertToParty": "Convert to party",
         "cancel": "Cancel"
       }
     },
@@ -1567,6 +4532,7 @@ export const en: EnTranslations = {
     "combat": {
       "floatingMiss": "Miss",
       "floatingDodge": "Dodge",
+      "floatingResist": "Resist",
       "cannotMove": "Can't move!",
       "attack": "attack",
       "damageDone": "Your {ability} hits {target} for {amount}.",
@@ -1575,6 +4541,7 @@ export const en: EnTranslations = {
       "damageTakenCrit": "{source} critically hits you for {amount}.",
       "miss": "Your {ability} misses {target}.",
       "dodged": "Your {ability} is dodged by {target}.",
+      "resisted": "Your {ability} is resisted by {target}.",
       "healSelf": "Your {ability} heals you for {amount}.",
       "healSelfCrit": "Your {ability} critically heals you for {amount}.",
       "healOther": "Your {ability} heals {target} for {amount}.",
@@ -1620,9 +4587,9 @@ export const en: EnTranslations = {
       "requiresCombo": "That ability requires combo points.",
       "requiresForm": "You must be in {form} Form.",
       "cantInForm": "You can't do that in {form} Form.",
-      "bear": "Bear",
+      "bear": "Bruin",
       "cat": "Wolf",
-      "travel": "Travel",
+      "travel": "Fleet",
       "shapeshifted": "You cannot do that while shapeshifted.",
       "stealthed": "You must be stealthed.",
       "inCombat": "You cannot do that while in combat.",
@@ -1644,6 +4611,10 @@ export const en: EnTranslations = {
       "whisperAmbiguous": "Several players match '{name}'. Use exact capitalization.",
       "whisperMissing": "There is no player named '{name}' online.",
       "whisperSelf": "You mutter to yourself. Nobody hears it.",
+      "assistSelf": "You can't assist yourself.",
+      "assistNoTarget": "{name} has no target.",
+      "assistWhom": "Assist whom? Target a player or use /assist <name>.",
+      "assisting": "Assisting {name}.",
       "notInParty": "You are not in a party.",
       "unknownCommand": "Unknown command: {command}. Try /s /y /w /p /g.",
       "chatCooldown": "Chat is on cooldown for {seconds}s.",
@@ -1688,8 +4659,29 @@ export const en: EnTranslations = {
       "lootReceiveMoney": "You receive {money}.",
       "lootMoney": "You loot {money}.",
       "soldItem": "Sold {item} for {money}.",
+      "soldJunkOne": "Sold {count} junk item for {money}.",
+      "soldJunkMany": "Sold {count} junk items for {money}.",
       "friendOnline": "{name} has come online.",
       "friendOffline": "{name} has gone offline."
+    },
+    "tutorial": {
+      "title": "New Adventurer",
+      "stepLabel": "Step {current} of {total}",
+      "skip": "Skip Tutorial",
+      "dismiss": "Dismiss",
+      "doneTitle": "Ready for Adventure",
+      "doneBody": "You have the basics, {name}. The Vale is yours to explore. Press {questKey} anytime to review your quests. Good hunting.",
+      "moveTitle": "Find Your Footing",
+      "moveBody": "Use {moveKeys} to move and the mouse to look around. Take a few steps to begin.",
+      "seekTitle": "Seek the Marshal",
+      "seekBody": "Marshal Redbrook waits in town and has work for a new blade. Follow the marker to reach him.",
+      "talkTitle": "Take the Task",
+      "talkBody": "Stand close to Marshal Redbrook and press {interactKey} to speak, then accept his task.",
+      "slayTitle": "Wolves at the Door",
+      "slayBody": "Hunt the Forest Wolves on the north road. Target one and attack to thin the pack.",
+      "slayProgress": "Forest Wolves slain: {current} / {needed}",
+      "returnTitle": "Claim Your Reward",
+      "returnBody": "Your task is done. Return to Marshal Redbrook and press {interactKey} to turn it in."
     },
     "markers": {
       "names": {
@@ -1711,7 +4703,7 @@ export const en: EnTranslations = {
       "attack": "Attack",
       "taunt": "Taunt",
       "healDemon": "Heal Demon",
-      "healPet": "Heal Pet",
+      "healPet": "Feed Pet",
       "passive": "Passive",
       "defensive": "Defensive",
       "aggressive": "Aggressive",
@@ -1720,7 +4712,7 @@ export const en: EnTranslations = {
       "petTauntTitle": "Pet Taunt",
       "petTauntDesc": "Command your pet to engage and Growl when in range. 10 second cooldown.",
       "healDemonDesc": "Spend mana to channel healing into your demon over 5 seconds.",
-      "healPetDesc": "Click, then click food in your bags to feed and heal your pet over 5 seconds.",
+      "healPetDesc": "Click, then click food in your bags to feed your pet, healing it over 5 seconds.",
       "stanceTitle": "Pet Stance",
       "stanceDesc": "Click to choose Passive, Defensive, or Aggressive.",
       "passiveDesc": "Only attacks when you command it.",
@@ -1880,6 +4872,7 @@ export const en: EnTranslations = {
       "offGlobalCooldown": "Off the global cooldown",
       "friendlyTarget": "Friendly target",
       "enemyTarget": "Enemy target",
+      "selfOnly": "Self only",
       "damageRange": "{min} to {max}",
       "finisherDamage": "{base} plus {perCombo} per combo point"
     },
@@ -1894,13 +4887,16 @@ export const en: EnTranslations = {
     },
     "cast": {
       "fishing": "Fishing",
-      "demonHeal": "Demon Heal"
+      "demonHeal": "Demon Heal",
+      "thunzharrStormcall": "Stormcall"
     }
   },
   "questUi": {
     "tracker": {
       "title": "Quests",
-      "complete": "Complete"
+      "complete": "Complete",
+      "showOnMap": "Show {name} on the map",
+      "hideFromMap": "Hide {name} from the map"
     },
     "log": {
       "title": "Quest Log",
@@ -1914,6 +4910,10 @@ export const en: EnTranslations = {
       "completedStatus": "Completed",
       "returnTo": "Return to {name}",
       "abandon": "Abandon Quest",
+      "abandonConfirmTitle": "Abandon Quest",
+      "abandonConfirmBody": "Are you sure you want to abandon {name}?",
+      "abandonConfirm": "Yes",
+      "abandonCancel": "Cancel",
       "suggestedPlayers": "Suggested players: {count}"
     },
     "dialog": {
@@ -1975,12 +4975,14 @@ export const en: EnTranslations = {
     "slots": {
       "mainhand": "Main Hand",
       "helmet": "Helmet",
+      "neck": "Neck",
       "shoulder": "Shoulder",
       "chest": "Chest",
       "waist": "Waist",
       "legs": "Legs",
       "gloves": "Gloves",
-      "feet": "Feet"
+      "feet": "Feet",
+      "ring": "Finger"
     },
     "quality": {
       "poor": "Poor",
@@ -1999,7 +5001,8 @@ export const en: EnTranslations = {
       "drink": "Drink",
       "tool": "Tool",
       "potion": "Potion",
-      "elixir": "Elixir"
+      "elixir": "Elixir",
+      "bag": "Bag"
     },
     "stats": {
       "armor": "Armor",
@@ -2037,11 +5040,12 @@ export const en: EnTranslations = {
       "cannotVendor": "Cannot be sold to merchants",
       "clickDestroy": "Click to destroy",
       "useFishing": "Use: Fish in nearby waters.",
-      "useHealingPotion": "Use: Instantly restores {amount} health. Usable in combat. 1 min cooldown.",
-      "useManaPotion": "Use: Instantly restores {amount} mana. Usable in combat. 1 min cooldown.",
+      "useHealingPotion": "Use: Instantly restores {amount} health. Usable in combat. 2 min cooldown.",
+      "useManaPotion": "Use: Instantly restores {amount} mana. Usable in combat. 2 min cooldown.",
       "clickUseInstant": "Click to use instantly in combat",
       "clickUse": "Click to use",
-      "clickBuyback": "Click to buy back"
+      "clickBuyback": "Click to buy back",
+      "bagSlots": "{slots} Slot Bag"
     },
     "bags": {
       "title": "Bags",
@@ -2068,7 +5072,10 @@ export const en: EnTranslations = {
       "sellQuantityTitle": "Sell {item}",
       "sellQuantityInput": "Quantity to sell",
       "sellQuantityConfirm": "Sell",
-      "sellQuantityCancel": "Cancel"
+      "sellQuantityCancel": "Cancel",
+      "sellJunk": "Sell Junk",
+      "sellJunkAria": "Sell all junk for {price}",
+      "sellJunkHint": "Sells every gray item in your bags except quest items."
     },
     "market": {
       "title": "The World Market",
@@ -2174,317 +5181,378 @@ export const en: EnTranslations = {
       "needAria": "Need for {item}",
       "greedAria": "Greed for {item}",
       "passAria": "Pass on {item}",
-      "everyonePassed": "Everyone passed on {item}."
+      "everyonePassed": "Everyone passed on {item}.",
+      "rolled": "{answered}/{total} rolled"
     }
   },
   "entities": {
     "abilities": {
+      "sport_kick": {
+        "name": "Kick",
+        "description": "Knock the ball along the ground toward the aim point."
+      },
+      "sport_shoot": {
+        "name": "Shoot",
+        "description": "Hold to build power, release to shoot at goal. Too much power sails over."
+      },
+      "sport_pass": {
+        "name": "Pass",
+        "description": "Roll a firm pass to your targeted teammate, leading their run."
+      },
+      "sport_boot": {
+        "name": "Big Boot",
+        "description": "A long lofted boot toward the aim point. The crowd loves it."
+      },
+      "sport_hoof": {
+        "name": "Hoof It",
+        "description": "Hammer the ball low and hard up the field."
+      },
+      "sport_punt": {
+        "name": "Long Punt",
+        "description": "A keeper's punt, high and far."
+      },
+      "sport_feint": {
+        "name": "Feint",
+        "description": "A quick sidestep burst toward the aim point."
+      },
+      "sport_dive": {
+        "name": "Dive",
+        "description": "Fling yourself toward the aim point. A crossing ball sticks to you."
+      },
+      "sport_shoulder": {
+        "name": "Shoulder",
+        "description": "A fair harvest-truce shoulder. Sends them tumbling off the ball."
+      },
+      "sport_second_wind": {
+        "name": "Fresh Legs",
+        "description": "Find your legs: move 50% faster for 4 sec."
+      },
+      "flamestrike": {
+        "name": "Flamestrike",
+        "description": "Calls down a burst of flame at the target area, dealing {damage} Fire damage to enemies caught in the blast."
+      },
+      "rain_of_fire": {
+        "name": "Rain of Fire",
+        "description": "Calls a rain of fire onto the target area for 4 sec, burning enemies for {damage} Fire damage each second."
+      },
+      "volley": {
+        "name": "Volley",
+        "description": "Rains arrows on the target area for 3 sec, dealing {damage} damage every 0.5 sec to enemies caught in it."
+      },
+      "hurricane": {
+        "name": "Hurricane",
+        "description": "Calls a hurricane onto the target area for 6 sec, battering enemies for {damage} Nature damage each second."
+      },
+      "earthquake": {
+        "name": "Earthquake",
+        "description": "Shakes the target area for 6 sec, battering enemies for {damage} Nature damage every 1.5 sec."
+      },
       "heroic_strike": {
-        "name": "Heroic Strike",
+        "name": "Reaver Strike",
         "description": "A strong attack that increases melee damage by {damage}. Activates on your next swing."
       },
       "battle_shout": {
-        "name": "Battle Shout",
-        "description": "Increases your attack power by 20 for 2 min."
+        "name": "Iron Bellow",
+        "description": "A shout that increases the attack power of all party members by {buff}% for 2 min."
       },
       "commanding_shout": {
-        "name": "Commanding Shout",
-        "description": "Increases your Stamina by 6 for 2 min."
+        "name": "Bolstering Cry",
+        "description": "Increases your Stamina by {buff} for 2 min."
       },
       "demoralizing_shout": {
-        "name": "Demoralizing Shout",
-        "description": "Lets out a fearsome shout, reducing the attack power of all nearby enemies by 30 for 30 sec."
+        "name": "Direhowl",
+        "description": "Lets out a fearsome shout, reducing the attack power of all nearby enemies by {buff} for 30 sec."
       },
       "charge": {
-        "name": "Charge",
+        "name": "Onrush",
         "description": "Charges an enemy, generating 9 rage and stunning it for 1 sec. 8-25 yd range."
       },
       "rend": {
-        "name": "Rend",
-        "description": "Wounds the target, causing them to bleed for {damage} damage over 9 sec."
+        "name": "Deep Gash",
+        "description": "Wounds the target, causing them to bleed for {damage} damage over {duration} sec."
       },
       "thunder_clap": {
-        "name": "Thunder Clap",
+        "name": "Quaking Blow",
         "description": "Blasts nearby enemies for {damage} damage and slows their attacks by 10% for 10 sec."
       },
       "hamstring": {
-        "name": "Hamstring",
-        "description": "Maims the enemy for 5 damage, slowing its movement by 50% for 15 sec."
+        "name": "Hobbling Cut",
+        "description": "Maims the enemy for {damage} damage, slowing its movement by 50% for 15 sec."
       },
       "bloodrage": {
-        "name": "Bloodrage",
+        "name": "Blood Toll",
         "description": "Generates 10 rage at the cost of health."
       },
       "overpower": {
-        "name": "Overpower",
-        "description": "Instant attack for weapon damage +5. Only usable after the target dodges. Cannot be dodged."
+        "name": "Redhand",
+        "description": "Instant attack for weapon damage plus {damage}. Only usable after the target dodges. Cannot be dodged."
       },
       "execute": {
-        "name": "Execute",
+        "name": "Early Grave",
         "description": "Attempt to finish off a wounded foe, causing {damage} damage. Only usable on enemies below 20% health."
       },
       "slam": {
-        "name": "Slam",
+        "name": "Brute Swing",
         "description": "Slams the opponent for weapon damage plus {damage}."
       },
       "cleave": {
-        "name": "Cleave",
+        "name": "Reaping Arc",
         "description": "A sweeping strike that hits all enemies in front of you for {damage} damage."
       },
       "defensive_stance": {
-        "name": "Defensive Stance",
+        "name": "Guarded Stance",
         "description": "A defensive combat stance: you generate 30% more threat but deal and take 10% less damage. Cast again to leave the stance."
       },
       "sunder_armor": {
-        "name": "Sunder Armor",
-        "description": "Sunders the target's armor, reducing it by {damage} per application. Stacks up to 5 times. Generates a high amount of threat."
+        "name": "Armor Shear",
+        "description": "Sunders the target's armor, reducing it by {damage}% per application. Stacks up to 5 times. Generates a high amount of threat."
       },
       "taunt": {
-        "name": "Taunt",
+        "name": "Goad",
         "description": "Taunts the target: your threat rises to match its most hated enemy and it is compelled to attack you for 3 sec."
       },
       "fireball": {
-        "name": "Fireball",
+        "name": "Cinderbolt",
         "description": "Hurls a fiery ball that causes {damage} Fire damage plus additional damage over time."
       },
       "frost_armor": {
-        "name": "Frost Armor",
-        "description": "Encases you in frost, increasing armor by 30 for 30 min."
+        "name": "Hoarfrost Mantle",
+        "description": "Encases you in frost, increasing armor by {buff} for 30 min."
       },
       "arcane_intellect": {
-        "name": "Arcane Intellect",
-        "description": "Increases Intellect by 2 for 30 min."
+        "name": "Aether Insight",
+        "description": "Increases the Intellect of all party members by {buff}% for 30 min."
       },
       "frostbolt": {
-        "name": "Frostbolt",
+        "name": "Rimelance",
         "description": "Launches a bolt of frost, causing {damage} Frost damage and slowing movement by 40%."
       },
       "conjure_water": {
-        "name": "Conjure Water",
+        "name": "Waterbind",
         "description": "Conjures 2 bottles of water, restoring mana when drunk. Higher ranks conjure purer water."
       },
       "conjure_food": {
-        "name": "Conjure Food",
+        "name": "Breadbind",
         "description": "Conjures 2 servings of bread, restoring health when eaten. Higher ranks conjure heartier fare."
       },
       "fire_blast": {
-        "name": "Fire Blast",
+        "name": "Cinderfall",
         "description": "Blasts the enemy for {damage} Fire damage. Instant."
       },
       "arcane_missiles": {
-        "name": "Arcane Missiles",
-        "description": "Launches Arcane Missiles at the enemy, causing 8 Arcane damage each second for 3 sec."
+        "name": "Aether Darts",
+        "description": "Launches Aether Darts at the enemy, causing {damage} Arcane damage each second for 3 sec."
       },
       "polymorph": {
-        "name": "Polymorph",
-        "description": "Transforms the enemy into a sheep for up to 15 sec. The sheep wanders and heals rapidly. Any damage breaks the effect. Beasts and humanoids only."
+        "name": "Bewitch",
+        "description": "Transforms the enemy into a toad for up to {duration} sec. The toad wanders and heals rapidly. Any damage breaks the effect. Beasts and humanoids only."
       },
       "frost_nova": {
-        "name": "Frost Nova",
+        "name": "Icebind",
         "description": "Freezes all nearby enemies in place for up to 8 sec, dealing {damage} Frost damage."
       },
       "arcane_explosion": {
-        "name": "Arcane Explosion",
+        "name": "Aetherburst",
         "description": "A burst of Arcane energy hits all nearby enemies for {damage} Arcane damage."
       },
       "scorch": {
-        "name": "Scorch",
+        "name": "Scald",
         "description": "Scorches the enemy for {damage} Fire damage. Quick to cast."
       },
       "pyroblast": {
-        "name": "Pyroblast",
+        "name": "Pyrelance",
         "description": "Hurls an immense fiery boulder that causes {damage} Fire damage plus additional damage over time."
       },
       "ice_barrier": {
-        "name": "Ice Barrier",
-        "description": "Shields you in ice, absorbing 130 damage for 60 sec."
+        "name": "Frostveil",
+        "description": "Shields you in ice, absorbing {damage} damage for 60 sec."
       },
       "sinister_strike": {
-        "name": "Sinister Strike",
+        "name": "Wicked Slash",
         "description": "An instant strike for weapon damage plus {damage}. Awards 1 combo point."
       },
       "eviscerate": {
-        "name": "Eviscerate",
-        "description": "Finishing move that causes damage per combo point."
+        "name": "Dirt Nap",
+        "description": "Finishing move that causes {damage}."
       },
       "backstab": {
-        "name": "Backstab",
+        "name": "Craven Thrust",
         "description": "Backstab the target for 150% weapon damage plus {damage}. Must be behind the target. Requires a dagger. Awards 1 combo point."
       },
       "gouge": {
-        "name": "Gouge",
-        "description": "Strikes the target, incapacitating it for 4 sec. Any damage breaks the effect. Awards 1 combo point."
+        "name": "Eye Jab",
+        "description": "Strikes the target for {damage} damage, incapacitating it for 4 sec. Any damage breaks the effect. Awards 1 combo point."
       },
       "evasion": {
-        "name": "Evasion",
+        "name": "Ghostfoot",
         "description": "Increases your dodge chance by 50% for 15 sec."
       },
       "slice_and_dice": {
-        "name": "Slice and Dice",
+        "name": "Cutthroat Tempo",
         "description": "Finishing move that increases melee attack speed by 30%. Lasts longer per combo point."
       },
       "sprint": {
-        "name": "Sprint",
+        "name": "Swift Heels",
         "description": "Increases your movement speed by 70% for 15 sec."
       },
       "kidney_shot": {
-        "name": "Kidney Shot",
+        "name": "Low Blow",
         "description": "Finishing move that stuns the target. Lasts 1 sec longer per combo point."
       },
       "ambush": {
-        "name": "Ambush",
+        "name": "Lurker's Strike",
         "description": "Ambush the target for 250% weapon damage plus {damage}. Must be stealthed and behind the target. Requires a dagger. Awards 1 combo point."
       },
       "stealth": {
-        "name": "Stealth",
-        "description": "Conceals you in the shadows: enemies barely notice you, but you move 30% slower. Attacking or taking damage breaks Stealth. Cast again to step out."
+        "name": "Duskveil",
+        "description": "Conceals you in the shadows: enemies barely notice you, but you move 50% slower. Attacking or taking damage breaks Duskveil. Cast again to step out."
       },
       "adrenaline_rush": {
-        "name": "Adrenaline Rush",
+        "name": "Quickened Blood",
         "description": "Your blood runs hot, instantly restoring 60 energy."
       },
       "garrote": {
-        "name": "Garrote",
-        "description": "Garrote the enemy, causing damage now and bleeding it for {damage} over 18 sec. Must be stealthed. Awards 1 combo point."
+        "name": "Throat Wire",
+        "description": "Garrote the enemy, causing {damage} damage now and bleeding it for {overTime} over 18 sec. Must be stealthed. Awards 1 combo point."
       },
       "cheap_shot": {
-        "name": "Cheap Shot",
-        "description": "Strike the target, stunning it for 4 sec. Must be stealthed. Awards 2 combo points."
+        "name": "Gut Punch",
+        "description": "Strike the target for {damage} damage, stunning it for 4 sec. Must be stealthed. Awards 2 combo points."
       },
       "sap": {
         "name": "Sap",
         "description": "Incapacitates the target for 8 sec. Must be stealthed and out of combat. Any damage breaks the effect."
       },
       "crippling_poison": {
-        "name": "Crippling Poison",
-        "description": "Strikes the target with a crippling poison, dealing {damage} Nature damage and slowing its movement speed by 50% for 12 sec."
+        "name": "Leaden Venom",
+        "description": "Strikes the target with a leaden venom, dealing {damage} Nature damage and slowing its movement speed by 50% for 12 sec."
       },
       "expose_armor": {
-        "name": "Expose Armor",
-        "description": "Finishing move that exposes the target, reducing its armor. More combo points spent build into a deeper cut."
+        "name": "Armor Breach",
+        "description": "Finishing move that exposes the target, reducing its armor by {damage}% for 30 sec."
       },
       "rupture": {
-        "name": "Rupture",
+        "name": "Bleed Out",
         "description": "Finishing move that wounds the target, causing it to bleed for {damage} over 16 sec."
       },
       "vanish": {
-        "name": "Vanish",
-        "description": "Vanish from sight, entering Stealth even in combat. You move 30% slower while hidden. Lasts up to 10 sec."
+        "name": "Smokestep",
+        "description": "Vanish from sight, entering Duskveil even in combat. You move 50% slower while hidden. Lasts up to 10 sec."
       },
       "instant_poison": {
-        "name": "Instant Poison",
+        "name": "Adder's Bite",
         "description": "Coats your weapon for 30 min, causing each of your melee swings to deal 8 additional Nature damage."
       },
       "deadly_poison": {
-        "name": "Deadly Poison",
+        "name": "Festering Venom",
         "description": "Coats your weapon for 30 min, causing each of your melee swings to deal 14 additional Nature damage."
       },
       "blind": {
-        "name": "Blind",
+        "name": "Dirt Toss",
         "description": "Blinds the target, causing it to wander disoriented for 8 sec. Any damage breaks the effect."
       },
       "seal_of_righteousness": {
-        "name": "Seal of Righteousness",
-        "description": "Fills you with Holy power for 30 sec, causing each of your melee swings to deal 4 additional Holy damage. Unleash with Judgement."
+        "name": "Oathbrand",
+        "description": "Fills you with Holy power for 30 sec, causing each of your melee swings to deal {damage} additional Holy damage. Unleash with Verdict."
       },
       "holy_light": {
-        "name": "Holy Light",
+        "name": "Mending Light",
         "description": "Heals a friendly target for {damage}."
       },
       "devotion_aura": {
-        "name": "Devotion Aura",
-        "description": "Increases your armor by 40 for 30 min."
+        "name": "Steadfast Aura",
+        "description": "Increases the armor of all party members by {buff}% for 30 min."
       },
       "judgement": {
-        "name": "Judgement",
-        "description": "Unleashes your active Seal upon the enemy, consuming it to deal its judgement damage."
+        "name": "Verdict",
+        "description": "Unleashes your active Seal upon the enemy, consuming it to deal its stored Holy damage."
       },
       "blessing_of_might": {
-        "name": "Blessing of Might",
-        "description": "Places a Blessing on a friendly target, increasing attack power by 15 for 5 min."
+        "name": "Oath of Iron",
+        "description": "Blesses the party, increasing the attack power of all party members by {buff}% for 30 min."
       },
       "divine_protection": {
-        "name": "Divine Protection",
-        "description": "A holy shield absorbs 50 damage for 10 sec."
+        "name": "Ward of Faith",
+        "description": "A protective ward absorbs {damage} damage for 10 sec."
       },
       "hammer_of_justice": {
-        "name": "Hammer of Justice",
-        "description": "Stuns the target for 3 sec."
+        "name": "Sundering Gavel",
+        "description": "Stuns the target for {duration} sec."
       },
       "lay_on_hands": {
-        "name": "Lay on Hands",
-        "description": "A massive surge of healing: restores 250 health. 10 min cooldown."
+        "name": "Last Rite",
+        "description": "A massive surge of healing: restores {damage} health. 10 min cooldown."
       },
       "flash_of_light": {
-        "name": "Flash of Light",
-        "description": "A quick, efficient flash of Light that heals a friendly target for {damage}."
+        "name": "Lightmend",
+        "description": "A quick, efficient burst of Light that heals a friendly target for {damage}."
       },
       "exorcism": {
-        "name": "Exorcism",
+        "name": "Rite of Expulsion",
         "description": "Banishes the wicked with Holy wrath, causing {damage} Holy damage."
       },
       "consecration": {
-        "name": "Consecration",
-        "description": "Consecrates the ground beneath you, searing nearby enemies for {damage} Holy damage."
+        "name": "Holy Ground",
+        "description": "Consecrates the ground beneath you, searing nearby enemies for {damage} Holy damage every 2 sec for 10 sec."
       },
       "righteous_fury": {
-        "name": "Righteous Fury",
+        "name": "Burning Oath",
         "description": "Increases the threat generated by your Holy damage by 60% for 30 min. The tanking paladin's cornerstone."
       },
       "retribution_aura": {
-        "name": "Retribution Aura",
+        "name": "Requital Aura",
         "description": "Surrounds you with holy energy for 30 min, dealing 5 Holy damage to any enemy that strikes you in melee."
       },
       "tame_beast": {
-        "name": "Tame Beast",
+        "name": "Wildbond",
         "description": "Begins taming a beast to be your companion. It must be your level or lower and not an elite. Your pet follows you, attacks your enemies, and holds threat of its own. You may have one pet at a time."
       },
       "dismiss_pet": {
-        "name": "Dismiss Pet",
+        "name": "Release Companion",
         "description": "Releases your pet back to the wild."
       },
       "raptor_strike": {
-        "name": "Raptor Strike",
-        "description": "A strong melee attack that increases damage by 5. Activates on your next swing."
+        "name": "Gutting Strike",
+        "description": "A strong melee attack that increases damage by {damage}. Activates on your next swing."
       },
       "aspect_of_the_hawk": {
-        "name": "Aspect of the Hawk",
-        "description": "Take on the aspect of the hawk, increasing attack power by 20 for 30 min."
+        "name": "Harrier's Guise",
+        "description": "Take on the harrier's guise, increasing attack power by {buff} for 30 min."
       },
       "serpent_sting": {
-        "name": "Serpent Sting",
+        "name": "Venom Barb",
         "description": "Stings the target, dealing {damage} Nature damage over 15 sec."
       },
       "arcane_shot": {
-        "name": "Arcane Shot",
+        "name": "Fell Shot",
         "description": "An instant shot that deals {damage} Arcane damage."
       },
       "concussive_shot": {
-        "name": "Concussive Shot",
-        "description": "Dazes the target, slowing movement by 50% for 4 sec."
+        "name": "Rattling Shot",
+        "description": "Dazes the target for {damage} damage, slowing movement by 50% for 4 sec."
       },
       "mongoose_bite": {
-        "name": "Mongoose Bite",
-        "description": "Counterattack after the target dodges for weapon damage plus 12. Cannot be dodged."
+        "name": "Counterfang",
+        "description": "Counterattack after the target dodges for weapon damage plus {damage}. Cannot be dodged."
       },
       "wing_clip": {
-        "name": "Wing Clip",
-        "description": "Inflicts a wound that slows the enemy by 40% for 10 sec."
+        "name": "Fettering Slash",
+        "description": "Inflicts a wound for {damage} damage, slowing the enemy by 40% for 10 sec."
       },
       "aspect_of_the_monkey": {
-        "name": "Aspect of the Monkey",
-        "description": "Take on the aspect of the monkey, increasing your dodge chance by 8% for 30 min."
+        "name": "Marten's Guise",
+        "description": "Take on the marten's guise, increasing your dodge chance by 8% for 30 min."
       },
       "aspect_of_the_cheetah": {
-        "name": "Aspect of the Cheetah",
-        "description": "Take on the aspect of the cheetah, increasing movement speed by 30% for 30 min."
+        "name": "Courser's Guise",
+        "description": "Take on the courser's guise, increasing movement speed by 30% for 30 min."
       },
       "aimed_shot": {
-        "name": "Aimed Shot",
-        "description": "A carefully aimed shot that deals {damage} damage."
+        "name": "Long Draw",
+        "description": "A carefully drawn shot that deals {damage} damage."
       },
       "rapid_fire": {
-        "name": "Rapid Fire",
+        "name": "Fevered Draw",
         "description": "Increases your attack speed by 40% for 15 sec."
       },
       "smite": {
@@ -2492,164 +5560,164 @@ export const en: EnTranslations = {
         "description": "Smites the enemy for {damage} Holy damage."
       },
       "lesser_heal": {
-        "name": "Lesser Heal",
+        "name": "Whispered Prayer",
         "description": "Heals a friendly target for {damage}."
       },
       "power_word_fortitude": {
-        "name": "Power Word: Fortitude",
-        "description": "Increases the target's Stamina by 3 for 30 min."
+        "name": "Litany of Resolve",
+        "description": "Increases the Stamina of all party members by {buff}% for 30 min."
       },
       "shadow_word_pain": {
-        "name": "Shadow Word: Pain",
+        "name": "Dirge of Decay",
         "description": "A word of darkness causes {damage} Shadow damage over 18 sec."
       },
       "power_word_shield": {
-        "name": "Power Word: Shield",
-        "description": "Shields the target, absorbing 48 damage for 30 sec."
+        "name": "Psalm of Warding",
+        "description": "Shields the target, absorbing {damage} damage for 30 sec."
       },
       "renew": {
-        "name": "Renew",
+        "name": "Lingering Grace",
         "description": "Heals the target for {damage} over 15 sec."
       },
       "mind_blast": {
-        "name": "Mind Blast",
+        "name": "Mindfracture",
         "description": "Blasts the target's mind for {damage} Shadow damage."
       },
       "heal": {
-        "name": "Heal",
+        "name": "Solemn Prayer",
         "description": "A slow but powerful prayer that heals a friendly target for {damage}."
       },
       "mind_flay": {
-        "name": "Mind Flay",
-        "description": "Assaults the target's mind with Shadow energy, causing 12 damage each second for 3 sec."
+        "name": "Litany of Woe",
+        "description": "Assaults the target's mind with Shadow energy, causing {damage} damage each second for 3 sec."
       },
       "flash_heal": {
-        "name": "Flash Heal",
+        "name": "Urgent Prayer",
         "description": "A fast prayer that heals a friendly target for {damage}."
       },
       "lightning_bolt": {
-        "name": "Lightning Bolt",
+        "name": "Arc Bolt",
         "description": "Hurls a bolt of lightning for {damage} Nature damage."
       },
       "rockbiter_weapon": {
-        "name": "Rockbiter Weapon",
-        "description": "Imbues your weapon with the fury of stone: each swing deals 5 additional damage for 5 min."
+        "name": "Stonebound Weapon",
+        "description": "Imbues your weapon with the fury of stone: each swing deals {damage} additional damage for 5 min."
       },
       "healing_wave": {
-        "name": "Healing Wave",
+        "name": "Mending Waters",
         "description": "Heals a friendly target for {damage}."
       },
       "earth_shock": {
-        "name": "Earth Shock",
+        "name": "Earthen Jolt",
         "description": "Instantly shocks the target with concussive force for {damage} Nature damage."
       },
       "lightning_shield": {
-        "name": "Lightning Shield",
-        "description": "Surrounds you with crackling lightning: melee attackers take 13 Nature damage."
+        "name": "Thunder Ward",
+        "description": "Surrounds you with crackling lightning: melee attackers take {buff} Nature damage, up to 3 charges and at most once every 5 seconds."
       },
       "flame_shock": {
-        "name": "Flame Shock",
-        "description": "Sears the target with fire for 25 damage plus {damage} over 12 sec."
+        "name": "Cinder Jolt",
+        "description": "Sears the target with fire for {damage} damage plus {overTime} over 12 sec."
       },
       "flametongue_weapon": {
-        "name": "Flametongue Weapon",
-        "description": "Imbues your weapon with elemental fire: each swing deals 8 additional Fire damage for 5 min."
+        "name": "Pyrebrand Weapon",
+        "description": "Imbues your weapon with elemental fire: each swing deals {damage} additional Fire damage for 5 min."
       },
       "frost_shock": {
-        "name": "Frost Shock",
+        "name": "Rime Jolt",
         "description": "Instantly shocks the target with frost for {damage} Frost damage and slows its movement by 50% for 8 sec."
       },
       "frostbrand_weapon": {
-        "name": "Frostbrand Weapon",
-        "description": "Imbues your weapon with biting frost: each swing deals 8 additional damage for 5 min."
+        "name": "Rimebound Weapon",
+        "description": "Imbues your weapon with biting frost: each swing deals {damage} additional damage for 5 min."
       },
       "ghost_wolf": {
-        "name": "Ghost Wolf",
-        "description": "Turns you into a Ghost Wolf, increasing movement speed by 40% for 10 min."
+        "name": "Shadewolf",
+        "description": "Turns you into a Shadewolf, increasing movement speed by 40% for 10 min."
       },
       "stormstrike": {
-        "name": "Stormstrike",
+        "name": "Ancestral Strike",
         "description": "Channels the storm through your weapon, instantly striking for weapon damage plus {damage}."
       },
       "shadow_bolt": {
-        "name": "Shadow Bolt",
+        "name": "Gloom Bolt",
         "description": "Sends a shadowy bolt at the enemy for {damage} Shadow damage."
       },
       "demon_skin": {
-        "name": "Demon Skin",
-        "description": "Demonic skin increases your armor by 30 for 30 min."
+        "name": "Fiendhide",
+        "description": "Demonic skin increases your armor by {buff} for 30 min."
       },
       "immolate": {
-        "name": "Immolate",
-        "description": "Burns the enemy for 11 Fire damage and an additional {damage} over 15 sec."
+        "name": "Burning Pact",
+        "description": "Burns the enemy for {damage} Fire damage and an additional {overTime} over 15 sec."
       },
       "corruption": {
-        "name": "Corruption",
+        "name": "Blackrot",
         "description": "Corrupts the target, causing {damage} Shadow damage over 18 sec."
       },
       "life_tap": {
-        "name": "Life Tap",
-        "description": "Converts 30 health into 30 mana."
+        "name": "Hard Bargain",
+        "description": "Converts {damage} health into {damage} mana."
       },
       "curse_of_agony": {
-        "name": "Curse of Agony",
+        "name": "Hex of Anguish",
         "description": "Curses the target with agony: {damage} Shadow damage over 24 sec."
       },
       "drain_life": {
-        "name": "Drain Life",
-        "description": "Drains the target's life, transferring 7 health to you each second for 5 sec."
+        "name": "Consume",
+        "description": "Drains the target's life, transferring {damage} health to you each second for 5 sec."
       },
       "fear": {
-        "name": "Fear",
+        "name": "Harrow",
         "description": "Strikes terror into the enemy, leaving it cowering for up to 8 sec. Any damage breaks the effect."
       },
       "searing_pain": {
-        "name": "Searing Pain",
+        "name": "Sear",
         "description": "Sears the enemy with agonizing fire for {damage} Fire damage. Quick to cast."
       },
       "shadowburn": {
-        "name": "Shadowburn",
-        "description": "Instantly blasts the target with Shadow Flame for {damage} Shadow damage."
+        "name": "Duskfire",
+        "description": "Instantly blasts the target with searing shadow for {damage} Shadow damage."
       },
       "wrath": {
-        "name": "Wrath",
+        "name": "Wildbolt",
         "description": "Hurls a bolt of nature energy for {damage} Nature damage."
       },
       "healing_touch": {
-        "name": "Healing Touch",
+        "name": "Wildmend",
         "description": "Heals a friendly target for {damage}."
       },
       "mark_of_the_wild": {
-        "name": "Mark of the Wild",
-        "description": "Places the Mark of the Wild on a friendly target, increasing armor by 25 for 30 min."
+        "name": "Wildward",
+        "description": "Places the Wildward on the party, increasing all attributes of all party members by {buff}% for 30 min."
       },
       "moonfire": {
-        "name": "Moonfire",
+        "name": "Lunar Tempest",
         "description": "Burns the enemy with moonfire for {damage} Arcane damage plus damage over time."
       },
       "rejuvenation": {
-        "name": "Rejuvenation",
+        "name": "Wildbloom",
         "description": "Heals the target for {damage} over 12 sec."
       },
       "thorns": {
-        "name": "Thorns",
-        "description": "Thorns sprout from the target: melee attackers take 3 Nature damage."
+        "name": "Briarguard",
+        "description": "Thorns sprout from the target: melee attackers take {buff} Nature damage."
       },
       "entangling_roots": {
-        "name": "Entangling Roots",
+        "name": "Gripping Roots",
         "description": "Roots the target in place for up to 12 sec."
       },
       "bear_form": {
-        "name": "Bear Form",
-        "description": "Shapeshift into a bear: armor +65%, attack power +15, your attacks build rage and generate 30% more threat. Cast again to return to caster form."
+        "name": "Bruin Form",
+        "description": "Shapeshift into a bear: armor +90%, greatly increased attack power, your attacks build rage and generate 30% more threat. Cast again to return to caster form."
       },
       "maul": {
-        "name": "Maul",
-        "description": "A mauling attack that increases melee damage by {damage} and causes a high amount of threat. Activates on your next swing. Bear Form only."
+        "name": "Bonecrush",
+        "description": "A mauling attack that increases melee damage by {damage} and causes a high amount of threat. Activates on your next swing. Bruin Form only."
       },
       "growl": {
-        "name": "Growl",
-        "description": "Growls at the target: your threat rises to match its most hated enemy and it is compelled to attack you for 3 sec. Bear Form only."
+        "name": "Menace",
+        "description": "Growls at the target: your threat rises to match its most hated enemy and it is compelled to attack you for 3 sec. Bruin Form only."
       },
       "cat_form": {
         "name": "Wolf Form",
@@ -2660,43 +5728,43 @@ export const en: EnTranslations = {
         "description": "Claw the enemy for weapon damage plus {damage}. Awards 1 combo point. Wolf Form only."
       },
       "ferocious_bite": {
-        "name": "Ferocious Bite",
-        "description": "Finishing move that causes damage per combo point. Wolf Form only."
+        "name": "Gorebite",
+        "description": "Finishing move that causes {damage}. Wolf Form only."
       },
       "swipe": {
-        "name": "Swipe",
-        "description": "Swipe nearby enemies for {damage} damage. Causes extra threat. Bear Form only."
+        "name": "Sweeping Claws",
+        "description": "Swipe nearby enemies for {damage} damage. Causes extra threat. Bruin Form only."
       },
       "regrowth": {
-        "name": "Regrowth",
+        "name": "Second Bloom",
         "description": "Heals a friendly target for {damage} and an additional amount over 21 sec."
       },
       "barkskin": {
-        "name": "Barkskin",
+        "name": "Oakhide",
         "description": "Your skin hardens like bark, increasing armor by 150 for 15 sec."
       },
       "starfire": {
-        "name": "Starfire",
+        "name": "Skyfall",
         "description": "Calls down a bolt of stellar fire, causing {damage} Arcane damage."
       },
       "travel_form": {
-        "name": "Travel Form",
-        "description": "Instantly shift into a swift travel form, increasing movement speed by 40%. You cannot use other abilities while shifted, but can shift in or out of combat — ideal for escaping."
+        "name": "Fleet Form",
+        "description": "Instantly shift into a swift fleet form, increasing movement speed by 40%. You cannot use other abilities while shifted, but can shift in or out of combat, ideal for escaping."
       },
       "enrage": {
-        "name": "Enrage",
-        "description": "Generates 20 rage instantly. Bear Form only."
+        "name": "Stoke",
+        "description": "Generates 20 rage instantly. Bruin Form only."
       },
       "bash": {
-        "name": "Bash",
-        "description": "Stuns the target for 2 sec. Bear Form only."
+        "name": "Concuss",
+        "description": "Stuns the target for 2 sec. Bruin Form only."
       },
       "faerie_fire": {
-        "name": "Faerie Fire",
-        "description": "Decreases the target's armor by 35 for 40 sec."
+        "name": "Witchlight",
+        "description": "Decreases the target's armor by {damage}% for 40 sec. Does not stack with Armor Shear."
       },
       "hibernate": {
-        "name": "Hibernate",
+        "name": "Slumber",
         "description": "Forces the target into a deep sleep for up to 8 sec. Any damage will awaken it."
       },
       "dash": {
@@ -2704,83 +5772,83 @@ export const en: EnTranslations = {
         "description": "Sprint forward, increasing movement speed by 50% for 15 sec. Wolf Form only."
       },
       "pounce": {
-        "name": "Pounce",
+        "name": "Slinkstrike",
         "description": "A stealth opener that stuns the target for 2 sec. Awards 1 combo point. Wolf Form only."
       },
       "insect_swarm": {
-        "name": "Insect Swarm",
+        "name": "Stinging Swarm",
         "description": "The enemy is swarmed by insects, taking {damage} Nature damage over 12 sec."
       },
       "tigers_fury": {
-        "name": "Tiger's Fury",
+        "name": "Wolfsblood",
         "description": "Increases attack power by 40 for 6 sec. Wolf Form only."
       },
       "rip": {
         "name": "Rip",
-        "description": "Finishing move that causes Bleed damage over 12 sec. Consumes combo points. Wolf Form only."
+        "description": "Finishing move that causes {damage} Bleed damage over 12 sec. Consumes combo points. Wolf Form only."
       },
       "mortal_strike": {
-        "name": "Mortal Strike",
+        "name": "Maiming Strike",
         "description": "A vicious strike dealing weapon damage plus {damage}. (Arms signature)"
       },
       "bloodthirst": {
-        "name": "Bloodthirst",
-        "description": "Instantly attack in a blood frenzy for {damage}. (Fury signature)"
+        "name": "Bloodletting",
+        "description": "Instantly attack in a blood frenzy for 60% weapon damage plus {damage}. (Fury signature)"
       },
       "shield_slam": {
-        "name": "Shield Slam",
-        "description": "Slam the target with your shield for {damage} and massive threat. (Protection signature)"
+        "name": "Shieldcrack",
+        "description": "Slam the target with your shield for 50% weapon damage plus {damage} and massive threat. (Protection signature)"
       },
       "whirlwind": {
-        "name": "Whirlwind",
+        "name": "Bladed Gyre",
         "description": "Spin in a deadly arc, striking all nearby enemies for {damage}. (Fury talent)"
       },
       "berserker_rage": {
-        "name": "Berserker Rage",
-        "description": "Enter a berserker rage, generating 20 rage. (Warrior talent)"
+        "name": "Seething Fury",
+        "description": "Enter a seething fury, generating 20 rage. (Warrior talent)"
       },
       "summon_imp": {
-        "name": "Summon Imp",
-        "description": "Summons an Imp under the command of the Warlock. The Imp hurls Firebolts at your enemies from afar. Summoning a new demon dismisses your current one. You may have one demon at a time."
+        "name": "Summon Emberkin",
+        "description": "Summons an Emberkin under the command of the Warlock. The Emberkin hurls Ashbolts at your enemies from afar. Summoning a new demon dismisses your current one. You may have one demon at a time."
       },
       "summon_voidwalker": {
-        "name": "Summon Voidwalker",
-        "description": "Summons a Voidwalker under the command of the Warlock. The Voidwalker is a sturdy demon that taunts your enemies and soaks up punishment. Summoning a new demon dismisses your current one. You may have one demon at a time."
+        "name": "Summon Gloomshade",
+        "description": "Summons a Gloomshade under the command of the Warlock. The Gloomshade is a sturdy demon that taunts your enemies and soaks up punishment. Summoning a new demon dismisses your current one. You may have one demon at a time."
       },
       "summon_succubus": {
-        "name": "Summon Succubus",
-        "description": "Summons a Succubus under the command of the Warlock. The Succubus is a fragile demon that strikes quickly and hits hard in melee. Summoning a new demon dismisses your current one. You may have one demon at a time."
+        "name": "Summon Duskborn",
+        "description": "Summons a Duskborn under the command of the Warlock. The Duskborn is a fragile demon that strikes quickly and hits hard in melee. Summoning a new demon dismisses your current one. You may have one demon at a time."
       },
       "summon_felhunter": {
-        "name": "Summon Felhunter",
-        "description": "Summons a Felhunter under the command of the Warlock. The Felhunter harries enemies from range with Shadow Bite and excels at hunting spellcasters. Summoning a new demon dismisses your current one. You may have one demon at a time."
+        "name": "Summon Spellhound",
+        "description": "Summons a Spellhound under the command of the Warlock. The Spellhound harries enemies from range with Gloombite and excels at hunting spellcasters. Summoning a new demon dismisses your current one. You may have one demon at a time."
       },
       "summon_felguard": {
-        "name": "Summon Felguard",
-        "description": "Summons a Felguard under the command of the Warlock. The Felguard is a durable melee demon that wades into battle and holds its own. Summoning a new demon dismisses your current one. You may have one demon at a time."
+        "name": "Summon Warfiend",
+        "description": "Summons a Warfiend under the command of the Warlock. The Warfiend is a durable melee demon that wades into battle and holds its own. Summoning a new demon dismisses your current one. You may have one demon at a time."
       },
       "summon_infernal": {
-        "name": "Summon Infernal",
-        "description": "Binds an Infernal to your will — a hulking juggernaut with crushing melee and the deepest health and armor of any demon. A long cooldown gates its raw power. Summoning a new demon dismisses your current one. You may have one demon at a time."
+        "name": "Summon Pyre Colossus",
+        "description": "Binds a Pyre Colossus to your will — a hulking juggernaut with crushing melee and the deepest health and armor of any demon. A long cooldown gates its raw power. Summoning a new demon dismisses your current one. You may have one demon at a time."
       },
       "summon_doomguard": {
-        "name": "Summon Doomguard",
-        "description": "Binds a Doomguard to your will — an elite demon that rains heavy Shadow damage from afar. A long cooldown gates its devastating power. Summoning a new demon dismisses your current one. You may have one demon at a time."
+        "name": "Summon Wraithborn",
+        "description": "Binds a Wraithborn to your will — an elite demon that rains heavy Shadow damage from afar. A long cooldown gates its devastating power. Summoning a new demon dismisses your current one. You may have one demon at a time."
       },
       "bear_charge": {
-        "name": "Bear Charge",
-        "description": "Charge an enemy, generating 9 rage and stunning it for 1 sec. 8-25 yd range. Bear Form only."
+        "name": "Bruin Rush",
+        "description": "Charge an enemy, generating 9 rage and stunning it for 1 sec. 8-25 yd range. Bruin Form only."
       },
       "demoralizing_roar": {
-        "name": "Demoralizing Roar",
-        "description": "Demoralizes nearby enemies, reducing their attack power by 20 for 20 sec. Bear Form only."
+        "name": "Craven Roar",
+        "description": "Demoralizes nearby enemies, reducing their attack power by 20 for 20 sec. Bruin Form only."
       },
       "prowl": {
-        "name": "Prowl",
-        "description": "Enter stealth while in Wolf Form. Cannot be used in combat."
+        "name": "Stalk",
+        "description": "Enter stealth while in Wolf Form, moving 50% slower. Cannot be used in combat."
       },
       "rake": {
-        "name": "Rake",
+        "name": "Flense",
         "description": "A stealth opener that rakes the enemy for weapon damage plus {damage} and causes bleeding damage over 9 sec. Awards 1 combo point. Wolf Form only."
       },
       "revive_pet": {
@@ -2790,10 +5858,10 @@ export const en: EnTranslations = {
     },
     "items": {
       "worn_sword": {
-        "name": "Worn Shortsword"
+        "name": "Pitted Shortsword"
       },
       "gnarled_staff": {
-        "name": "Gnarled Staff"
+        "name": "Bogoak Staff"
       },
       "rusty_dagger": {
         "name": "Rusty Dagger"
@@ -2805,13 +5873,13 @@ export const en: EnTranslations = {
         "name": "Rusty Hatchet"
       },
       "recruit_tunic": {
-        "name": "Recruit's Tunic"
+        "name": "Levyman's Tunic"
       },
       "apprentice_robe": {
-        "name": "Apprentice's Robe"
+        "name": "Threadbare Robe"
       },
       "footpad_jerkin": {
-        "name": "Footpad's Jerkin"
+        "name": "Cutpurse Jerkin"
       },
       "redbrook_blade": {
         "name": "Redbrook Militia Blade"
@@ -2841,22 +5909,22 @@ export const en: EnTranslations = {
         "name": "Greyjaw's Pelt Leggings"
       },
       "baked_bread": {
-        "name": "Freshly Baked Bread"
+        "name": "Cottage Loaf"
       },
       "spring_water": {
-        "name": "Refreshing Spring Water"
+        "name": "Cold Well Water"
       },
       "roasted_boar": {
-        "name": "Roasted Boar Meat"
+        "name": "Spitted Boar Haunch"
       },
       "conjured_water": {
-        "name": "Conjured Spring Water"
+        "name": "Conjured Rainwater"
       },
       "conjured_water2": {
-        "name": "Conjured Mineral Water"
+        "name": "Conjured Wellwater"
       },
       "conjured_water3": {
-        "name": "Conjured Sparkling Water"
+        "name": "Conjured Clearwater"
       },
       "eastbrook_arming_sword": {
         "name": "Eastbrook Arming Sword"
@@ -2916,7 +5984,7 @@ export const en: EnTranslations = {
         "name": "Ghostly Essence"
       },
       "webwood_silk": {
-        "name": "Webwood Silk Gland"
+        "name": "Sableweb Silk Gland"
       },
       "supply_crate": {
         "name": "Stolen Supply Crate"
@@ -2937,13 +6005,13 @@ export const en: EnTranslations = {
         "name": "Red Bandana"
       },
       "tough_jerky": {
-        "name": "Tough Jerky"
+        "name": "Salted Jerky"
       },
       "mudfin_scale": {
-        "name": "Slimy Murloc Scale"
+        "name": "Slimy Mudfin Scale"
       },
       "tallow_candle": {
-        "name": "Tallow Candle"
+        "name": "Greasy Tallow Lump"
       },
       "spider_leg": {
         "name": "Twitching Spider Leg"
@@ -3009,7 +6077,7 @@ export const en: EnTranslations = {
         "name": "Marshstrider Boots"
       },
       "mistcallers_edge": {
-        "name": "Mistcaller's Edge"
+        "name": "Fogbinder's Edge"
       },
       "vaels_mist_staff": {
         "name": "Vael's Mist-Staff"
@@ -3079,6 +6147,9 @@ export const en: EnTranslations = {
       },
       "ridge_stalker_pelt": {
         "name": "Ridge Stalker Pelt"
+      },
+      "old_cragmaws_pelt": {
+        "name": "Old Cragmaw's Pelt"
       },
       "glowing_wax": {
         "name": "Glowing Wax"
@@ -3150,7 +6221,7 @@ export const en: EnTranslations = {
         "name": "Staff of Velkhar"
       },
       "shadowmeld_tunic": {
-        "name": "Shadowmeld Tunic"
+        "name": "Nightveil Tunic"
       },
       "gravewyrm_scale_hauberk": {
         "name": "Gravewyrm Scale Hauberk"
@@ -3219,13 +6290,13 @@ export const en: EnTranslations = {
         "name": "Cracked Wyrm Scale"
       },
       "conjured_bread": {
-        "name": "Conjured Bread"
+        "name": "Conjured Oatcake"
       },
       "conjured_bread2": {
-        "name": "Conjured Pumpernickel"
+        "name": "Conjured Black Loaf"
       },
       "conjured_bread3": {
-        "name": "Conjured Sweet Roll"
+        "name": "Conjured Honeycake"
       },
       "roadwardens_helm": {
         "name": "Roadwarden's Helm"
@@ -3299,9 +6370,6 @@ export const en: EnTranslations = {
       "milepost_boots": {
         "name": "Milepost Boots"
       },
-      "glade_pelt": {
-        "name": "Glade Pelt"
-      },
       "soft_down": {
         "name": "Soft Down Tuft"
       },
@@ -3320,11 +6388,86 @@ export const en: EnTranslations = {
       "monarch_crown_helm": {
         "name": "Monarch's Crown"
       },
-      "monarch_heart": {
-        "name": "The Monarch's Heart"
+      "linen_pouch": {
+        "name": "Linen Pouch"
+      },
+      "travelers_knapsack": {
+        "name": "Traveler's Knapsack"
+      },
+      "wolfhide_satchel": {
+        "name": "Wolfhide Satchel"
+      },
+      "gravewoven_bag": {
+        "name": "Gravewoven Bag"
+      },
+      "mistcallers_duffel": {
+        "name": "Fogbinder's Duffel"
+      },
+      "copper_mining_pick": {
+        "name": "Copper Mining Pick"
+      },
+      "iron_mining_pick": {
+        "name": "Iron Mining Pick"
+      },
+      "mithril_mining_pick": {
+        "name": "Mithril Mining Pick"
+      },
+      "handaxe": {
+        "name": "Handaxe"
+      },
+      "felling_axe": {
+        "name": "Felling Axe"
+      },
+      "ironbark_axe": {
+        "name": "Ironbark Axe"
+      },
+      "gathering_sickle": {
+        "name": "Gathering Sickle"
+      },
+      "bronze_sickle": {
+        "name": "Bronze Sickle"
+      },
+      "silverleaf_sickle": {
+        "name": "Silverleaf Sickle"
+      },
+      "thorium_mining_pick": {
+        "name": "Thorium Mining Pick"
+      },
+      "arcanite_mining_pick": {
+        "name": "Arcanite Mining Pick"
+      },
+      "ashwood_axe": {
+        "name": "Ashwood Axe"
+      },
+      "elderwood_axe": {
+        "name": "Elderwood Axe"
+      },
+      "goldleaf_sickle": {
+        "name": "Goldleaf Sickle"
+      },
+      "sunpetal_sickle": {
+        "name": "Sunpetal Sickle"
+      },
+      "thorium_ore": {
+        "name": "Thorium Ore"
+      },
+      "arcanite_bar": {
+        "name": "Arcanite Bar"
+      },
+      "ashwood_log": {
+        "name": "Ashwood Log"
+      },
+      "elderwood_log": {
+        "name": "Elderwood Log"
+      },
+      "goldleaf_herb": {
+        "name": "Goldleaf Herb"
+      },
+      "sunpetal_herb": {
+        "name": "Sunpetal Herb"
       },
       "bristleback_maul": {
-        "name": "Bristleback Maul"
+        "name": "Gallowglass Hammer"
       },
       "broodmother_silk_robe": {
         "name": "Broodmother's Silk Robe"
@@ -3333,16 +6476,16 @@ export const en: EnTranslations = {
         "name": "Cryptbone Greaves"
       },
       "cryptstalker_jerkin": {
-        "name": "Cryptstalker Jerkin"
+        "name": "Gravestalker Jerkin"
       },
       "deathlord_legguards": {
-        "name": "Deathlord Legguards"
+        "name": "Barrowlord Legguards"
       },
       "deathlord_sabatons": {
-        "name": "Deathlord Sabatons"
+        "name": "Barrowlord Sabatons"
       },
       "deathlord_warplate": {
-        "name": "Deathlord Warplate"
+        "name": "Barrowlord Warplate"
       },
       "drogmar_warboots": {
         "name": "Drogmar's Warboots"
@@ -3420,13 +6563,13 @@ export const en: EnTranslations = {
         "name": "Mogger's Stomper Boots"
       },
       "necromancers_legwraps": {
-        "name": "Necromancer's Legwraps"
+        "name": "Mournweave Legwraps"
       },
       "necromancers_soulsteps": {
-        "name": "Necromancer's Soulsteps"
+        "name": "Mournweave Soulsteps"
       },
       "necromancers_starshroud": {
-        "name": "Necromancer's Starshroud"
+        "name": "Mournweave Starshroud"
       },
       "nhalias_dirgeblade": {
         "name": "Nhalia's Dirgeblade"
@@ -3462,13 +6605,13 @@ export const en: EnTranslations = {
         "name": "Wyrmcult Soulsteps"
       },
       "wyrmshadow_harness": {
-        "name": "Wyrmshadow Harness"
+        "name": "Nightfang Harness"
       },
       "wyrmshadow_legguards": {
-        "name": "Wyrmshadow Legguards"
+        "name": "Nightfang Legguards"
       },
       "wyrmshadow_treads": {
-        "name": "Wyrmshadow Treads"
+        "name": "Nightfang Treads"
       },
       "glimmerfin_koi": {
         "name": "Glimmerfin Koi"
@@ -3486,7 +6629,7 @@ export const en: EnTranslations = {
         "name": "Raw River Perch"
       },
       "raw_stonescale_carp": {
-        "name": "Raw Stonescale Carp"
+        "name": "Raw Slatefin Carp"
       },
       "soggy_boot": {
         "name": "Soggy Boot"
@@ -3520,6 +6663,9 @@ export const en: EnTranslations = {
       },
       "cragmaw_prowlboots": {
         "name": "Cragmaw Prowlboots"
+      },
+      "cragmaw_huntcord": {
+        "name": "Cragmaw's Huntcord"
       },
       "drowned_tide_scepter": {
         "name": "Drowned Tide Scepter"
@@ -3594,13 +6740,13 @@ export const en: EnTranslations = {
         "name": "Moonscale Saber"
       },
       "moonshroud_breastplate": {
-        "name": "Moonshroud Breastplate"
+        "name": "Moonwrack Breastplate"
       },
       "moonshroud_robe": {
-        "name": "Moonshroud Robe"
+        "name": "Moonwrack Robe"
       },
       "moonshroud_tunic": {
-        "name": "Moonshroud Tunic"
+        "name": "Moonwrack Tunic"
       },
       "pale_pearl": {
         "name": "Pale Pearl"
@@ -3636,7 +6782,7 @@ export const en: EnTranslations = {
         "name": "Cryptbone Pauldrons"
       },
       "deathlords_dread_visage": {
-        "name": "Deathlord's Dread Visage"
+        "name": "Barrowlord Dread Visage"
       },
       "gravewyrm_gauntlets": {
         "name": "Gravewyrm Gauntlets"
@@ -3651,10 +6797,100 @@ export const en: EnTranslations = {
         "name": "Mistveil Grips"
       },
       "necromancers_soulspire_mantle": {
-        "name": "Necromancer's Soulspire Mantle"
+        "name": "Mournweave Soulspire Mantle"
       },
       "wyrmshadow_talongrips": {
-        "name": "Wyrmshadow Talongrips"
+        "name": "Nightfang Talongrips"
+      },
+      "reliquary_plate_chest": {
+        "name": "Reliquary Guard Hauberk"
+      },
+      "reliquary_leather_chest": {
+        "name": "Dustwarden Jerkin"
+      },
+      "reliquary_cloth_chest": {
+        "name": "Shroud of the Reliquary"
+      },
+      "reliquary_legs": {
+        "name": "Vaultbound Legwraps"
+      },
+      "reliquary_helm": {
+        "name": "Ossuary Watch Helm"
+      },
+      "reliquary_shoulder": {
+        "name": "Crumbled Spaulders"
+      },
+      "reliquary_gloves_rog": {
+        "name": "Bonewarden Grips"
+      },
+      "deacon_reliquary_helm": {
+        "name": "Deacon's Reliquary Helm"
+      },
+      "varric_shadow_cowl": {
+        "name": "Varric's Shadow Cowl"
+      },
+      "siltguard_helm": {
+        "name": "Siltguard Helm"
+      },
+      "bulwark_rusted_pauldrons": {
+        "name": "Bulwark-Rusted Pauldrons"
+      },
+      "nhalias_bell_maul": {
+        "name": "Nhalia's Bell-Maul"
+      },
+      "reedstalker_jerkin": {
+        "name": "Reedstalker Jerkin"
+      },
+      "mirejaw_fang_knife": {
+        "name": "Mirejaw Fang-Knife"
+      },
+      "widow_silk_hood": {
+        "name": "Widow-Silk Hood"
+      },
+      "cantors_drowned_sash": {
+        "name": "Cantor's Drowned Sash"
+      },
+      "corpse_candle_focus": {
+        "name": "Corpse-Candle Focus"
+      },
+      "nhalias_litany_rod": {
+        "name": "Nhalia's Litany Rod"
+      },
+      "blackwater_vanguard_chest": {
+        "name": "Blackwater Vanguard Chestguard"
+      },
+      "siltstep_leggings": {
+        "name": "Siltstep Leggings"
+      },
+      "sunken_reliquary_hood": {
+        "name": "Sunken Reliquary Hood"
+      },
+      "litany_legs": {
+        "name": "Silt-Walker Greaves"
+      },
+      "litany_shoulder": {
+        "name": "Blackwater Drift Mantle"
+      },
+      "litany_gloves_rog": {
+        "name": "Reed-Bound Handwraps"
+      },
+      "litany_plate_chest": {
+        "name": "Sump-Warden Cuirass"
+      },
+      "litany_leather_chest": {
+        "name": "Silt-Deep Vestment"
+      },
+      "litany_cloth_chest": {
+        "name": "Choir-Drowned Raiment"
+      },
+      "litany_helm": {
+        "name": "Reliquant's Drowned Cowl"
+      },
+      "sister_nhalia_choir_plate": {
+        "name": "Sister Nhalia's Choir-Forged Plate"
+      },
+      "drowned_choir_fang": {
+        "name": "Drowned Choir-Fang"
       },
       "the_codfather": {
         "name": "The Codfather"
@@ -3695,35 +6931,161 @@ export const en: EnTranslations = {
       "event_skin_token": {
         "name": "Mysterious Cosmetic Cache"
       },
+      "heroic_mark": {
+        "name": "Heroic Mark"
+      },
+      "morthens_cryptforged_hauberk": {
+        "name": "Morthen's Cryptforged Hauberk"
+      },
+      "shadowpulse_handwraps": {
+        "name": "Shadowpulse Handwraps"
+      },
+      "bonechill_striders": {
+        "name": "Bonechill Striders"
+      },
+      "mistcallers_fang": {
+        "name": "Mistcaller's Fang"
+      },
+      "tidebound_spaulders": {
+        "name": "Tidebound Spaulders"
+      },
+      "sash_of_the_sunken_court": {
+        "name": "Sash of the Sunken Court"
+      },
+      "lunar_tide_greatstaff": {
+        "name": "Lunar Tide Greatstaff"
+      },
+      "tidewoven_trousers": {
+        "name": "Tidewoven Trousers"
+      },
+      "choirmothers_casque": {
+        "name": "Choirmother's Casque"
+      },
+      "gravewyrm_cleaver": {
+        "name": "Gravewyrm Cleaver"
+      },
+      "shroud_of_the_gravewyrm": {
+        "name": "Shroud of the Gravewyrm"
+      },
+      "sanctum_prowlers_grips": {
+        "name": "Sanctum Prowler's Grips"
+      },
+      "scepter_of_the_deathless_court": {
+        "name": "Scepter of the Deathless Court"
+      },
+      "deathless_warguard_legmail": {
+        "name": "Deathless Warguard Legmail"
+      },
+      "soulrend_diadem": {
+        "name": "Soulrend Diadem"
+      },
+      "scourgehide_carapace": {
+        "name": "Scourgehide Carapace"
+      },
+      "cryptplate_helm": {
+        "name": "Cryptplate Helm"
+      },
+      "shadowpulse_slippers": {
+        "name": "Shadowpulse Slippers"
+      },
+      "bonechill_cord": {
+        "name": "Bonechill Cord"
+      },
+      "mistforged_pauldrons": {
+        "name": "Mistforged Pauldrons"
+      },
+      "tideguard_faceguard": {
+        "name": "Tideguard Faceguard"
+      },
+      "sunken_court_mantle": {
+        "name": "Sunken Court Mantle"
+      },
+      "lunar_choir_leggings": {
+        "name": "Lunar Choir Leggings"
+      },
+      "choir_blessed_spaulders": {
+        "name": "Choir-Blessed Spaulders"
+      },
+      "tideworn_warboots": {
+        "name": "Tideworn Warboots"
+      },
+      "gravewyrm_claws": {
+        "name": "Gravewyrm Claws"
+      },
+      "gravescale_girdle": {
+        "name": "Gravescale Girdle"
+      },
+      "wyrmchoir_handwraps": {
+        "name": "Wyrmchoir Handwraps"
+      },
+      "deathless_greatblade": {
+        "name": "Deathless Greatblade"
+      },
+      "soulforged_warplate": {
+        "name": "Soulforged Warplate"
+      },
+      "stormcallers_focus": {
+        "name": "Stormcaller's Focus"
+      },
+      "seal_of_the_nine_oaths": {
+        "name": "Seal of the Nine Oaths"
+      },
+      "nielas_coldlight_band": {
+        "name": "Niela's Coldlight Band"
+      },
+      "sutils_gambit": {
+        "name": "Sutil's Gambit"
+      },
+      "oath_of_the_round_table": {
+        "name": "Oath of the Round Table"
+      },
+      "zyzzs_deathless_signet": {
+        "name": "Zyzz's Deathless Signet"
+      },
+      "architects_cornerstone": {
+        "name": "The Architect's Cornerstone"
+      },
+      "swiftfang_talisman": {
+        "name": "Swiftfang Talisman"
+      },
+      "yumis_keepsake_locket": {
+        "name": "Yumi's Keepsake Locket"
+      },
+      "zense_meridian": {
+        "name": "Zense Meridian"
+      },
+      "medallion_of_endless_profit": {
+        "name": "Medallion of Endless Profit"
+      },
       "deathless_heartwood": {
         "name": "Heartwood of the Deathless Crown"
       },
       "kingsbane_last_oath": {
-        "name": "Kingsbane, Last Oath of Thornpeak"
+        "name": "Thronebane, Last Oath of Thornpeak"
       },
       "crownforged_dreadhelm": {
-        "name": "Crownforged Dreadhelm"
+        "name": "Bonewrought Dreadhelm"
       },
       "crownforged_warspaulders": {
-        "name": "Crownforged Warspaulders"
+        "name": "Bonewrought Warspaulders"
       },
       "nighttalon_crown": {
-        "name": "Nighttalon Crown"
+        "name": "Direfang Crown"
       },
       "nighttalon_shoulderguards": {
-        "name": "Nighttalon Shoulderguards"
+        "name": "Direfang Shoulderguards"
       },
       "soulflame_cowl": {
-        "name": "Soulflame Cowl"
+        "name": "Wraithfire Cowl"
       },
       "soulflame_mantle": {
-        "name": "Soulflame Mantle"
+        "name": "Wraithfire Mantle"
       },
       "stormcallers_crown": {
-        "name": "Stormcaller's Crown"
+        "name": "Galecall Crown"
       },
       "stormcallers_spaulders": {
-        "name": "Stormcaller's Spaulders"
+        "name": "Galecall Spaulders"
       },
       "unknown_alien_weaponry": {
         "name": "Unknown Alien Weaponry"
@@ -3775,9 +7137,36 @@ export const en: EnTranslations = {
       },
       "vanguard_chrome_armor_plate": {
         "name": "Vanguard Chrome"
+      },
+      "crownforged_gauntlets": {
+        "name": "Bonewrought Gauntlets"
+      },
+      "nighttalon_grips": {
+        "name": "Direfang Grips"
+      },
+      "soulflame_gloves": {
+        "name": "Wraithfire Gloves"
+      },
+      "stormcallers_handguards": {
+        "name": "Galecall Handguards"
+      },
+      "crownforged_girdle": {
+        "name": "Bonewrought Girdle"
+      },
+      "nighttalon_waistband": {
+        "name": "Direfang Waistband"
+      },
+      "soulflame_cord": {
+        "name": "Wraithfire Cord"
+      },
+      "stormcallers_waistguard": {
+        "name": "Galecall Waistguard"
       }
     },
     "mobs": {
+      "yumi_cat": {
+        "name": "Yumi"
+      },
       "forest_wolf": {
         "name": "Forest Wolf"
       },
@@ -3788,13 +7177,13 @@ export const en: EnTranslations = {
         "name": "Wild Boar"
       },
       "webwood_spider": {
-        "name": "Webwood Lurker"
+        "name": "Sableweb Lurker"
       },
       "mudfin_murloc": {
         "name": "Mudfin Skulker"
       },
       "tunnel_rat": {
-        "name": "Tunnel Rat Digger"
+        "name": "Deeprock Digger"
       },
       "vale_bandit": {
         "name": "Vale Bandit"
@@ -3837,6 +7226,9 @@ export const en: EnTranslations = {
       },
       "deacon_voss": {
         "name": "Deacon Voss"
+      },
+      "training_dummy": {
+        "name": "Training Dummy"
       },
       "ridge_stalker": {
         "name": "Ridge Stalker"
@@ -3896,13 +7288,13 @@ export const en: EnTranslations = {
         "name": "Knight-Commander Olen"
       },
       "vael_the_mistcaller": {
-        "name": "Vael the Mistcaller"
+        "name": "Vael the Fogbinder"
       },
       "sanctum_boneguard": {
         "name": "Sanctum Boneguard"
       },
       "sanctum_drakonid": {
-        "name": "Sanctum Drakonid"
+        "name": "Sanctum Scaleguard"
       },
       "raised_bonewalker": {
         "name": "Raised Bonewalker"
@@ -3946,41 +7338,68 @@ export const en: EnTranslations = {
       "nythraxis_scourge_of_thornpeak": {
         "name": "Nythraxis, Scourge of Thornpeak"
       },
-      "brightwood_hare": {
-        "name": "Brightwood Hare"
+      "reliquary_ledger_wraith": {
+        "name": "Ledger Wraith"
       },
-      "glade_fox": {
-        "name": "Glade Fox"
+      "reliquary_funeral_ringer": {
+        "name": "Funeral Ringer"
       },
-      "spotted_fawn": {
-        "name": "Spotted Fawn"
+      "reliquary_gravecall_acolyte": {
+        "name": "Gravecall Acolyte"
       },
-      "meadow_crane": {
-        "name": "Meadow Crane"
+      "reliquary_bonewalker": {
+        "name": "Raised Bonewalker"
       },
-      "thornpelt_badger": {
-        "name": "Thornpelt Badger"
+      "reliquary_saintless_effigy": {
+        "name": "Saintless Effigy"
       },
-      "dawnmane_doe": {
-        "name": "Dawnmane Doe"
+      "deacon_varric": {
+        "name": "Deacon Varric"
       },
-      "bramble_lynx": {
-        "name": "Bramble Lynx"
+      "acolyte_tessa": {
+        "name": "Acolyte Tessa"
       },
-      "brightwood_stag": {
-        "name": "Brightwood Stag"
+      "drowned_cantor": {
+        "name": "Drowned Cantor"
       },
-      "grovetusk_boar": {
-        "name": "Grovetusk Boar"
+      "reedbound_acolyte": {
+        "name": "Reedbound Acolyte"
       },
-      "sunhide_bear": {
-        "name": "Sunhide Bear"
+      "deepfen_spearjaw": {
+        "name": "Deepfen Spearjaw"
       },
-      "brightwood_monarch": {
-        "name": "The Brightwood Monarch"
+      "mirefen_widowling": {
+        "name": "Mirefen Widowling"
       },
-      "elder_bristleback": {
-        "name": "Elder Bristleback"
+      "spider_egg_sac": {
+        "name": "Spider Egg-Sac"
+      },
+      "grave_silt_bulwark": {
+        "name": "Grave-Silt Bulwark"
+      },
+      "sump_troll_devourer": {
+        "name": "Sump Troll Devourer"
+      },
+      "choir_thrall": {
+        "name": "Bog Thrall"
+      },
+      "sister_nhalia_drowned_canticle": {
+        "name": "Sister Nhalia, the Drowned Canticle"
+      },
+      "edda_reedhand": {
+        "name": "Edda Reedhand"
+      },
+      "tolling_bell": {
+        "name": "Tolling Bell"
+      },
+      "vale_cup_ball": {
+        "name": "Boarball"
+      },
+      "thunzharr_waking_peak": {
+        "name": "Thunzharr, the Waking Peak"
+      },
+      "thunzharr_stormling": {
+        "name": "Roused Stormling"
       },
       "ironvein_foreman": {
         "name": "Ironvein Foreman"
@@ -4006,26 +7425,20 @@ export const en: EnTranslations = {
       "nhalia_mourner": {
         "name": "Nhalia Mourner"
       },
-      "sableweb_hatchling": {
-        "name": "Sableweb Hatchling"
-      },
-      "sableweb_matriarch": {
-        "name": "Sableweb Matriarch"
-      },
       "sister_nhalia": {
         "name": "Sister Nhalia"
       },
       "varkas_boneguard": {
         "name": "Varkas Boneguard"
       },
-      "imp": {
-        "name": "Imp"
+      "emberkin": {
+        "name": "Emberkin"
       },
-      "voidwalker": {
-        "name": "Voidwalker"
+      "gloomshade": {
+        "name": "Gloomshade"
       },
-      "succubus": {
-        "name": "Succubus"
+      "duskborn": {
+        "name": "Duskborn"
       },
       "grix_the_tunnelking": {
         "name": "Grix the Tunnelking"
@@ -4048,17 +7461,17 @@ export const en: EnTranslations = {
       "wraithbinder_maldrec": {
         "name": "Wraithbinder Maldrec"
       },
-      "felhunter": {
-        "name": "Felhunter"
+      "spellhound": {
+        "name": "Spellhound"
       },
-      "felguard": {
-        "name": "Felguard"
+      "warfiend": {
+        "name": "Warfiend"
       },
-      "infernal": {
-        "name": "Infernal"
+      "pyre_colossus": {
+        "name": "Pyre Colossus"
       },
-      "doomguard": {
-        "name": "Doomguard"
+      "wraithborn": {
+        "name": "Wraithborn"
       },
       "choirmother_selthe": {
         "name": "Choirmother Selthe"
@@ -4131,12 +7544,12 @@ export const en: EnTranslations = {
       "fisherman_brandt": {
         "name": "Fisherman Brandt",
         "title": "Old Salt",
-        "greeting": "Grlmurlgrl- sorry, been listening to those fish-men too long."
+        "greeting": "Blrb-glub- sorry, been listening to those fish-men too long."
       },
       "foreman_odell": {
         "name": "Foreman Odell",
         "title": "Mine Foreman",
-        "greeting": "Whole dig's crawling with those candle-headed vermin!"
+        "greeting": "Whole dig's crawling with those dirt-caked vermin!"
       },
       "warden_fenwick": {
         "name": "Warden Fenwick",
@@ -4188,20 +7601,60 @@ export const en: EnTranslations = {
         "title": "Master Armorer",
         "greeting": "Forge is hot and the grindstone is turning. If it cuts, I sell it."
       },
+      "heroic_quartermaster": {
+        "name": "Quartermaster Vex",
+        "title": "Heroic Quartermaster",
+        "greeting": "Proof of the heroic depths buys the finest rings and pendants in Highwatch. Show me your marks."
+      },
       "loremaster_caddis": {
         "name": "Loremaster Caddis",
         "title": "Loremaster",
         "greeting": "Mind the loose shale, {className}. The mountain has been... restless of late. I intend to learn why."
       },
-      "ranger_elwyn": {
-        "name": "Ranger Elwyn",
-        "title": "Glade Warden",
-        "greeting": "Quiet, {className} - the glade is calm today, and I mean to keep it that way."
+      "auctioneer_voss": {
+        "name": "Auctioneer Voss",
+        "title": "Keeper of the World Market",
+        "greeting": "The World Market is open here too, {className}. Buy from every adventurer in the realm, or set out your own wares."
+      },
+      "bursar_fernando": {
+        "name": "Bursar Fernando",
+        "title": "The Gilded Strongbox",
+        "greeting": "Welcome to the Gilded Strongbox. Your goods rest safe behind our locks."
+      },
+      "bursar_petra_vell": {
+        "name": "Bursar Petra Vell",
+        "title": "The Gilded Strongbox",
+        "greeting": "The Gilded Strongbox keeps clean ledgers and cleaner vaults. What shall we stow for you?"
+      },
+      "bursar_aldous_crane": {
+        "name": "Bursar Aldous Crane",
+        "title": "The Gilded Strongbox",
+        "greeting": "Every crate, coffer, and trinket is safe with the Gilded Strongbox."
       },
       "brother_aldric_raid": {
         "name": "Brother Aldric",
         "title": "Priest of the Vale",
         "greeting": "From a chapel yard in the Vale to the roof of the world... the trail we have followed ends here. I can feel the mountain listening."
+      },
+      "brother_halven": {
+        "name": "Brother Halven",
+        "title": "Reliquary Keeper",
+        "greeting": "The reliquary below has shifted again."
+      },
+      "brother_halven_marsh": {
+        "name": "Brother Halven",
+        "title": "Reliquary Keeper",
+        "greeting": "The trail led north. Another reliquary, another rite. Choose your tier, and I'll hold the rope until you return."
+      },
+      "spirit_healer": {
+        "name": "The Pale Keeper",
+        "title": "Warden of the Dead",
+        "greeting": "Rest now, spirit. I can return you to your body, but the crossing back leaves you weak."
+      },
+      "groundskeeper_bram": {
+        "name": "Groundskeeper Bram",
+        "title": "Keeper of the Sowfield",
+        "greeting": "The truce holds at the Sowfield, {className}: boots and shoulders only. Care to play for the Copper Pail?"
       },
       "tidewatcher_ondrel": {
         "name": "Ondrel Vane",
@@ -4231,7 +7684,7 @@ export const en: EnTranslations = {
         }
       },
       "q_boars": {
-        "title": "Bristleback Hides",
+        "title": "Bristly Boar Hides",
         "text": "Boar hide makes the finest travel packs, and the meadows west of town are crawling with the beasts. Bring me 5 Bristly Boar Hides and I will make it worth your time.",
         "completion": "Ah, fine bristly hides! These will fetch a good price.",
         "objectives": {
@@ -4241,21 +7694,21 @@ export const en: EnTranslations = {
         }
       },
       "q_spiders": {
-        "title": "Webwood Menace",
-        "text": "The lurkers in the eastern woods spin a silk I need for my poultices - and they have grown far too numerous besides. Cull 6 Webwood Lurkers and cut 4 silk glands from their bellies.",
+        "title": "Sableweb Menace",
+        "text": "The lurkers in the eastern woods spin a silk I need for my poultices - and they have grown far too numerous besides. Cull 6 Sableweb Lurkers and cut 4 silk glands from their bellies.",
         "completion": "Ugh, still twitching. Perfect. Here, you've earned this.",
         "objectives": {
           "0": {
-            "label": "Webwood Lurker slain"
+            "label": "Sableweb Lurker slain"
           },
           "1": {
-            "label": "Webwood Silk Gland"
+            "label": "Sableweb Silk Gland"
           }
         }
       },
       "q_murlocs": {
         "title": "Trouble at the Lake",
-        "text": "Twenty years I have fished Mirror Lake, and never lost a net until those gurgling fish-men crawled out of the shallows. Drive the Mudfin back - slay 8 of them. And watch yourself: where there is one murloc, there are five.",
+        "text": "Twenty years I have fished Mirror Lake, and never lost a net until those gurgling fish-men crawled out of the shallows. Drive the Mudfin back - slay 8 of them. And watch yourself: where there is one mudfin, there are five.",
         "completion": "Hah! That will teach them to mind their own mudholes.",
         "objectives": {
           "0": {
@@ -4265,11 +7718,11 @@ export const en: EnTranslations = {
       },
       "q_mine": {
         "title": "Rats in the Mine",
-        "text": "We struck a fine copper vein and then those kobold vermin came boiling out of the hillside. My crew will not set foot in the dig until it is cleared. Put down 10 Tunnel Rat Diggers.",
+        "text": "We struck a fine copper vein and then those burrowing vermin came boiling out of the hillside. My crew will not set foot in the dig until it is cleared. Put down 10 Deeprock Diggers.",
         "completion": "Ha! Back to work, lads! You have my thanks - and my coin.",
         "objectives": {
           "0": {
-            "label": "Tunnel Rat Digger slain"
+            "label": "Deeprock Digger slain"
           }
         }
       },
@@ -4325,7 +7778,7 @@ export const en: EnTranslations = {
       },
       "q_rite": {
         "title": "The Binding Rite",
-        "text": "The crypt beneath the chapel must be unsealed if we are to stop the Gravecaller - but only a binding rite will let the living pass. I need 4 lumps of Blessed Tallow - the kobold diggers hoard candles by the crate - and 6 Ghostly Essences from the restless dead.",
+        "text": "The crypt beneath the chapel must be unsealed if we are to stop the Gravecaller - but only a binding rite will let the living pass. I need 4 lumps of Blessed Tallow - the mine's burrowers hoard tallow by the crate - and 6 Ghostly Essences from the restless dead.",
         "completion": "It is done. The way below stands open... and may the Light forgive me for opening it. Gather your strongest companions before you descend, {playerName}. No one should face the Hollow alone.",
         "objectives": {
           "0": {
@@ -4359,7 +7812,7 @@ export const en: EnTranslations = {
       "q_gravecallers_trail": {
         "title": "The Gravecaller's Trail",
         "text": "Morthen is dead, yet a question gnaws at me: a sect that hid for a century does not spend itself on one village chapel. He kept a grimoire - his rites, his correspondence. If anything of it survives, it lies in the vestry of the ruined chapel above the crypt. Search the ruin and bring me whatever remains of his writings, {playerName}.",
-        "completion": "Morthen wrote to a 'Mistcaller' in the northern fen. The sect is not dead, {playerName} - it has merely been patient.",
+        "completion": "Morthen wrote to a 'Fogbinder' in the northern fen. The sect is not dead, {playerName} - it has merely been patient.",
         "objectives": {
           "0": {
             "label": "Morthen's Grimoire"
@@ -4388,7 +7841,7 @@ export const en: EnTranslations = {
       },
       "q_fenbridge_muster": {
         "title": "Muster at Fenbridge",
-        "text": "Morthen's writings named a master in the northern marsh - a 'Mistcaller.' Now Warden Fenwick has sounded the muster horn at Fenbridge, and I do not believe in coincidence, {playerName}. Take the causeway north, pull the muster order from the gatepost, and present it to the Warden.",
+        "text": "Morthen's writings named a master in the northern marsh - a 'Fogbinder.' Now Warden Fenwick has sounded the muster horn at Fenbridge, and I do not believe in coincidence, {playerName}. Take the causeway north, pull the muster order from the gatepost, and present it to the Warden.",
         "completion": "Aldric's seal, is it? Then you'll do. The fen has been swallowing my patrols whole, and I need every blade that floats.",
         "objectives": {
           "0": {
@@ -4428,7 +7881,7 @@ export const en: EnTranslations = {
       },
       "q_deepfen": {
         "title": "The Deepfen Stirs",
-        "text": "The Deepfen murlocs kept to their shallows for twenty years. Now they swarm the east bank like flies on a carcass - and my wardens say they are dragging things up from the lake bed. Whatever has them stirred, I want it stopped. Cull 12 of the snappers.",
+        "text": "The Deepfen mudfins kept to their shallows for twenty years. Now they swarm the east bank like flies on a carcass - and my wardens say they are dragging things up from the lake bed. Whatever has them stirred, I want it stopped. Cull 12 of the snappers.",
         "completion": "That will push them back to the mud for a while. But something set them digging, and I mean to learn what.",
         "objectives": {
           "0": {
@@ -4458,7 +7911,7 @@ export const en: EnTranslations = {
       },
       "q_deepfen_purge": {
         "title": "Back to the Shallows",
-        "text": "Aldric says those idols are cult-make - which means the murlocs are hauling the marsh's old evil up one armful at a time. I will not have it washing onto my causeway. Go back to the shallows and break the dredging for good: 14 more snappers.",
+        "text": "Aldric says those idols are cult-make - which means the mudfins are hauling the marsh's old evil up one armful at a time. I will not have it washing onto my causeway. Go back to the shallows and break the dredging for good: 14 more snappers.",
         "completion": "Ruthless and thorough. If this marsh ever dries out, there's warden's work waiting for you.",
         "objectives": {
           "0": {
@@ -4565,7 +8018,7 @@ export const en: EnTranslations = {
       "q_summoners": {
         "title": "Stopping the Summoning",
         "text": "Maren's reports name summoners among the cultists - voices that call the drowned up out of the water like hounds to a whistle. Their ciphers will spell out the chain of command. Silence 8 summoners and bring me 4 of their ciphers.",
-        "completion": "Every cipher is countersigned 'Deacon Voss' - and addressed onward to a 'Mistcaller' in the Bastion. Morthen's master, {playerName}. We have found him.",
+        "completion": "Every cipher is countersigned 'Deacon Voss' - and addressed onward to a 'Fogbinder' in the Bastion. Morthen's master, {playerName}. We have found him.",
         "objectives": {
           "0": {
             "label": "Gravecaller Summoner slain"
@@ -4587,7 +8040,7 @@ export const en: EnTranslations = {
       },
       "q_bastion_door": {
         "title": "The Sunken Bastion",
-        "text": "The Sunken Bastion - a knight's hold that drowned in the fen a century ago - is where Voss's letters point, and where this Mistcaller sings his drowning hymns. The cult has warded its door with grave-stones. Bring me one of the ward stones, {playerName}, and I will unweave the seal.",
+        "text": "The Sunken Bastion - a knight's hold that drowned in the fen a century ago - is where Voss's letters point, and where this Fogbinder sings his drowning hymns. The cult has warded its door with grave-stones. Bring me one of the ward stones, {playerName}, and I will unweave the seal.",
         "completion": "The ward parts like rotten rope. The door stands open... and the dark below it is listening.",
         "objectives": {
           "0": {
@@ -4597,7 +8050,7 @@ export const en: EnTranslations = {
       },
       "q_olen": {
         "title": "The Knight-Commander's Shame",
-        "text": "Knight-Commander Olen held the Bastion when it sank - drowned at his post rather than abandon it. Every warden learns his name with pride. Now the Mistcaller has raised him as a puppet to guard the very door he died defending. That shame ends, {playerName}. Take four companions below and grant Olen the rest he earned.",
+        "text": "Knight-Commander Olen held the Bastion when it sank - drowned at his post rather than abandon it. Every warden learns his name with pride. Now the Fogbinder has raised him as a puppet to guard the very door he died defending. That shame ends, {playerName}. Take four companions below and grant Olen the rest he earned.",
         "completion": "Then his watch is finally over. I'll see his name cut into the gate myself. Thank you, {playerName}.",
         "objectives": {
           "0": {
@@ -4606,12 +8059,12 @@ export const en: EnTranslations = {
         }
       },
       "q_mistcaller": {
-        "title": "The Mistcaller",
-        "text": "At the bottom of the Bastion waits Vael the Mistcaller - Morthen's master, Voss's master, the voice that has drowned a hundred travelers to raise itself an army. He is far beyond any one hero: take four companions, no fewer. End him, {playerName}, and the fen's dead may finally lie still.",
+        "title": "The Fogbinder",
+        "text": "At the bottom of the Bastion waits Vael the Fogbinder - Morthen's master, Voss's master, the voice that has drowned a hundred travelers to raise itself an army. He is far beyond any one hero: take four companions, no fewer. End him, {playerName}, and the fen's dead may finally lie still.",
         "completion": "Vael is dead, and the mist is lifting for the first time in years. But Maren heard his last words, and they freeze my blood: 'The Wyrm stirs beneath the peaks.' The sect serves something older than we ever guessed, {playerName}. Rest while you can - the mountains are next.",
         "objectives": {
           "0": {
-            "label": "Vael the Mistcaller slain"
+            "label": "Vael the Fogbinder slain"
           }
         }
       },
@@ -4645,10 +8098,40 @@ export const en: EnTranslations = {
           }
         }
       },
+      "q_stalkers_return": {
+        "title": "The Stalkers Return",
+        "text": "Twelve dead, and the ridge crawls thicker than the day you started, {playerName}. Beasts do not throw themselves at a wall out of hunger. Something on the high ridge is pushing them down, and until I know what, the culling does not stop. Fourteen more.",
+        "completion": "Fourteen more, and still my patrols count fresh tracks by morning. My scout came back from the high ridge white as the snowline: prints the size of a shield, she says, and old kills no stalker would leave. Whatever walks up there is no ordinary cat.",
+        "objectives": {
+          "0": {
+            "label": "Ridge Stalker slain"
+          }
+        }
+      },
+      "q_stalker_cloaks": {
+        "title": "Cloaks for the Watch",
+        "text": "Eight pelts lined the officers' cloaks, and now every soldier on the wall wants the same, {playerName}. They are right to want it: winter takes fingers first and apologies never. Ten more pelts from the ridges south of the gate, and the whole watch sleeps warm.",
+        "completion": "Ten good pelts, thick as any I have... no, look at these, {playerName}. Torn, half of them, and by no blade or spear. Claw marks wide as my hand, right through the winter coat. Something on that ridge is savaging its own kind.",
+        "objectives": {
+          "0": {
+            "label": "Ridge Stalker Pelt"
+          }
+        }
+      },
+      "q_old_cragmaw": {
+        "title": "Old Cragmaw",
+        "text": "The mountain folk put a name to the prints my scout found: Old Cragmaw, a scar-pelted tyrant of a cat that has outlived three generations of its own pack. It is the reason the stalkers flood my road, {playerName}. Its den sits on the western ridge above the road south. Bring a friend, and put the old devil down.",
+        "completion": "Down at last. The mountain folk swore that cat would outlive the wall itself. The stalkers will keep to their high snows now, {playerName}, and my patrols will walk the road without bleeding for it. The whole ridge is quieter for your work.",
+        "objectives": {
+          "0": {
+            "label": "Old Cragmaw slain"
+          }
+        }
+      },
       "q_kobold_tunnels": {
         "title": "Deeprock Trouble",
-        "text": "The kobolds at Deeprock Burrows are digging deeper than any candle-rat has business digging - straight down, as if something were calling them. Their tunnels run beneath our wall, {playerName}. Collapse the matter: kill twelve Deeprock Tunnelers.",
-        "completion": "Straight down, every shaft of it - kobolds do not dig like that on their own. I must consult my books.",
+        "text": "The tunnelers at Deeprock Burrows are digging deeper than any pit-rat has business digging - straight down, as if something were calling them. Their tunnels run beneath our wall, {playerName}. Collapse the matter: kill twelve Deeprock Tunnelers.",
+        "completion": "Straight down, every shaft of it - burrowers do not dig like that on their own. I must consult my books.",
         "objectives": {
           "0": {
             "label": "Deeprock Tunneler slain"
@@ -4657,7 +8140,7 @@ export const en: EnTranslations = {
       },
       "q_glowing_wax": {
         "title": "Strange Wax",
-        "text": "Caddis showed me a candle taken off one of those tunnelers - the wax glows, {playerName}, and it is warm as a heartbeat. He wants more for study, and I want it off my requisition list. Bring back six lumps of the glowing wax.",
+        "text": "Caddis showed me a lump of wax taken off one of those tunnelers - it glows, {playerName}, and it is warm as a heartbeat. He wants more for study, and I want it off my requisition list. Bring back six lumps of the glowing wax.",
         "completion": "Still warm. The Loremaster says the glow matches no flame he knows of. I say it is mountain trouble, and I say it kindly.",
         "objectives": {
           "0": {
@@ -4952,145 +8435,6 @@ export const en: EnTranslations = {
           }
         }
       },
-      "q_brightwood_thinning": {
-        "title": "Thinning the Glade",
-        "text": "Brightwood Glade is overrun, {playerName}. The bramble lynx breed faster than I can cull them, and the herds trample what little grazing is left. Slay 8 Bramble Lynx and bring me 6 Glade Pelts so I can judge the health of the rest.",
-        "completion": "Good. The pride is thinned and these pelts are sound - the glade will hold another season.",
-        "objectives": {
-          "0": {
-            "label": "Bramble Lynx slain"
-          },
-          "1": {
-            "label": "Glade Pelt"
-          }
-        }
-      },
-      "q_brightwood_monarch": {
-        "title": "The Brightwood Monarch",
-        "text": "There is one beast I will not loose an arrow at alone: the Brightwood Monarch, the great stag that rules the deep glade. He has grown old and savage, goring any who near his hollow. He is more than a match for one hunter - bring a friend or two. Lay him to rest and bring me his heart, {playerName}.",
-        "completion": "So the old king has fallen. A heavy thing, this - but a kinder end than the wolves would have given him. Wear this crown of his antlers with respect, {playerName}.",
-        "objectives": {
-          "0": {
-            "label": "The Monarch's Heart"
-          }
-        }
-      },
-      "q_ledger_first_duty": {
-        "title": "A Warden's First Duty",
-        "text": "You want to earn your keep in Eastbrook, {playerName}? Then start where every warden starts. The thornpelt badgers have dug their setts clean through the Brightwood Glade, in the far north past Wolf Run, and the grove floor is caving into their burrows. Cull 8 Thornpelt Badgers and the ledger will remember your name.",
-        "completion": "Eight setts emptied and the grove floor settled. Good. Every name in this ledger started just where you are standing.",
-        "objectives": {
-          "0": {
-            "label": "Thornpelt Badger culled"
-          }
-        }
-      },
-      "q_ledger_teeth": {
-        "title": "Teeth in the Dark",
-        "text": "The glade foxes have grown bold as wolves - they slip the henhouses at dusk and are gone before a lantern is lit, and a hungry vixen will take a lamb as soon as a hen. Thin them, {playerName}. Slay 10 Glade Foxes and let the rest learn to fear the light again.",
-        "completion": "Ten foxes, and the henhouses are quiet at dusk again. The ledger grows kinder to you.",
-        "objectives": {
-          "0": {
-            "label": "Glade Fox slain"
-          }
-        }
-      },
-      "q_ledger_reedwater": {
-        "title": "Reedwater Patrol",
-        "text": "Redbrook sent you? Good - these old bones cannot wade the shallows anymore. The meadow cranes have found my nets, and they spear more of my catch than the Mudfin ever did. Thin them: 8 Meadow Cranes, and mind the deep water.",
-        "completion": "That will keep the long-legged thieves off my nets for a season. Tell the Marshal the shallows are mine again.",
-        "objectives": {
-          "0": {
-            "label": "Meadow Crane driven off"
-          }
-        }
-      },
-      "q_ledger_silk": {
-        "title": "Browse and Bramble",
-        "text": "The ledger marks the eastern woods as warden ground too - and my physic-beds are part of it. The spotted fawns have stripped my silverleaf and bloodthistle to the root, and without those simples half of Eastbrook goes without medicine. I take no joy in it, but cull 8 Spotted Fawns before the autumn herbs are lost entirely.",
-        "completion": "The beds may yet recover, thanks to you. A hard mercy - but a child burning with fever needs the simples more than the wood needs the deer. The ledger is square.",
-        "objectives": {
-          "0": {
-            "label": "Spotted Fawn culled"
-          }
-        }
-      },
-      "q_ledger_brood": {
-        "title": "The Spawning Dark",
-        "text": "Killing the lurkers only made room for the brood. The Sableweb hatchlings are pouring out of the deep nest, and a hundred small fangs kill a traveler as surely as one great one. Crush 8 Sableweb Hatchlings before they grow.",
-        "completion": "A grim work, drowning a nest. But mercy now is a hundred funerals spared later. The ledger is square.",
-        "objectives": {
-          "0": {
-            "label": "Sableweb Hatchling crushed"
-          }
-        }
-      },
-      "q_ledger_deepvermin": {
-        "title": "Vermin in the Deep",
-        "text": "The Marshal's ledger says you clear pests. Well, my dig has the worst of them. The tunnel rats breed faster than my crew can swing a pick - put down 12 Tunnel Rat Diggers and maybe we strike copper before winter.",
-        "completion": "Twelve of the candle-headed vermin, gone! Right, lads - back down the shaft. You have earned the Marshal a good word, {playerName}.",
-        "objectives": {
-          "0": {
-            "label": "Tunnel Rat Digger slain"
-          }
-        }
-      },
-      "q_ledger_toll": {
-        "title": "The Tusked Road",
-        "text": "The grovetusk boars have come down out of the Brightwood and onto the southeast trade road - great tusked brutes that gore the draft oxen and overturn carts for the spilled grain. The ledger has a price on every one. Reopen the road: put down 8 Grovetusk Boars.",
-        "completion": "Eight brutes off the road, and the carts are rolling again. Word is already spreading that the trade road has a new keeper. The ledger climbs in your favor.",
-        "objectives": {
-          "0": {
-            "label": "Grovetusk Boar slain"
-          }
-        }
-      },
-      "q_ledger_vigil": {
-        "title": "Vigil at the Chapel",
-        "text": "The Marshal sends his wardens to me when the trouble is past the reach of swords alone. The chapel dead will not lie still, and I am too old to stand the night vigil. Keep it for me, {playerName} - lay 10 Restless Bones back to their rest.",
-        "completion": "Ten souls returned to the earth, and a night of peace bought for the chapel. The Light remembers such vigils, even when the ledger forgets.",
-        "objectives": {
-          "0": {
-            "label": "Restless Bones laid to rest"
-          }
-        }
-      },
-      "q_ledger_great_boar": {
-        "title": "The Great Bristleback",
-        "text": "There is an old bull boar in the western thickets - the Elder Bristleback, hide like bark and a temper to match. He has gored two of my hide-runners. Bring him down and clear 6 of the lesser Wild Boar that shelter behind him, and I will see your name set high in the ledger.",
-        "completion": "The Elder Bristleback, dead by your hand! That hide alone is worth a season of trade. You have made the ledger proud, {playerName}.",
-        "objectives": {
-          "0": {
-            "label": "Elder Bristleback slain"
-          },
-          "1": {
-            "label": "Wild Boar of the herd slain"
-          }
-        }
-      },
-      "q_ledger_outlaw_captain": {
-        "title": "The Outlaw Captain",
-        "text": "The last name in the ledger is the one I have wanted crossed out for a year: Captain Verlan, who turned half the Vale to banditry. He shelters behind his lieutenants in the southeast camp. Cut down 6 Vale Bandits to reach him, then end Verlan himself. Do not go alone.",
-        "completion": "Captain Verlan, dead, and his coat brought to my door. The ledger is closed, {playerName} - and the Vale will tell wardens-to-come the name of the one who closed it.",
-        "objectives": {
-          "0": {
-            "label": "Vale Bandit cut down"
-          },
-          "1": {
-            "label": "Captain Verlan slain"
-          }
-        }
-      },
-      "q_mogger_tracks": {
-        "title": "Mogger's Trail",
-        "text": "Before you take the road north, Eastbrook has one last thorn in its side: Mogger. The brute has been trampling the lower meadow and driving the boars mad. Clear the meadow around his trail so we can see where he lairs.",
-        "completion": "Those tracks are fresh and deep enough to hold rain. Mogger is no camp tale, {playerName} - and he is close.",
-        "objectives": {
-          "0": {
-            "label": "Wild Boar driven from the trail"
-          }
-        }
-      },
       "q_mogger": {
         "title": "Mogger Must Fall",
         "text": "Mogger has split carts, flattened fences, and killed enough livestock to empty half the Vale. Do not face him alone. Take two strong companions into the eastern meadow and put the brute down for good.",
@@ -5098,6 +8442,26 @@ export const en: EnTranslations = {
         "objectives": {
           "0": {
             "label": "Mogger slain"
+          }
+        }
+      },
+      "q_archetype_acceptance": {
+        "title": "A Craft to Call Your Own",
+        "text": "Every artisan of Eastbrook eventually settles on one craft to call their own. Prove yourself with a single deed, {playerName}, and declare your path.",
+        "completion": "Your path is chosen; walk it well.",
+        "objectives": {
+          "0": {
+            "label": "Forest Wolf slain"
+          }
+        }
+      },
+      "q_prof_make_amends": {
+        "title": "Making Amends",
+        "text": "To set aside one craft for another, an artisan must first make amends for the path not walked, {playerName}.",
+        "completion": "Amends made; a new path is open to you.",
+        "objectives": {
+          "0": {
+            "label": "Forest Wolf slain"
           }
         }
       },
@@ -5183,7 +8547,7 @@ export const en: EnTranslations = {
             "label": "Mirror Lake"
           },
           "4": {
-            "label": "Webwood"
+            "label": "Sableweb"
           },
           "5": {
             "label": "Copper Dig"
@@ -5195,7 +8559,13 @@ export const en: EnTranslations = {
             "label": "Fallen Chapel"
           },
           "8": {
+            "label": "Reliquary Hill"
+          },
+          "9": {
             "label": "Brightwood Glade"
+          },
+          "10": {
+            "label": "The Sowfield"
           }
         }
       },
@@ -5297,12 +8667,111 @@ export const en: EnTranslations = {
         "enterText": "You step through the moongate — the air turns to cold water and pale light, and the singing closes over your head.",
         "leaveText": "You surface through the moongate into the mountain night."
       }
+    },
+    "delves": {
+      "collapsed_reliquary": {
+        "name": "The Collapsed Reliquary",
+        "enterText": "You descend into the collapsed reliquary.",
+        "leaveText": "You climb back to Brother Halven at the reliquary ruin."
+      },
+      "drowned_litany": {
+        "name": "The Drowned Litany",
+        "enterText": "You descend into the drowned shrine at the marsh's edge.",
+        "leaveText": "You climb back to Brother Halven at the marsh's edge."
+      }
+    },
+    "letters": {
+      "ravenpost_welcome": {
+        "sender": "The Ravenpost",
+        "subject": "The ravens now fly for you",
+        "body": "Traveler,\n\nThe Ravenpost has opened its perches across the vale. Seek the raven pillars in Eastbrook, Fenbridge and Highwatch: from any of them you may send letters, coin and goods to other adventurers, and collect whatever the ravens bring you.\n\nEnclosed is a small courtesy for your first stamp.\n\nWings up,\nThe Ravenpost"
+      },
+      "letter_q_wolves": {
+        "sender": "Marshal Redbrook",
+        "subject": "The pens are quiet again",
+        "body": "The herders can sleep with both eyes shut for once, and that is your doing. I have told the Ravenpost to carry you a little something from the watch fund.\n\nKeep your blade oiled.\n- Marshal Redbrook"
+      },
+      "letter_q_greyjaw": {
+        "sender": "Marshal Redbrook",
+        "subject": "Old Greyjaw, at last",
+        "body": "Word travels fast in a town this small. The herders drank to your health last night, and Wilkes swears the wolf was the size of a cart. Let them embellish: you earned it.\n\nShare a meal on the watch.\n- Marshal Redbrook"
+      },
+      "letter_q_hollow": {
+        "sender": "Brother Aldric",
+        "subject": "What you did in the dark",
+        "body": "Few will ever know what was buried in that hollow, and fewer still would believe it. I know, and I will not forget.\n\nMay your road stay lit.\n- Brother Aldric"
+      }
+    },
+    "itemSets": {
+      "boundstone_vanguard": {
+        "name": "Boundstone Vanguard",
+        "bonus3": "Increases attack and casting speed by 15%."
+      },
+      "crownforged": {
+        "name": "Bonewrought Regalia",
+        "bonus2": "Increases attack power by 40.",
+        "bonus3": "Increases Strength by 15, Stamina by 15, and attack and casting speed by 15%.",
+        "bonus4": "Your weapon critical strikes splinter the target with Bonesplinter, bleeding it for 8 damage every 2 sec for 12 sec. Stacks up to 3 times."
+      },
+      "deathlord": {
+        "name": "Barrowlord Battlegear",
+        "bonus2": "Increases attack power by 40.",
+        "bonus3": "Increases Strength by 15 and Stamina by 15.",
+        "bonus4": "Your weapon critical strikes have a 50% chance to grant Gravemight, increasing attack power by 60 for 10 sec."
+      },
+      "greyjaw_stalker": {
+        "name": "Greyjaw Stalker's Kit",
+        "bonus3": "Increases attack and casting speed by 15%."
+      },
+      "necromancers": {
+        "name": "Mournweave Raiment",
+        "bonus2": "Increases spell power by 20. You cannot be knocked back (100% knockback resistance).",
+        "bonus3": "Increases Intellect by 10 and Stamina by 10.",
+        "bonus4": "Your spells have a 10% chance to grant Clearcasting, making your next spell free."
+      },
+      "nighttalon": {
+        "name": "Direfang Pelt",
+        "bonus2": "Increases attack power by 40.",
+        "bonus3": "Increases Agility by 15, critical strike chance by 2%, and attack and casting speed by 15%.",
+        "bonus4": "Your weapon critical strikes tear a Ragged Gash, bleeding the target for 6 damage every 2 sec for 12 sec. Stacks up to 3 times."
+      },
+      "soulflame": {
+        "name": "Wraithfire Regalia",
+        "bonus2": "Increases spell power by 20. You cannot be knocked back (100% knockback resistance).",
+        "bonus3": "Increases Intellect by 15, Spirit by 15, and attack and casting speed by 15%.",
+        "bonus4": "Your spells have a 10% chance to grant Soulblaze, increasing spell power by 40 for 10 sec."
+      },
+      "stormcallers": {
+        "name": "Galecall Vestments",
+        "bonus2": "Increases spell power by 20. You cannot be knocked back (100% knockback resistance).",
+        "bonus3": "Increases Intellect by 15, Spirit by 15, and attack and casting speed by 15%.",
+        "bonus4": "Your spells have a 10% chance to grant Soulblaze, increasing spell power by 40 for 10 sec."
+      },
+      "vale_arcanist": {
+        "name": "Vale Arcanist's Regalia",
+        "bonus3": "Increases attack and casting speed by 15%."
+      },
+      "wyrmshadow": {
+        "name": "Nightfang Vestments",
+        "bonus2": "Increases attack power by 40.",
+        "bonus3": "Increases Agility by 15 and critical strike chance by 2%.",
+        "bonus4": "Your weapon critical strikes have a 50% chance to grant Fangrush, increasing attack speed by 25% for 8 sec."
+      }
     }
   },
   "worldContent": {
     "corpseName": "{name} (corpse)",
     "dungeonExitName": "{name} Exit",
     "dungeonPartyWarning": "{name} is meant for a full party of {count}. Tread carefully.",
-    "dungeonInstanceBusy": "All instances of {name} are busy. Try again soon."
+    "dungeonInstanceBusy": "All instances of {name} are busy. Try again soon.",
+    "delveLockedChestInteract": "Press F to pick the lock",
+    "delveRewardChestInteract": "Press F to claim spoils",
+    "delveSurfaceExitInteract": "Press F to climb",
+    "delveReliquaryInteract": "Drowned Reliquary: Press F to begin the rite",
+    "delveRiteShrineBellInteract": "Bell Shrine: Press F to ring it",
+    "delveRiteShrineCandleInteract": "Candle Shrine: Press F to touch it",
+    "delveRiteShrineReedInteract": "Reed Shrine: Press F to touch it",
+    "delveRiteShrineSkullInteract": "Skull Shrine: Press F to touch it",
+    "mailboxName": "Mailbox"
   }
 };
