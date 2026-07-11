@@ -460,6 +460,18 @@ describe('ERR_KEYS server-code coverage', () => {
     'not_damm_v2',
     'no_locked_vesting',
     'no_migration_threshold',
+    // power (phase 7, server/realm_power.ts): token-to-copper conversion.
+    // Only the codes NEW to this phase are listed; the quote/confirm path also
+    // reuses codes already pinned above (quote_not_found, wrong_payer, ...).
+    'power_disabled',
+    'realm_not_power',
+    'token_not_live',
+    'power_rate_unset',
+    'power_sink_unavailable',
+    'amount_below_minimum',
+    'character_not_found',
+    'sink_short',
+    'credit_already_recorded',
     // route-level rate limit literal
     'too many requests, slow down',
   ];

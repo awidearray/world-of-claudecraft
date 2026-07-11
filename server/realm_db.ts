@@ -274,6 +274,30 @@ const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
     'pay_tx_sig',
     'refund_tx_sig',
   ],
+  // Power-credit money tables (phase 7): the ledger's replay guard and the
+  // credited-once stamp are load-bearing.
+  realm_power_quotes: [
+    'quote_id',
+    'realm_id',
+    'account_id',
+    'character_id',
+    'wallet',
+    'amount_base',
+    'copper_credit',
+    'sink_wallet',
+    'expires_at',
+  ],
+  realm_power_credits: [
+    'credit_id',
+    'realm_id',
+    'account_id',
+    'character_id',
+    'wallet',
+    'amount_base',
+    'copper_credit',
+    'pay_tx_sig',
+    'credited_at',
+  ],
   // Fee-claim ledger (phase 5): both signatures are UNIQUE recovery anchors
   // and the split legs are the executed ledger.
   realm_fee_claims: [

@@ -90,6 +90,7 @@ import {
   type OwnedRealm,
   type ProvisionQuote,
   type RealmBuyQuoteResponse,
+  type RealmPowerQuote,
   type RealmPresaleQuote,
   type ReleaseEntry,
 } from './net/online';
@@ -6486,6 +6487,24 @@ async function signServerBuiltTransaction(txBase64: string): Promise<string | nu
   }
 }
 
+// Sign + send the phase 7 token-to-copper payment (one Token-2022 transfer of
+// the quoted realm-token amount into the treasury sink). Returns the payment
+// signature, or null if the player cancelled in their wallet.
+async function signPowerCreditPayment(quote: RealmPowerQuote): Promise<string | null> {
+  const wallet = await loadWallet();
+  try {
+    return await wallet.signAndSendPowerCredit({
+      mint: quote.mint,
+      sinkWallet: quote.sinkWallet,
+      amountBase: quote.amountBase,
+      memo: quote.memo,
+    });
+  } catch (err) {
+    if (wallet.isWalletSelectionCancelled(err)) return null;
+    throw err instanceof Error ? err : new Error(t('launchpad.err.generic'));
+  }
+}
+
 // Realm token launchpad (phases 0 to 3): rendered into the realm-operator panel
 // body for one owned realm; Back re-opens the operator dashboard.
 function openRealmLaunchpad(realm: OwnedRealm): void {
@@ -6497,6 +6516,7 @@ function openRealmLaunchpad(realm: OwnedRealm): void {
     ensureWalletReady: ensureRealmWalletReady,
     signContribution: signPresaleContribution,
     signServerTransaction: signServerBuiltTransaction,
+    signPowerCredit: signPowerCreditPayment,
     close: () => {
       realmOperator = null; // the panel body was repurposed; rebuild fresh
       openRealmOperator();

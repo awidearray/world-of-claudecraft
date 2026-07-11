@@ -27,6 +27,7 @@ import {
 import bs58 from 'bs58';
 import { buildRealmPurchaseInstructions } from './realm_buy';
 import { buildRealmLockIx, ownerTokenAccount } from './realm_escrow';
+import { buildPowerCreditInstructions } from './realm_power';
 import { buildPresaleContributionInstructions } from './realm_presale';
 
 export interface WalletState {
@@ -563,6 +564,50 @@ export async function signAndSendPresaleContribution(
   const { blockhash } = await connection.getLatestBlockhash('confirmed');
   const tx = new Transaction();
   tx.feePayer = contributor;
+  tx.recentBlockhash = blockhash;
+  for (const ix of ixs) tx.add(ix);
+  const wire = tx.serialize({ requireAllSignatures: false, verifySignatures: false });
+
+  const [result] = await feature.signAndSendTransaction({
+    account,
+    chain: REALM_CHAIN,
+    transaction: new Uint8Array(wire),
+  });
+  if (!result || !(result.signature instanceof Uint8Array))
+    throw new Error('wallet returned an invalid signature');
+  return bs58.encode(result.signature);
+}
+
+// ── Power-realm token-to-copper credit (launchpad phase 7) ──────────────────
+// The server-quoted credit: one Token-2022 transfer of the exact realm-token
+// amount into the realm treasury sink, tagged with the quoteId memo.
+export interface PowerCreditQuote {
+  mint: string;
+  sinkWallet: string;
+  amountBase: string;
+  memo: string; // == quoteId
+}
+
+export async function signAndSendPowerCredit(quote: PowerCreditQuote): Promise<string> {
+  const wallet = selectedWallet;
+  const account = selectedAccount;
+  if (!wallet || !account) throw new Error('connect a wallet first');
+  const feature = signAndSendFeature(wallet);
+  if (!feature) throw new Error('this wallet cannot sign and send transactions');
+
+  const payer = new PublicKey(account.address);
+  const ixs = buildPowerCreditInstructions({
+    payer,
+    mint: new PublicKey(quote.mint),
+    sinkWallet: new PublicKey(quote.sinkWallet),
+    amountBase: BigInt(quote.amountBase),
+    memo: quote.memo,
+  });
+
+  const connection = new Connection(REALM_RPC_URL, 'confirmed');
+  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  const tx = new Transaction();
+  tx.feePayer = payer;
   tx.recentBlockhash = blockhash;
   for (const ix of ixs) tx.add(ix);
   const wire = tx.serialize({ requireAllSignatures: false, verifySignatures: false });

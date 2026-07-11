@@ -9,9 +9,11 @@
 
 import type {
   Api,
+  CharacterSummary,
   RealmCurveInfo,
   RealmLaunchCheck,
   RealmLaunchStatus,
+  RealmPowerQuote,
   RealmPresaleQuote,
   RealmPresaleRail,
   RealmTokenPage,
@@ -48,6 +50,9 @@ export interface RealmLaunchpadHost {
   // Co-sign + send a server-built partial-signed transaction (the phase 3
   // create-mint tx). null = cancelled in the wallet.
   signServerTransaction(txBase64: string): Promise<string | null>;
+  // Sign + send the phase 7 token-to-copper payment (one Token-2022 transfer
+  // into the realm treasury sink). null = cancelled in the wallet.
+  signPowerCredit(quote: RealmPowerQuote): Promise<string | null>;
   // Return to the operator dashboard.
   close(): void;
 }
@@ -198,6 +203,16 @@ export const ERR_KEYS = {
   not_damm_v2: 'launchpad.err.not_damm_v2',
   no_locked_vesting: 'launchpad.err.no_locked_vesting',
   no_migration_threshold: 'launchpad.err.no_migration_threshold',
+  // power (phase 7): token-to-copper conversion on power realms
+  power_disabled: 'launchpad.err.power_disabled',
+  realm_not_power: 'launchpad.err.realm_not_power',
+  token_not_live: 'launchpad.err.token_not_live',
+  power_rate_unset: 'launchpad.err.power_rate_unset',
+  power_sink_unavailable: 'launchpad.err.power_sink_unavailable',
+  amount_below_minimum: 'launchpad.err.amount_below_minimum',
+  character_not_found: 'launchpad.err.character_not_found',
+  sink_short: 'launchpad.err.sink_short',
+  credit_already_recorded: 'launchpad.err.credit_already_recorded',
   'too many requests, slow down': 'launchpad.err.rate_limited',
 } satisfies Record<string, TranslationKey>;
 
@@ -224,6 +239,9 @@ export class RealmLaunchpad {
   private launch: RealmLaunchStatus | null = null;
   private lastChecks: RealmLaunchCheck[] | null = null;
   private curve: RealmCurveInfo | null = null;
+  // The account's characters on this realm (the power-convert delivery picker;
+  // loaded only when the realm converts, i.e. policy `power` + a live token).
+  private characters: CharacterSummary[] | null = null;
   // The DBC base mint returned by curve/prepare, held until the founder's
   // creation transaction finalizes and .../curve/confirm verifies it.
   private pendingCurveMint: string | null = null;
@@ -251,6 +269,10 @@ export class RealmLaunchpad {
       const launchable = status === 'funded' || status === 'live' || status === 'graduated';
       this.launch = launchable ? await this.host.api.realmLaunch(this.host.realm.realmId) : null;
       this.curve = launchable ? await this.fetchCurve() : null;
+      const converts =
+        this.page.token?.monetizationPolicy === 'power' &&
+        (status === 'live' || status === 'graduated');
+      this.characters = converts ? await this.host.api.characters() : null;
     } catch (err) {
       this.root.innerHTML = `<p class="ro-hint ro-hint-muted">${esc(messageForError(err))}</p>`;
       return;
@@ -298,6 +320,7 @@ export class RealmLaunchpad {
         );
       }
       if (this.curve) sections.push(this.curveHtml(curveView(this.curve), status));
+      if (this.characters) sections.push(this.powerHtml());
     }
     sections.push(
       `<button id="lp-back" class="btn btn-secondary" type="button">${esc(t('launchpad.back'))}</button>`,
@@ -701,6 +724,43 @@ export class RealmLaunchpad {
     return `<section class="lp-curve" aria-label="${esc(t('launchpad.curve.title'))}">${lines.join('')}</section>`;
   }
 
+  // The phase 7 power-realm conversion: send realm tokens to the treasury
+  // sink, receive in-game copper on a chosen character. Rendered only on a
+  // `power` realm with a live token; the server re-checks the policy, the
+  // platform flag, and the rate on every quote and confirm.
+  private powerHtml(): string {
+    const symbol = this.page?.token?.symbol ?? '';
+    const characters = this.characters ?? [];
+    if (characters.length === 0) {
+      return `
+        <section class="lp-power" aria-label="${esc(t('launchpad.power.title'))}">
+          <h4 class="ro-h">${esc(t('launchpad.power.title'))}</h4>
+          <p class="ro-hint ro-hint-muted">${esc(t('launchpad.power.noCharacters'))}</p>
+        </section>`;
+    }
+    const options = characters
+      .map((c) => `<option value="${c.id}">${esc(c.name)}</option>`)
+      .join('');
+    const submitKey: TranslationKey = this.host.linkedWallet()
+      ? 'launchpad.power.convertBtn'
+      : 'launchpad.power.convertConnect';
+    return `
+      <section class="lp-power" aria-label="${esc(t('launchpad.power.title'))}">
+        <h4 class="ro-h">${esc(t('launchpad.power.title'))}</h4>
+        <p class="ro-sub">${esc(t('launchpad.power.subtitle', { symbol }))}</p>
+        <div class="ro-field">
+          <label class="ro-label" for="lp-power-char">${esc(t('launchpad.power.charLabel'))}</label>
+          <select id="lp-power-char" class="ro-input ro-select">${options}</select>
+        </div>
+        <div class="ro-field">
+          <label class="ro-label" for="lp-power-amount">${esc(t('launchpad.power.amountLabel', { symbol }))}</label>
+          <input id="lp-power-amount" class="ro-input" type="text" inputmode="decimal" autocomplete="off"
+            placeholder="${esc(t('launchpad.presale.amountPlaceholder'))}" />
+        </div>
+        <button id="lp-power-convert" class="btn btn-primary" type="button">${esc(t(submitKey))}</button>
+      </section>`;
+  }
+
   private presaleConfigHtml(): string {
     const railFields = (['SOL', 'USDC', 'WOC'] as const)
       .map(
@@ -744,6 +804,7 @@ export class RealmLaunchpad {
     this.on('#lp-curve-open', () => void this.openCurveFlow());
     this.on('#lp-curve-verify', () => void this.verifyCurveFlow());
     this.on('#lp-curve-graduate', () => void this.graduationFlow());
+    this.on('#lp-power-convert', () => void this.convertPowerFlow());
     const currency = this.root.querySelector<HTMLSelectElement>('#lp-currency');
     currency?.addEventListener('change', () => {
       this.selectedCurrency = currency.value as RealmPresaleRail['currency'];
@@ -941,6 +1002,51 @@ export class RealmLaunchpad {
       this.pendingCurveMint = null;
       await this.reload();
       this.setStatus(t('launchpad.flow.curveListed'), 'success');
+    });
+  }
+
+  // Convert realm tokens to copper (phase 7): the server pins the copper
+  // amount in a quote, the player pays one Token-2022 transfer into the
+  // treasury sink, then the server verifies the finalized transfer and
+  // credits the character (live now, or banked for their next join).
+  private async convertPowerFlow(): Promise<void> {
+    const charRaw = this.root.querySelector<HTMLSelectElement>('#lp-power-char')?.value ?? '';
+    const characterId = Number.parseInt(charRaw, 10);
+    if (!Number.isInteger(characterId) || characterId <= 0) return;
+    const raw = this.root.querySelector<HTMLInputElement>('#lp-power-amount')?.value ?? '';
+    const amountBase = parseAmountToBase(raw, 9); // realm tokens are 9 decimals
+    if (!amountBase) {
+      this.setStatus(t('launchpad.err.invalid_amount'), 'error');
+      return;
+    }
+    await this.run(async () => {
+      const wallet = await this.host.ensureWalletReady();
+      if (!wallet) return;
+      this.setStatus(t('launchpad.flow.quotingPower'), 'info');
+      const quote = await this.host.api.quoteRealmPower(
+        this.host.realm.realmId,
+        characterId,
+        amountBase.toString(),
+      );
+      this.setStatus(
+        t('launchpad.flow.powerQuoted', { copper: formatNumber(Number(quote.copperCredit)) }),
+        'info',
+      );
+      const paySig = await this.host.signPowerCredit(quote);
+      if (!paySig) return; // cancelled in the wallet
+      this.setStatus(t('launchpad.flow.confirmingPower'), 'info');
+      const res = await this.host.api.confirmRealmPower(
+        this.host.realm.realmId,
+        quote.quoteId,
+        paySig,
+      );
+      await this.reload();
+      this.setStatus(
+        t(res.granted ? 'launchpad.flow.powerCredited' : 'launchpad.flow.powerBanked', {
+          copper: formatNumber(Number(res.copperCredit)),
+        }),
+        'success',
+      );
     });
   }
 

@@ -375,7 +375,21 @@ export const ja_JP: EnTranslations = {
       "verifyingCurve": "オンチェーンでカーブを検証しています...",
       "curveListed": "トークンはカーブ上でライブになりました。",
       "verifyingGraduation": "オンチェーンで卒業を検証しています...",
-      "graduated": "卒業しました。LP は永久ロックされています。"
+      "graduated": "卒業しました。LP は永久ロックされています。",
+      "quotingPower": "変換の見積もりを取得しています...",
+      "powerQuoted": "{copper} カッパーを受け取ります。ウォレットで送金を承認してください...",
+      "confirmingPower": "チェーン上で送金を検証しています...",
+      "powerCredited": "キャラクターに {copper} カッパーを付与しました。",
+      "powerBanked": "{copper} カッパーを記帳しました。そのキャラクターの次回ログイン時に届きます。"
+    },
+    "power": {
+      "title": "カッパーに変換",
+      "subtitle": "このペイ・トゥ・ウィンのワールドでは {symbol} をゲーム内カッパーに変換できます。トークンはワールドのトレジャリーに送られ、送金がチェーン上で最終確定した後にカッパーが付与されます。",
+      "charLabel": "受け取るキャラクター",
+      "amountLabel": "数量({symbol})",
+      "convertBtn": "カッパーに変換",
+      "convertConnect": "ウォレットを接続して変換",
+      "noCharacters": "カッパーを受け取るには、まずこのワールドでキャラクターを作成してください。"
     },
     "err": {
       "not_realm_owner": "そのワールドを運営していません。",
@@ -460,6 +474,15 @@ export const ja_JP: EnTranslations = {
       "not_damm_v2": "ローンチ設定はロック付きプールへ卒業しません。",
       "no_locked_vesting": "ローンチ設定にロックされたベスティングがありません。",
       "no_migration_threshold": "ローンチ設定に移行しきい値がありません。",
+      "power_disabled": "このサーバーではトークンからカッパーへの変換が有効になっていません。",
+      "realm_not_power": "このワールドではトークンからカッパーへの変換はできません。",
+      "token_not_live": "トークンはまずカーブ上でライブになる必要があります。",
+      "power_rate_unset": "変換レートがまだ設定されていません。",
+      "power_sink_unavailable": "ワールドのトレジャリーはまだ利用できません。",
+      "amount_below_minimum": "その数量は少なすぎて変換できません。",
+      "character_not_found": "このワールドのあなたのキャラクターを選んでください。",
+      "sink_short": "送金が見積もり数量に達していません。",
+      "credit_already_recorded": "そのトランザクションはすでに付与済みです。",
       "rate_limited": "リクエストが多すぎます。少し待ってからもう一度お試しください。",
       "wallet_mismatch": "アカウントにリンクしたウォレットを接続してください。",
       "generic": "問題が発生しました。もう一度お試しください。"
@@ -596,6 +619,9 @@ export const ja_JP: EnTranslations = {
     }
   },
   "hudChrome": {
+    "money": {
+      "realmCurrency": "{amount} {symbol}"
+    },
     "spectate": {
       "banner": "{name}を観戦中"
     },

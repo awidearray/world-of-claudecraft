@@ -375,7 +375,21 @@ export const zh_TW: EnTranslations = {
       "verifyingCurve": "正在鏈上驗證曲線...",
       "curveListed": "代幣已在曲線上線。",
       "verifyingGraduation": "正在鏈上驗證畢業...",
-      "graduated": "已畢業:LP 已永久鎖定。"
+      "graduated": "已畢業:LP 已永久鎖定。",
+      "quotingPower": "正在為您的兌換報價...",
+      "powerQuoted": "您將獲得 {copper} 銅幣。請在錢包中核准轉帳...",
+      "confirmingPower": "正在鏈上驗證您的轉帳...",
+      "powerCredited": "已向您的角色發放 {copper} 銅幣。",
+      "powerBanked": "已記入 {copper} 銅幣。該角色下次登入時到帳。"
+    },
+    "power": {
+      "title": "兌換銅幣",
+      "subtitle": "此付費變強世界可將 {symbol} 兌換為遊戲內銅幣。代幣將發送至世界金庫,轉帳在鏈上最終確認後發放銅幣。",
+      "charLabel": "發放到角色",
+      "amountLabel": "數量({symbol})",
+      "convertBtn": "兌換銅幣",
+      "convertConnect": "連接錢包並兌換",
+      "noCharacters": "請先在此世界建立角色以接收銅幣。"
     },
     "err": {
       "not_realm_owner": "您不是該世界的營運者。",
@@ -460,6 +474,15 @@ export const zh_TW: EnTranslations = {
       "not_damm_v2": "發射設定不會畢業到鎖定池。",
       "no_locked_vesting": "發射設定不含鎖定歸屬。",
       "no_migration_threshold": "發射設定沒有遷移門檻。",
+      "power_disabled": "本伺服器未啟用代幣兌換銅幣。",
+      "realm_not_power": "此世界不允許代幣兌換銅幣。",
+      "token_not_live": "代幣必須先在曲線上線。",
+      "power_rate_unset": "兌換匯率尚未設定。",
+      "power_sink_unavailable": "世界金庫尚不可用。",
+      "amount_below_minimum": "數量太小,無法兌換。",
+      "character_not_found": "請選擇您在此世界的角色。",
+      "sink_short": "轉帳未達到報價數量。",
+      "credit_already_recorded": "該交易已發放過。",
       "rate_limited": "請求過多。請放慢速度後再試。",
       "wallet_mismatch": "請連接您帳戶所關聯的錢包。",
       "generic": "出了點問題。請重試。"
@@ -596,6 +619,9 @@ export const zh_TW: EnTranslations = {
     }
   },
   "hudChrome": {
+    "money": {
+      "realmCurrency": "{amount} {symbol}"
+    },
     "spectate": {
       "banner": "正在觀察 {name}"
     },

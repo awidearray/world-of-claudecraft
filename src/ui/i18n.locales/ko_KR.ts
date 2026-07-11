@@ -6448,13 +6448,16 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.wocSeason.colReward': '보상($WOC)',
   'hudChrome.wocSeason.emittedLabel': '지금까지 풀의 {pct}% 지급됨',
   'hudChrome.wocSeason.ended': '이번 시즌이 종료되었습니다.',
-  'hudChrome.wocSeason.invariant': '지급액은 시즌 수입을 초과할 수 없습니다. 매수가 매도를 초과하도록 온체인에서 강제됩니다.',
+  'hudChrome.wocSeason.invariant':
+    '지급액은 시즌 수입을 초과할 수 없습니다. 매수가 매도를 초과하도록 온체인에서 강제됩니다.',
   'hudChrome.wocSeason.menu': '$WOC 시즌',
   'hudChrome.wocSeason.none': '현재 진행 중인 보상 시즌이 없습니다.',
-  'hudChrome.wocSeason.noneHint': '투기장 수수료와 바이백이 풀에 자금을 대기 시작하면 시즌이 열립니다.',
+  'hudChrome.wocSeason.noneHint':
+    '투기장 수수료와 바이백이 풀에 자금을 대기 시작하면 시즌이 열립니다.',
   'hudChrome.wocSeason.openEnded': '무기한',
   'hudChrome.wocSeason.poolLabel': '사용 가능한 보상 풀',
-  'hudChrome.wocSeason.projectedNote': '현재 풀과 투기장 순위 기준 예상치이며, 최종 지급은 시즌 종료 시 확정됩니다.',
+  'hudChrome.wocSeason.projectedNote':
+    '현재 풀과 투기장 순위 기준 예상치이며, 최종 지급은 시즌 종료 시 확정됩니다.',
   'hudChrome.wocSeason.sinkLabel': '적립됨',
   'hudChrome.wocSeason.standingsTitle': '예상 상위 획득자',
   'hudChrome.wocSeason.statusActive': '진행 중',
@@ -6464,8 +6467,10 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'realmOp.open': '월드 설립',
   'realmOp.panelTitle': '월드 운영자',
   'realmOp.affiliate.bonusRealm': '또한 그들이 설립한 월드에서 15%의 USDC 수수료를 받습니다.',
-  'realmOp.affiliate.bonusReferee': '내 링크로 가입한 플레이어는 첫 30일 동안 경험치와 골드를 +10% 받습니다.',
-  'realmOp.affiliate.bonusReferrer': '해당 기간 동안 그들이 얻는 수익의 +5%가 내 캐릭터에 적립됩니다.',
+  'realmOp.affiliate.bonusReferee':
+    '내 링크로 가입한 플레이어는 첫 30일 동안 경험치와 골드를 +10% 받습니다.',
+  'realmOp.affiliate.bonusReferrer':
+    '해당 기간 동안 그들이 얻는 수익의 +5%가 내 캐릭터에 적립됩니다.',
   'realmOp.affiliate.bonusTitle': '링크 보상 안내',
   'realmOp.affiliate.commission': '{pct}% 수수료',
   'realmOp.affiliate.copied': '복사됨',
@@ -6477,33 +6482,46 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'realmOp.affiliate.referredCount': '활성 추천 월드 {count}개',
   'realmOp.affiliate.referredCountPlural': '활성 추천 월드 {count}개',
   'realmOp.affiliate.referredTitle': '내가 추천한 월드',
-  'realmOp.affiliate.rewardsEmpty': '플레이어를 추천하여 수익을 시작하세요. 보상은 다음 로그인 시 캐릭터에 지급됩니다.',
+  'realmOp.affiliate.rewardsEmpty':
+    '플레이어를 추천하여 수익을 시작하세요. 보상은 다음 로그인 시 캐릭터에 지급됩니다.',
   'realmOp.affiliate.rewardsLifetime': '평생 {xp} 경험치와 {gold} 획득',
-  'realmOp.affiliate.rewardsPending': '{xp} 경험치와 {gold} 지급 대기 중, 다음 로그인 시 적립됩니다',
+  'realmOp.affiliate.rewardsPending':
+    '{xp} 경험치와 {gold} 지급 대기 중, 다음 로그인 시 적립됩니다',
   'realmOp.affiliate.rewardsReferred': '추천한 플레이어: {count}',
   'realmOp.affiliate.rewardsTitle': '내 추천 보상',
-  'realmOp.affiliate.subtitle': '링크 하나를 공유하세요. 링크로 가입한 플레이어는 경험치와 골드 부스트를 받고, 당신은 그들의 수익에서 보상을 얻으며, 그들이 설립한 월드에서 15%를 받습니다.',
+  'realmOp.affiliate.subtitle':
+    '링크 하나를 공유하세요. 링크로 가입한 플레이어는 경험치와 골드 부스트를 받고, 당신은 그들의 수익에서 보상을 얻으며, 그들이 설립한 월드에서 15%를 받습니다.',
   'realmOp.affiliate.title': '추천 및 제휴 프로그램',
   'realmOp.affiliate.unavailable': '추천 통계를 지금 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
   'realmOp.affiliate.yourLink': '내 추천 링크',
-  'realmOp.buy.bondNote': '또한 {amount} $WOC를 보유해야 하며, 월드가 유지되는 동안 연결된 지갑에 보관해야 합니다. 그렇지 않으면 월드가 만료됩니다.',
-  'realmOp.buy.bondWhy': '이 지속 보증금은 지불하는 {currency}와 별개입니다. 월드를 운영하는 동안 이해관계를 유지하기 위한 것입니다.',
+  'realmOp.buy.bondNote':
+    '또한 {amount} $WOC를 보유해야 하며, 월드가 유지되는 동안 연결된 지갑에 보관해야 합니다. 그렇지 않으면 월드가 만료됩니다.',
+  'realmOp.buy.bondWhy':
+    '이 지속 보증금은 지불하는 {currency}와 별개입니다. 월드를 운영하는 동안 이해관계를 유지하기 위한 것입니다.',
   'realmOp.buy.currencyLabel': '결제 수단',
   'realmOp.buy.currencyUnavailable': '{currency}은(는) 지금 사용할 수 없습니다(스왑 경로 없음).',
-  'realmOp.buy.finalNote': '구매는 최종이며 환불되지 않습니다. 스테이크와 달리 월드를 해체해도 반환되지 않습니다.',
-  'realmOp.buy.note': '{amount} {currency}을(를) 지불하는 트랜잭션 하나에 서명하여 이 월드를 설립합니다. 월드는 즉시 활성화됩니다.',
-  'realmOp.buy.splitNote': '지불액의 {treasuryPct}%는 트레저리로 가고, 나머지는 $WOC를 매입하여 소각합니다.',
+  'realmOp.buy.finalNote':
+    '구매는 최종이며 환불되지 않습니다. 스테이크와 달리 월드를 해체해도 반환되지 않습니다.',
+  'realmOp.buy.note':
+    '{amount} {currency}을(를) 지불하는 트랜잭션 하나에 서명하여 이 월드를 설립합니다. 월드는 즉시 활성화됩니다.',
+  'realmOp.buy.splitNote':
+    '지불액의 {treasuryPct}%는 트레저리로 가고, 나머지는 $WOC를 매입하여 소각합니다.',
   'realmOp.buy.submit': '구매 및 설립',
   'realmOp.buy.submitConnect': '구매하려면 지갑 연결',
-  'realmOp.buy.unavailable': '지금은 월드를 구매할 수 없습니다. 대신 $WOC를 스테이킹하여 설립하세요.',
+  'realmOp.buy.unavailable':
+    '지금은 월드를 구매할 수 없습니다. 대신 $WOC를 스테이킹하여 설립하세요.',
   'realmOp.err.bad_signature': '해당 결제 서명이 유효하지 않습니다. 다시 시작하세요.',
-  'realmOp.err.bond_required': '이 등급을 구매하려면 연결된 지갑에 {amount} $WOC를 보유해야 합니다. 충전 후 다시 시도하세요.',
-  'realmOp.err.buy_unavailable': '지금은 월드를 구매할 수 없습니다. 대신 $WOC를 스테이킹하여 설립하세요.',
+  'realmOp.err.bond_required':
+    '이 등급을 구매하려면 연결된 지갑에 {amount} $WOC를 보유해야 합니다. 충전 후 다시 시도하세요.',
+  'realmOp.err.buy_unavailable':
+    '지금은 월드를 구매할 수 없습니다. 대신 $WOC를 스테이킹하여 설립하세요.',
   'realmOp.err.buyback_short': '지불한 금액이 견적과 일치하지 않습니다.',
   'realmOp.err.generic': '문제가 발생했습니다. 다시 시도하세요.',
-  'realmOp.err.invalid_amount': '스테이크 수량이 유효하지 않습니다. 등급을 선택하고 다시 시도하세요.',
+  'realmOp.err.invalid_amount':
+    '스테이크 수량이 유효하지 않습니다. 등급을 선택하고 다시 시도하세요.',
   'realmOp.err.invalid_currency': 'SOL 또는 USDC를 선택하고 다시 시도하세요.',
-  'realmOp.err.invalid_realm_name': '해당 월드 이름은 허용되지 않습니다. 문자, 숫자, 공백, 하이픈을 사용하세요.',
+  'realmOp.err.invalid_realm_name':
+    '해당 월드 이름은 허용되지 않습니다. 문자, 숫자, 공백, 하이픈을 사용하세요.',
   'realmOp.err.invalid_tier': '등급을 선택하고 다시 시도하세요.',
   'realmOp.err.legs_collide': '결제를 확인할 수 없습니다. 다시 시작하세요.',
   'realmOp.err.link_wallet': '먼저 지갑을 계정에 연결하세요.',
@@ -6512,7 +6530,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'realmOp.err.not_realm_owner': '해당 월드의 운영자가 아닙니다.',
   'realmOp.err.not_your_quote': '해당 견적은 다른 계정의 것입니다.',
   'realmOp.err.payment_already_recorded': '해당 결제는 이미 기록되었습니다.',
-  'realmOp.err.price_unavailable': '실시간 가격을 지금 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
+  'realmOp.err.price_unavailable':
+    '실시간 가격을 지금 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
   'realmOp.err.quote_expired': '견적이 만료되었습니다. 다시 시작하세요.',
   'realmOp.err.quote_not_found': '견적을 찾을 수 없습니다. 다시 시작하세요.',
   'realmOp.err.rate_limited': '요청이 너무 많습니다. 잠시 후 다시 시도하세요.',
@@ -6523,10 +6542,13 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'realmOp.err.realm_not_decommissioning': '해당 월드는 해체 진행 중이 아닙니다.',
   'realmOp.err.realm_not_found': '해당 월드는 더 이상 존재하지 않습니다.',
   'realmOp.err.stake_already_recorded': '해당 스테이크는 이미 기록되었습니다.',
-  'realmOp.err.stake_below_minimum': '해당 스테이크는 최소 등급 미만입니다. 더 높은 등급을 선택하세요.',
+  'realmOp.err.stake_below_minimum':
+    '해당 스테이크는 최소 등급 미만입니다. 더 높은 등급을 선택하세요.',
   'realmOp.err.stake_not_released_onchain': '먼저 온체인에서 스테이크를 해제한 다음 마무리하세요.',
-  'realmOp.err.stake_service_unavailable': '스테이킹을 일시적으로 사용할 수 없습니다. 잠시 후 다시 확인하세요.',
-  'realmOp.err.supply_unavailable': '$WOC 공급량 정보를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
+  'realmOp.err.stake_service_unavailable':
+    '스테이킹을 일시적으로 사용할 수 없습니다. 잠시 후 다시 확인하세요.',
+  'realmOp.err.supply_unavailable':
+    '$WOC 공급량 정보를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
   'realmOp.err.timelock_not_elapsed': '스테이크 타임락이 아직 지나지 않았습니다.',
   'realmOp.err.token_2022': '이 $WOC 민트는 스테이킹에 지원되지 않습니다.',
   'realmOp.err.treasury_short': '지불한 금액이 견적과 일치하지 않습니다.',
@@ -6546,36 +6568,46 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'realmOp.flow.quoting': '월드를 예약하는 중...',
   'realmOp.flow.released': '월드가 닫혔습니다. 이름을 다시 사용할 수 있습니다.',
   'realmOp.flow.releasing': '닫기를 마무리하는 중...',
-  'realmOp.found.affiliateNote': '제휴자의 추천입니다. 그들은 이 월드 수익의 15%를 수수료로 받습니다.',
-  'realmOp.found.badgeNote': '스테이킹한 $WOC는 계속 홀더 배지에 집계되므로, 월드를 설립해도 등급이 내려가지 않습니다.',
+  'realmOp.found.affiliateNote':
+    '제휴자의 추천입니다. 그들은 이 월드 수익의 15%를 수수료로 받습니다.',
+  'realmOp.found.badgeNote':
+    '스테이킹한 $WOC는 계속 홀더 배지에 집계되므로, 월드를 설립해도 등급이 내려가지 않습니다.',
   'realmOp.found.methodBuy': 'SOL 또는 USDC로 구매',
-  'realmOp.found.methodBuyHint': 'SOL 또는 USDC로 한 번만 지불합니다. 최종 구매이며 회수할 스테이크가 없습니다.',
+  'realmOp.found.methodBuyHint':
+    'SOL 또는 USDC로 한 번만 지불합니다. 최종 구매이며 회수할 스테이크가 없습니다.',
   'realmOp.found.methodLabel': '결제 방법',
   'realmOp.found.methodStake': '$WOC 스테이킹',
   'realmOp.found.methodStakeHint': '$WOC를 에스크로에 잠급니다. 해체 시 전액 반환됩니다.',
   'realmOp.found.nameLabel': '월드 이름',
   'realmOp.found.namePlaceholder': '월드 이름 짓기',
   'realmOp.found.nameTaken': '다른 이름을 선택하세요. 해당 이름은 사용 중입니다.',
-  'realmOp.found.stakingNote': '{amount} $WOC를 에스크로에 잠그는 트랜잭션 하나에 서명합니다. 해체 후 {days}일 타임락이 지나면 언제든 회수할 수 있습니다.',
+  'realmOp.found.stakingNote':
+    '{amount} $WOC를 에스크로에 잠그는 트랜잭션 하나에 서명합니다. 해체 후 {days}일 타임락이 지나면 언제든 회수할 수 있습니다.',
   'realmOp.found.submit': '스테이킹 및 설립',
   'realmOp.found.submitConnect': '설립하려면 지갑 연결',
-  'realmOp.found.subtitle': '$WOC를 비수탁 에스크로에 스테이킹하여 나만의 월드를 개설하고 운영하세요.',
+  'realmOp.found.subtitle':
+    '$WOC를 비수탁 에스크로에 스테이킹하여 나만의 월드를 개설하고 운영하세요.',
   'realmOp.found.supplyNote': '각 등급의 가격은 실시간 $WOC 공급량의 비율로 책정됩니다.',
-  'realmOp.found.tierHint': '더 큰 스테이크는 더 높은 등급을 해제합니다. 더 많은 플레이어, 더 많은 커스터마이징 예산, 운영자 수익 레일이 제공됩니다.',
+  'realmOp.found.tierHint':
+    '더 큰 스테이크는 더 높은 등급을 해제합니다. 더 많은 플레이어, 더 많은 커스터마이징 예산, 운영자 수익 레일이 제공됩니다.',
   'realmOp.found.tierLabel': '스테이크 등급',
-  'realmOp.found.tiersUnavailable': '실시간 등급 가격을 지금 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
+  'realmOp.found.tiersUnavailable':
+    '실시간 등급 가격을 지금 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
   'realmOp.found.title': '월드 설립',
   'realmOp.found.typeLabel': '월드 유형',
   'realmOp.mine.bondInfo': '보증금: 연결된 지갑에 {amount} $WOC 보유.',
-  'realmOp.mine.bondWarning': '보증금이 요구치 미만입니다. {amount} $WOC를 보유하고 {date} 전에 충전하지 않으면 이 월드는 만료됩니다.',
+  'realmOp.mine.bondWarning':
+    '보증금이 요구치 미만입니다. {amount} $WOC를 보유하고 {date} 전에 충전하지 않으면 이 월드는 만료됩니다.',
   'realmOp.mine.decommission': '해체',
-  'realmOp.mine.decommissionConfirm': '{name}을(를) 해체할까요? 월드가 오프라인이 되고 {days}일의 스테이크 해제 타임락이 시작됩니다.',
+  'realmOp.mine.decommissionConfirm':
+    '{name}을(를) 해체할까요? 월드가 오프라인이 되고 {days}일의 스테이크 해제 타임락이 시작됩니다.',
   'realmOp.mine.eligible': '스테이크는 {date}에 해제 가능',
   'realmOp.mine.empty': '아직 운영 중인 월드가 없습니다. 위에서 하나 설립해 시작하세요.',
   'realmOp.mine.enter': '입장',
   'realmOp.mine.loading': '월드를 불러오는 중...',
   'realmOp.mine.release': '닫기 마무리',
-  'realmOp.mine.releaseHint': '온체인에서 스테이크를 해제한 뒤 마무리하면 월드가 닫히고 이름이 해제됩니다.',
+  'realmOp.mine.releaseHint':
+    '온체인에서 스테이크를 해제한 뒤 마무리하면 월드가 닫히고 이름이 해제됩니다.',
   'realmOp.mine.tier': '{tier} 등급',
   'realmOp.mine.title': '내 월드',
   'realmOp.status.active': '활성',
@@ -6607,16 +6639,20 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.checklist.launch': '출시',
   'launchpad.policy.cosmetic': '외형 전용',
   'launchpad.policy.power': '페이 투 윈',
-  'launchpad.policy.powerBanner': '페이 투 윈 월드: 출시 후 이 토큰으로 게임 내 이점을 구매할 수 있습니다.',
+  'launchpad.policy.powerBanner':
+    '페이 투 윈 월드: 출시 후 이 토큰으로 게임 내 이점을 구매할 수 있습니다.',
   'launchpad.register.title': '월드 토큰 등록',
-  'launchpad.register.subtitle': '이 월드가 출시할 화폐의 이름을 정합니다. 등록은 신원 확정일 뿐이며, 민트, 잠금, 유동성은 각자의 안전장치와 함께 이후 단계에서 제공됩니다.',
+  'launchpad.register.subtitle':
+    '이 월드가 출시할 화폐의 이름을 정합니다. 등록은 신원 확정일 뿐이며, 민트, 잠금, 유동성은 각자의 안전장치와 함께 이후 단계에서 제공됩니다.',
   'launchpad.register.symbolLabel': '토큰 심볼',
   'launchpad.register.symbolPlaceholder': '예: MOON',
   'launchpad.register.policyLabel': '수익화 정책',
-  'launchpad.register.policyHint': '\'외형 전용\'을 선택하면 이 월드는 페이 투 윈이 없는 상태를 유지합니다. \'페이 투 윈\'은 모든 플레이어에게 표시되며 출시 전 승인 게이트를 거칩니다.',
+  'launchpad.register.policyHint':
+    "'외형 전용'을 선택하면 이 월드는 페이 투 윈이 없는 상태를 유지합니다. '페이 투 윈'은 모든 플레이어에게 표시되며 출시 전 승인 게이트를 거칩니다.",
   'launchpad.register.submit': '토큰 등록',
   'launchpad.vote.title': '이 월드가 토큰을 출시해야 할까요?',
-  'launchpad.vote.subtitle': '검증된 연결 지갑당 1표이며, 투표 시점에 보유한 $WOC로 가중됩니다. 투표는 자문용이며 무료입니다. 트랜잭션이 전송되지 않습니다.',
+  'launchpad.vote.subtitle':
+    '검증된 연결 지갑당 1표이며, 투표 시점에 보유한 $WOC로 가중됩니다. 투표는 자문용이며 무료입니다. 트랜잭션이 전송되지 않습니다.',
   'launchpad.vote.openBtn': '커뮤니티 투표 열기',
   'launchpad.vote.yes': '찬성 투표',
   'launchpad.vote.no': '반대 투표',
@@ -6631,7 +6667,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.vote.outcomePassed': '투표가 통과되었습니다. 사전 판매가 열렸습니다.',
   'launchpad.vote.outcomeFailed': '찬성이 기준에 미치지 못했습니다.',
   'launchpad.presale.title': '사전 판매',
-  'launchpad.presale.subtitle': 'SOL, USDC 또는 $WOC로 출시에 기여하세요. 자금은 창립자 에스크로 지갑으로 직접 전송되며, 이 서버는 트랜잭션을 검증만 하고 자금을 보관하지 않습니다.',
+  'launchpad.presale.subtitle':
+    'SOL, USDC 또는 $WOC로 출시에 기여하세요. 자금은 창립자 에스크로 지갑으로 직접 전송되며, 이 서버는 트랜잭션을 검증만 하고 자금을 보관하지 않습니다.',
   'launchpad.presale.stripeDeferred': '이 단계에서는 카드 결제를 사용할 수 없습니다.',
   'launchpad.presale.progress': '소프트캡의 {pct}%',
   'launchpad.presale.progressAria': '소프트캡 대비 사전 판매 진행도',
@@ -6642,17 +6679,21 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.presale.contribute': '기여하기',
   'launchpad.presale.contributeConnect': '지갑 연결 후 기여',
   'launchpad.presale.escrowNote': '에스크로 지갑: {address}',
-  'launchpad.presale.refundTerms': '사전 판매가 소프트캡을 넘지 못하면 창립자가 에스크로 지갑에서 환불하며, 각 환불은 온체인 검증 후 반영됩니다.',
+  'launchpad.presale.refundTerms':
+    '사전 판매가 소프트캡을 넘지 못하면 창립자가 에스크로 지갑에서 환불하며, 각 환불은 온체인 검증 후 반영됩니다.',
   'launchpad.presale.softCapMet': '소프트캡을 달성했습니다.',
   'launchpad.presale.finalize': '사전 판매 마감',
-  'launchpad.presale.finalizeHint': '사전 판매를 종료합니다. 소프트캡을 달성하면 목표 달성, 아니면 환불이 시작됩니다.',
+  'launchpad.presale.finalizeHint':
+    '사전 판매를 종료합니다. 소프트캡을 달성하면 목표 달성, 아니면 환불이 시작됩니다.',
   'launchpad.presale.notConfigured': '창립자가 아직 기여를 열지 않았습니다.',
   'launchpad.presale.refundTitle': '환불',
-  'launchpad.presale.refundNote': '이 사전 판매는 소프트캡에 도달하지 못했습니다. 환불은 에스크로 지갑에서 지급되며 온체인에서 검증됩니다.',
+  'launchpad.presale.refundNote':
+    '이 사전 판매는 소프트캡에 도달하지 못했습니다. 환불은 에스크로 지갑에서 지급되며 온체인에서 검증됩니다.',
   'launchpad.presale.refundRemaining': '환불 검증 대기 중인 기여: {count}',
   'launchpad.presale.refundDone': '모든 기여가 검증된 환불을 받았습니다.',
   'launchpad.presale.config.title': '기여 받기 열기',
-  'launchpad.presale.config.subtitle': '본인이 관리하는 에스크로 지갑과 화폐별 한도를 설정하세요. 비워 두면 해당 화폐는 비활성화됩니다. 금액은 전체 단위입니다.',
+  'launchpad.presale.config.subtitle':
+    '본인이 관리하는 에스크로 지갑과 화폐별 한도를 설정하세요. 비워 두면 해당 화폐는 비활성화됩니다. 금액은 전체 단위입니다.',
   'launchpad.presale.config.escrowLabel': '에스크로 지갑 주소',
   'launchpad.presale.config.softLabel': '소프트캡 ({currency})',
   'launchpad.presale.config.raiseLabel': '모금 상한 ({currency})',
@@ -6686,9 +6727,11 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.presale_not_configured': '창립자가 아직 기여를 열지 않았습니다.',
   'launchpad.err.presale_already_configured': '기여가 이미 열려 있습니다.',
   'launchpad.err.presale_not_refunding': '이 사전 판매는 환불 상태가 아닙니다.',
-  'launchpad.err.presale_unavailable': '사전 판매를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
+  'launchpad.err.presale_unavailable':
+    '사전 판매를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하세요.',
   'launchpad.err.invalid_escrow_wallet': '해당 에스크로 지갑 주소가 유효하지 않습니다.',
-  'launchpad.err.invalid_presale_caps': '해당 한도가 유효하지 않습니다. 활성화된 화폐마다 소프트캡, 그 이상인 모금 상한, 지갑당 한도가 필요합니다.',
+  'launchpad.err.invalid_presale_caps':
+    '해당 한도가 유효하지 않습니다. 활성화된 화폐마다 소프트캡, 그 이상인 모금 상한, 지갑당 한도가 필요합니다.',
   'launchpad.err.invalid_currency': 'SOL, USDC 또는 $WOC를 선택하세요.',
   'launchpad.err.currency_not_enabled': '이 사전 판매는 해당 화폐를 받지 않습니다.',
   'launchpad.err.invalid_amount': '유효한 금액을 입력하세요.',
@@ -6724,7 +6767,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.launch.step.verify': '온체인 검증',
   'launchpad.launch.step.list': '상장',
   'launchpad.launch.supply': '고정 공급량: {amount} {symbol}',
-  'launchpad.launch.allocLine': '퍼블릭 커브 {publicPct}%, 유동성 {liquidityPct}% (졸업 시 영구 잠금)',
+  'launchpad.launch.allocLine':
+    '퍼블릭 커브 {publicPct}%, 유동성 {liquidityPct}% (졸업 시 영구 잠금)',
   'launchpad.launch.bucketLine':
     '{bucket}: {pct}%, {amount} {symbol}, 클리프 {cliff}개월 + 선형 {linear}개월',
   'launchpad.launch.bucket.founder': '파운더',
@@ -6732,12 +6776,14 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.launch.bucket.treasury': '렐름 재무',
   'launchpad.launch.lockProof': '{bucket} 잠금:',
   'launchpad.launch.mintCreated': '민트:',
-  'launchpad.launch.verifiedNote': '모든 잠금이 온체인에서 검증되었습니다. 커브가 열리면 토큰이 상장될 수 있습니다.',
+  'launchpad.launch.verifiedNote':
+    '모든 잠금이 온체인에서 검증되었습니다. 커브가 열리면 토큰이 상장될 수 있습니다.',
   'launchpad.launch.createTitle': '민트 생성',
   'launchpad.launch.createHint':
     '지갑이 임대료를 지불하고 민트 권한으로 서명합니다. 서버는 자금을 움직일 수 있는 키를 절대 보유하지 않습니다. 트랜잭션을 구성하고 민트 주소를 고정하며 결과를 온체인에서 검증할 뿐입니다.',
   'launchpad.launch.treasuryLabel': '렐름 재무 지갑',
-  'launchpad.launch.treasuryHint': '베스팅되는 렐름 재무 몫을 받습니다. 렐름이 관리하는 지갑을 사용하세요.',
+  'launchpad.launch.treasuryHint':
+    '베스팅되는 렐름 재무 몫을 받습니다. 렐름이 관리하는 지갑을 사용하세요.',
   'launchpad.launch.nameLabel': '토큰 이름 (선택)',
   'launchpad.launch.uriLabel': '메타데이터 URL (선택)',
   'launchpad.launch.createBtn': '민트 생성',
@@ -6772,7 +6818,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.flow.notVerified': '검증에서 문제가 발견되었습니다. 아래 체크리스트를 확인하세요.',
   'launchpad.err.mint_already_created': '민트가 이미 생성되었습니다.',
   'launchpad.err.presale_not_funded': '프리세일이 아직 목표를 달성하지 못했습니다.',
-  'launchpad.err.levy_fund_unconfigured': '플랫폼 펀드 지갑이 아직 설정되지 않았습니다. 나중에 다시 시도하세요.',
+  'launchpad.err.levy_fund_unconfigured':
+    '플랫폼 펀드 지갑이 아직 설정되지 않았습니다. 나중에 다시 시도하세요.',
   'launchpad.err.invalid_treasury_wallet': '해당 재무 지갑 주소가 유효하지 않습니다.',
   'launchpad.err.invalid_token_name': '토큰 이름은 1자에서 32자의 일반 문자입니다.',
   'launchpad.err.invalid_token_uri': '메타데이터 URL은 https 주소여야 합니다.',
@@ -6783,7 +6830,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.wrong_token_program': '민트가 예상 토큰 프로그램 아래에 있지 않습니다.',
   'launchpad.err.wrong_decimals': '민트의 소수 자릿수가 예상과 다릅니다.',
   'launchpad.err.freeze_authority_set': '민트에 동결 권한이 있습니다. 동결 권한이 없어야 합니다.',
-  'launchpad.err.bad_metadata_pointer': '민트 메타데이터 포인터가 잘못되었거나 아직 변경 가능합니다.',
+  'launchpad.err.bad_metadata_pointer':
+    '민트 메타데이터 포인터가 잘못되었거나 아직 변경 가능합니다.',
   'launchpad.err.metadata_symbol_mismatch': '온체인 심볼이 등록된 토큰과 일치하지 않습니다.',
   'launchpad.err.unexpected_extension': '민트에 허용되지 않는 확장이 있습니다.',
   'launchpad.err.launch_sig_replayed': '해당 런치 트랜잭션은 이미 사용되었습니다.',
@@ -6800,10 +6848,12 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.curve.poolLabel': '커브 풀:',
   'launchpad.curve.progressAria': '이전 임계값 진행률',
   'launchpad.curve.progress': '이전까지 {raised} / {threshold} 모금됨',
-  'launchpad.curve.migratedNote': '커브가 임계값에 도달해 이전되었습니다. 아래에서 졸업을 검증하세요.',
+  'launchpad.curve.migratedNote':
+    '커브가 임계값에 도달해 이전되었습니다. 아래에서 졸업을 검증하세요.',
   'launchpad.curve.graduatedNote': '졸업 완료: LP가 영구 잠긴 유동성 풀:',
   'launchpad.curve.openBtn': '커브 열기',
-  'launchpad.curve.openHint': '지갑이 서명할 풀 생성을 구성합니다. 커브 호스트가 토큰을 발행하고 커브 공급량을 보유하며, 자금은 이 서버를 거치지 않습니다.',
+  'launchpad.curve.openHint':
+    '지갑이 서명할 풀 생성을 구성합니다. 커브 호스트가 토큰을 발행하고 커브 공급량을 보유하며, 자금은 이 서버를 거치지 않습니다.',
   'launchpad.curve.verifyBtn': '커브 상장 검증',
   'launchpad.curve.verifyHint': '풀 생성 트랜잭션이 확정되면 검증하여 토큰을 상장하세요.',
   'launchpad.curve.graduateBtn': '졸업 검증',
@@ -6815,11 +6865,14 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.flow.verifyingGraduation': '온체인에서 졸업을 검증하는 중...',
   'launchpad.flow.graduated': '졸업 완료: LP가 영구 잠겼습니다.',
   'launchpad.err.launchpad_disabled': '이 서버에서는 커브 런치패드가 아직 활성화되지 않았습니다.',
-  'launchpad.err.launchpad_config_unreadable': '런치 구성을 읽을 수 없습니다. 잠시 후 다시 시도하세요.',
+  'launchpad.err.launchpad_config_unreadable':
+    '런치 구성을 읽을 수 없습니다. 잠시 후 다시 시도하세요.',
   'launchpad.err.curve_already_created': '커브가 이미 존재합니다.',
-  'launchpad.err.host_requires_dbc_mint': '이 커브 호스트는 토큰을 직접 생성합니다. 사전 발행 토큰은 들어갈 수 없습니다.',
+  'launchpad.err.host_requires_dbc_mint':
+    '이 커브 호스트는 토큰을 직접 생성합니다. 사전 발행 토큰은 들어갈 수 없습니다.',
   'launchpad.err.invalid_base_mint': '해당 기본 민트 주소가 유효하지 않습니다.',
-  'launchpad.err.curve_not_found': '커브 풀을 아직 온체인에서 찾을 수 없습니다. 잠시 후 다시 시도하세요.',
+  'launchpad.err.curve_not_found':
+    '커브 풀을 아직 온체인에서 찾을 수 없습니다. 잠시 후 다시 시도하세요.',
   'launchpad.err.wrong_curve_creator': '커브 풀은 연결된 지갑으로 생성해야 합니다.',
   'launchpad.err.not_live': '토큰이 커브에서 라이브 상태가 아닙니다.',
   'launchpad.err.not_migrated': '커브가 이전 임계값에 도달하지 않았습니다.',
@@ -6837,8 +6890,10 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.fund.empty': '펀드는 아직 렐름 토큰을 보유하지 않았습니다.',
   'launchpad.fund.aum': '총 가치: {amount} USD',
   'launchpad.fund.updated': '업데이트 {time}',
-  'launchpad.fund.clampedNote': '한 번의 갱신에서 발생한 큰 변동은 확인 갱신을 기다리며 보류 중입니다.',
-  'launchpad.fund.policyNote': '모든 보유분은 캡 테이블에서 가장 엄격한 일정(클리프 12개월 + 선형 48개월)으로 베스팅되며 처분은 거버넌스 승인이 필요합니다. 플랫폼은 이 지분을 투매할 수 없습니다.',
+  'launchpad.fund.clampedNote':
+    '한 번의 갱신에서 발생한 큰 변동은 확인 갱신을 기다리며 보류 중입니다.',
+  'launchpad.fund.policyNote':
+    '모든 보유분은 캡 테이블에서 가장 엄격한 일정(클리프 12개월 + 선형 48개월)으로 베스팅되며 처분은 거버넌스 승인이 필요합니다. 플랫폼은 이 지분을 투매할 수 없습니다.',
   'launchpad.fund.tableAria': '펀드 보유 내역',
   'launchpad.fund.colToken': '토큰',
   'launchpad.fund.colAmount': '수량',
@@ -6852,5 +6907,29 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'launchpad.fund.confidence.high': '가격 산정됨 (교차 검증)',
   'launchpad.fund.confidence.medium': '가격 산정됨',
   'launchpad.fund.confidence.low': '가격 산정됨 (신뢰도 낮음)',
-  'launchpad.fund.illiquidNote': '신뢰할 수 있는 가격이 없는 보유분: {count}. 표시되지만 집계되지 않습니다.',
+  'launchpad.fund.illiquidNote':
+    '신뢰할 수 있는 가격이 없는 보유분: {count}. 표시되지만 집계되지 않습니다.',
+  'launchpad.flow.quotingPower': '변환 견적을 받는 중...',
+  'launchpad.flow.powerQuoted': '{copper} 코퍼를 받게 됩니다. 지갑에서 전송을 승인하세요...',
+  'launchpad.flow.confirmingPower': '체인에서 전송을 확인하는 중...',
+  'launchpad.flow.powerCredited': '캐릭터에게 {copper} 코퍼를 지급했습니다.',
+  'launchpad.flow.powerBanked':
+    '{copper} 코퍼가 기록되었습니다. 해당 캐릭터가 다음에 접속할 때 지급됩니다.',
+  'launchpad.power.title': '코퍼로 변환',
+  'launchpad.power.subtitle':
+    '이 페이 투 윈 월드는 {symbol}을(를) 게임 내 코퍼로 변환합니다. 토큰은 월드 트레저리로 전송되며, 전송이 체인에서 최종 확정된 후 코퍼가 지급됩니다.',
+  'launchpad.power.charLabel': '지급받을 캐릭터',
+  'launchpad.power.amountLabel': '수량({symbol})',
+  'launchpad.power.convertBtn': '코퍼로 변환',
+  'launchpad.power.convertConnect': '지갑 연결 후 변환',
+  'launchpad.power.noCharacters': '코퍼를 받으려면 먼저 이 월드에서 캐릭터를 만드세요.',
+  'launchpad.err.power_disabled': '이 서버에서는 토큰-코퍼 변환이 활성화되어 있지 않습니다.',
+  'launchpad.err.realm_not_power': '이 월드는 토큰-코퍼 변환을 허용하지 않습니다.',
+  'launchpad.err.token_not_live': '토큰이 먼저 커브에서 라이브 상태여야 합니다.',
+  'launchpad.err.power_rate_unset': '변환 비율이 아직 설정되지 않았습니다.',
+  'launchpad.err.power_sink_unavailable': '월드 트레저리를 아직 사용할 수 없습니다.',
+  'launchpad.err.amount_below_minimum': '수량이 너무 적어 변환할 수 없습니다.',
+  'launchpad.err.character_not_found': '이 월드에 있는 본인 캐릭터를 선택하세요.',
+  'launchpad.err.sink_short': '전송 금액이 견적 수량에 미치지 못합니다.',
+  'launchpad.err.credit_already_recorded': '해당 트랜잭션은 이미 지급 처리되었습니다.',
 };

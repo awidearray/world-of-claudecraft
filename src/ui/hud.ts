@@ -209,8 +209,6 @@ import { esc } from './esc';
 import { fctSpawnShape } from './fct_event';
 import { FctPainter } from './fct_painter';
 import { FocusManager, type FocusTrapHandle } from './focus_manager';
-import { currentSeasonView, onWocSeasonChange, wocSeasonUiEnabled } from './woc_season';
-import { wocSeasonPanelHtml } from './woc_season_panel';
 import {
   type AimPoint,
   abilityAoeRadius,
@@ -397,6 +395,8 @@ import {
 import { type WeaponProcEffectDesc, weaponProcLines } from './weapon_proc_view';
 import { makeWindowFocus } from './window_focus';
 import { installWindowResize, markResizableWindow } from './window_resize';
+import { currentSeasonView, onWocSeasonChange, wocSeasonUiEnabled } from './woc_season';
+import { wocSeasonPanelHtml } from './woc_season_panel';
 import { formatXp, xpBarView } from './xp_bar';
 import { XpBarPainter } from './xp_bar_painter';
 import { YumiMatchPainter } from './yumi_match_painter';
@@ -1740,7 +1740,9 @@ export class Hud {
     $('#mm-arena').addEventListener('click', () => this.toggleArena());
     $('#mm-valecup').addEventListener('click', () => this.toggleValeCup());
     $('#mm-leaderboard').addEventListener('click', () => this.toggleLeaderboard());
-    document.querySelector('#mm-woc-season')?.addEventListener('click', () => this.toggleWocSeason());
+    document
+      .querySelector('#mm-woc-season')
+      ?.addEventListener('click', () => this.toggleWocSeason());
     const emoteBtn = $('#mm-emote');
     emoteBtn.addEventListener('click', (ev) => {
       ev.preventDefault();
@@ -3913,6 +3915,19 @@ export class Hud {
   }
 
   moneyHtml(copper: number): string {
+    // Currency re-skin (launchpad phase 7): a realm with a registered token
+    // PRESENTS the same opaque copper balance in its own currency (symbol +
+    // procedural icon) instead of gold/silver/copper coins. Pure display: the
+    // amount is the copper value verbatim, never converted or priced.
+    const currency = this.sim.realmCurrency();
+    if (currency) {
+      const amount = formatNumber(copper, { maximumFractionDigits: 0 });
+      const label = t('hudChrome.money.realmCurrency', { amount, symbol: currency.symbol });
+      const icon = currency.icon
+        ? `<img class="coin coin-realm" src="${iconDataUrl('item', currency.icon)}" alt="" draggable="false">`
+        : '';
+      return `<span class="money-inline" aria-label="${esc(label)}"><span class="coin-part"><span class="coin-amount">${esc(amount)}</span>${icon}<span class="coin-symbol">${esc(currency.symbol)}</span></span></span>`;
+    }
     const parts = moneyParts(copper);
     const coin = (value: number, cls: 'g' | 's' | 'c', unitKey: TranslationKey): string =>
       `<span class="coin-part"><span class="coin-amount">${esc(formatNumber(value, { maximumFractionDigits: 0 }))}</span><span class="coin ${cls}" aria-hidden="true"></span><span class="visually-hidden">${esc(t(unitKey))}</span></span>`;
@@ -12993,7 +13008,11 @@ export class Hud {
 
   toggleWocSeason(): void {
     const el = $('#woc-season-window');
-    if (el.style.display === 'block') { el.style.display = 'none'; this.hideTooltip(); return; }
+    if (el.style.display === 'block') {
+      el.style.display = 'none';
+      this.hideTooltip();
+      return;
+    }
     this.closeOtherWindows('#woc-season-window');
     el.style.display = 'block';
     this.renderWocSeason();
@@ -13002,7 +13021,9 @@ export class Hud {
   private renderWocSeason(): void {
     const el = $('#woc-season-window');
     el.innerHTML = wocSeasonPanelHtml(currentSeasonView(Date.now()));
-    el.querySelector('[data-close]')?.addEventListener('click', () => { el.style.display = 'none'; });
+    el.querySelector('[data-close]')?.addEventListener('click', () => {
+      el.style.display = 'none';
+    });
   }
 
   toggleDailyRewards(): void {

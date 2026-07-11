@@ -1189,6 +1189,12 @@ export class Sim {
   // parties / partyByPid / partyInvites / nextPartyId moved to the PartyMachine
   // (src/sim/social/party.ts, session A1); reached via `this.party`.
   accountCosmetics: AccountCosmetics = { completedQuestIds: [], mechChromaIds: [] };
+  // IWorldCosmetics: the offline world has no realm token, so the currency
+  // display is always the classic one. Display identity only; the balance
+  // stays opaque copper (launchpad phase 7).
+  realmCurrency(): { symbol: string; icon: string } | null {
+    return null;
+  }
   private nextLootRollId = 1;
   private pendingLootRolls = new Map<number, PendingLootRoll>();
   trades = new Map<number, TradeSession>(); // pid -> shared session (both pids point at it)

@@ -375,7 +375,21 @@ export const en: EnTranslations = {
       "verifyingCurve": "Verifying the curve on chain...",
       "curveListed": "The token is live on its curve.",
       "verifyingGraduation": "Verifying the graduation on chain...",
-      "graduated": "Graduated: the LP is permanently locked."
+      "graduated": "Graduated: the LP is permanently locked.",
+      "quotingPower": "Quoting your conversion...",
+      "powerQuoted": "You will receive {copper} copper. Approve the transfer in your wallet...",
+      "confirmingPower": "Verifying your transfer on chain...",
+      "powerCredited": "Credited {copper} copper to your character.",
+      "powerBanked": "Credited {copper} copper. It arrives the next time that character logs in."
+    },
+    "power": {
+      "title": "Convert to copper",
+      "subtitle": "This power realm converts {symbol} into in-game copper. Tokens are sent to the realm treasury and the copper is credited after the transfer finalizes on chain.",
+      "charLabel": "Deliver to character",
+      "amountLabel": "Amount ({symbol})",
+      "convertBtn": "Convert to copper",
+      "convertConnect": "Connect wallet and convert",
+      "noCharacters": "Create a character on this realm first to receive copper."
     },
     "err": {
       "not_realm_owner": "You do not operate that realm.",
@@ -460,6 +474,15 @@ export const en: EnTranslations = {
       "not_damm_v2": "The launch configuration does not graduate to the locked pool.",
       "no_locked_vesting": "The launch configuration carries no locked vesting.",
       "no_migration_threshold": "The launch configuration has no migration threshold.",
+      "power_disabled": "Token-to-copper conversion is not enabled on this server.",
+      "realm_not_power": "This realm does not allow token-to-copper conversion.",
+      "token_not_live": "The token must be live on its curve first.",
+      "power_rate_unset": "The conversion rate is not configured yet.",
+      "power_sink_unavailable": "The realm treasury is not available yet.",
+      "amount_below_minimum": "That amount is too small to convert.",
+      "character_not_found": "Pick one of your characters on this realm.",
+      "sink_short": "The transfer does not cover the quoted amount.",
+      "credit_already_recorded": "That transaction was already credited.",
       "rate_limited": "Too many requests. Slow down and try again.",
       "wallet_mismatch": "Connect the wallet you linked to your account.",
       "generic": "Something went wrong. Try again."
@@ -596,6 +619,9 @@ export const en: EnTranslations = {
     }
   },
   "hudChrome": {
+    "money": {
+      "realmCurrency": "{amount} {symbol}"
+    },
     "spectate": {
       "banner": "Spectating {name}"
     },

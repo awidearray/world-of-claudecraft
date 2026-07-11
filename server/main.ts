@@ -279,11 +279,12 @@ import {
   withRealmFeeKeeperLock,
 } from './payout_db';
 import { buildPayoutKeeper } from './payout_keeper';
-import { mergeRealmDirectory, REALM_ORIGINS, resolveRealmType } from './realm';
+import { mergeRealmDirectory, resolveRealmType } from './realm';
 import { confirmBuyQuote, prepareBuyQuote, realmBuyInfo } from './realm_buy';
 import { bondsForRealms } from './realm_buy_db';
 import { buildRealmBuybackKeepers } from './realm_buyback_keeper';
 import {
+  getLiveRealmByName,
   getRealmById,
   listRealmsForDirectory,
   listRealmsForOwner,
@@ -305,6 +306,8 @@ import {
   realmLaunchpadHost,
 } from './realm_launchpad';
 import { liveCurveQuoteOut, liveDbcGateway, liveRealmFeeGateway } from './realm_launchpad_dbc';
+import { confirmPowerCredit, type PowerDeps, preparePowerQuote } from './realm_power';
+import { realmPowerStore } from './realm_power_db';
 import {
   configurePresale,
   confirmPresaleContribution,
@@ -328,6 +331,7 @@ import {
   mergeDirectoryCurrencies,
   type RealmToken,
   type RegisterDeps,
+  realmTokenConfig,
   registerRealmToken,
 } from './realm_token';
 import {
@@ -352,6 +356,7 @@ import { castVote, openVote, type VoteDeps, voteStatus } from './realm_vote';
 import { realmVoteDb } from './realm_vote_db';
 import { referralRewardSummary } from './referral_db';
 import { rewardTierBpsFromEnv } from './reward_tiers';
+import { fetchFinalizedTransaction } from './solana_rpc';
 import { WOC_DECIMALS } from './woc_config';
 import { SeasonBodyCache } from './woc_season_api';
 
@@ -1889,6 +1894,51 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { status: result.status, poolAddress: result.poolAddress });
     }
+    // ── Power-realm token-to-copper credits (phase 7) ─────────────────────────
+    // Flag-gated DEFAULT OFF (REALM_POWER_CREDIT_ENABLED + a rate both required)
+    // and policy-gated per realm: only a `power` realm converts, checked on
+    // every quote AND confirm. The server verifies the finalized Token-2022
+    // transfer with the scoped verifier and never signs.
+    const powerDeps = (): PowerDeps =>
+      ({
+        ...launchpadDeps(),
+        launches: realmTokenLaunchStore(pool),
+        store: realmPowerStore(pool),
+        ownsCharacter: async (accountId: number, characterId: number) =>
+          (await getCharacter(accountId, characterId)) !== null,
+        fetchTx: (sig: string) => fetchFinalizedTransaction(sig),
+      }) as unknown as PowerDeps;
+    const powerQuoteMatch = /^\/api\/realms\/(\d+)\/token\/power\/quote$/.exec(url);
+    if (req.method === 'POST' && powerQuoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await preparePowerQuote(powerDeps(), {
+        accountId,
+        realmId: Number(powerQuoteMatch[1]),
+        characterId: Number(body.characterId),
+        amountBase: typeof body.amountBase === 'string' ? body.amountBase : '',
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, result.quote);
+    }
+    const powerConfirmMatch = /^\/api\/realms\/(\d+)\/token\/power\/confirm$/.exec(url);
+    if (req.method === 'POST' && powerConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const quoteId = typeof body.quoteId === 'string' ? body.quoteId : '';
+      const paySig = typeof body.paySig === 'string' ? body.paySig : '';
+      if (!quoteId || !paySig) return json(res, 400, { error: 'missing_quoteId_or_paySig' });
+      const result = await confirmPowerCredit(powerDeps(), { accountId, quoteId, paySig });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      // Grant now when the character is online in this process; otherwise the
+      // banked credit lands on their next join.
+      const granted = await liveGame().grantPendingPowerCredits(result.characterId);
+      return json(res, 200, { copperCredit: result.copperCredit, granted });
+    }
     // ── Levy Street Fund portfolio (phase 6): PUBLIC and display-only ─────────
     // Serves the cached valuation snapshot (never the chain): AUM + one row
     // per holding. STRICTLY display data: no buy, sell, or redeem surface
@@ -3115,6 +3165,34 @@ export async function startServer(): Promise<http.Server> {
     void feeTick();
     setInterval(() => void feeTick(), PAYOUT_KEEPER_TICK_MS).unref();
     console.log('realm token fee keeper enabled');
+  }
+
+  // Currency re-skin (launchpad phase 7): resolve THIS realm process's display
+  // identity from the registry (the phase 0 resolver is the one authority) and
+  // push it onto the game for the hello frame. Refreshed on a slow cadence so
+  // a lifecycle flip (registration, launch, closure) reaches new joins without
+  // a restart. Display identity only; the sim never sees it.
+  {
+    const refreshRealmCurrency = async () => {
+      const realm = await getLiveRealmByName(pool, REALM);
+      const tokens = realm
+        ? await realmTokenDb(pool).listRealmTokens([realm.realmId])
+        : new Map<number, RealmToken>();
+      const config = realmTokenConfig(realm?.realmId ?? null, tokens);
+      liveGame().setRealmCurrency(
+        config.realmToken ? { symbol: config.symbol, icon: config.icon } : null,
+      );
+    };
+    await refreshRealmCurrency().catch((err) =>
+      console.error('realm currency resolve failed:', err),
+    );
+    setInterval(
+      () =>
+        void refreshRealmCurrency().catch((err) =>
+          console.error('realm currency refresh failed:', err),
+        ),
+      5 * 60 * 1000,
+    ).unref();
   }
 
   // Levy Street Fund valuation keeper (launchpad phase 6): prices the fund's

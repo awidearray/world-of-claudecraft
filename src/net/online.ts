@@ -460,6 +460,20 @@ export interface RealmCurvePrepare {
   host: 'meteora-dbc' | 'fixed-rate-stub';
 }
 
+// A pinned token-to-copper conversion quote (POST .../token/power/quote,
+// phase 7): the exact realm-token amount, the copper the server will credit,
+// and the treasury sink + memo the payment transfer must carry.
+export interface RealmPowerQuote {
+  quoteId: string;
+  realmId: number;
+  mint: string;
+  amountBase: string;
+  copperCredit: string;
+  sinkWallet: string;
+  memo: string; // == quoteId
+  expiresAt: string;
+}
+
 // The signed-in account's affiliate identity (GET /api/affiliate/me): a stable
 // code for building the /?aff= link, plus how many realms it has referred.
 export interface AffiliateInfo {
@@ -773,6 +787,28 @@ export class Api {
   // The public, display-only Levy Street Fund portfolio snapshot (phase 6).
   levyFund(): Promise<unknown> {
     return this.get('/api/levy-fund');
+  }
+
+  // ── Power-realm token-to-copper credits (phase 7) ───────────────────────────
+
+  // Quote a token-to-copper conversion on a `power` realm (flag- and
+  // policy-gated server-side; the copper amount is pinned by the server).
+  quoteRealmPower(
+    realmId: number,
+    characterId: number,
+    amountBase: string,
+  ): Promise<RealmPowerQuote> {
+    return this.post(`/api/realms/${realmId}/token/power/quote`, { characterId, amountBase });
+  }
+
+  // Confirm the finalized transfer; the copper lands on the live character or
+  // banks for their next join.
+  confirmRealmPower(
+    realmId: number,
+    quoteId: string,
+    paySig: string,
+  ): Promise<{ copperCredit: string; granted: boolean }> {
+    return this.post(`/api/realms/${realmId}/token/power/confirm`, { quoteId, paySig });
   }
 
   // The account's affiliate code + referred-realm count (code created on first call).
@@ -1477,6 +1513,12 @@ export class ClientWorld implements IWorld {
   // --- IWorldCosmetics: account cosmetics (completed-quest + mech-chroma ids),
   // mirrored from snapshot self. ---
   accountCosmetics: AccountCosmetics = { completedQuestIds: [], mechChromaIds: [] };
+  // The realm's currency re-skin from `hello` (launchpad phase 7): display
+  // identity only, null for the classic gold/silver/copper presentation.
+  private realmCurrencyIdentity: { symbol: string; icon: string } | null = null;
+  realmCurrency(): { symbol: string; icon: string } | null {
+    return this.realmCurrencyIdentity;
+  }
   // --- IWorldProgressionXp: XP + post-cap progression scalars + unlocked
   // milestones, mirrored from snapshot self. ---
   xp = 0;
@@ -1881,6 +1923,16 @@ export class ClientWorld implements IWorld {
       this.ownPlayerId = msg.pid;
       this.cfg.seed = msg.seed;
       if (typeof msg.realm === 'string') this.realm = msg.realm;
+      // Currency re-skin (phase 7): additive, delta-guarded like every hello
+      // field. A missing field keeps the classic display.
+      if (
+        msg.currency &&
+        typeof msg.currency === 'object' &&
+        typeof msg.currency.symbol === 'string' &&
+        typeof msg.currency.icon === 'string'
+      ) {
+        this.realmCurrencyIdentity = { symbol: msg.currency.symbol, icon: msg.currency.icon };
+      }
       if (Array.isArray(msg.softWords)) {
         this.profanityWords = msg.softWords.filter(
           (w: unknown): w is string => typeof w === 'string',

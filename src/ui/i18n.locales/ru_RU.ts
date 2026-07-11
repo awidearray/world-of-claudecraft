@@ -6586,13 +6586,16 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.wocSeason.colReward': 'Награда ($WOC)',
   'hudChrome.wocSeason.emittedLabel': 'Выплачено {pct}% пула',
   'hudChrome.wocSeason.ended': 'Этот сезон завершён.',
-  'hudChrome.wocSeason.invariant': 'Выплаты никогда не превысят доход сезона: покупок больше, чем продаж, это гарантирует блокчейн.',
+  'hudChrome.wocSeason.invariant':
+    'Выплаты никогда не превысят доход сезона: покупок больше, чем продаж, это гарантирует блокчейн.',
   'hudChrome.wocSeason.menu': 'Сезон $WOC',
   'hudChrome.wocSeason.none': 'Сейчас нет активного сезона наград.',
-  'hudChrome.wocSeason.noneHint': 'Сезон откроется, когда сборы арены и выкупы начнут пополнять пул.',
+  'hudChrome.wocSeason.noneHint':
+    'Сезон откроется, когда сборы арены и выкупы начнут пополнять пул.',
   'hudChrome.wocSeason.openEnded': 'Бессрочный',
   'hudChrome.wocSeason.poolLabel': 'Доступный призовой фонд',
-  'hudChrome.wocSeason.projectedNote': 'Прогноз по текущему пулу и рейтингу арены; итоговые выплаты фиксируются в конце сезона.',
+  'hudChrome.wocSeason.projectedNote':
+    'Прогноз по текущему пулу и рейтингу арены; итоговые выплаты фиксируются в конце сезона.',
   'hudChrome.wocSeason.sinkLabel': 'Пополнено',
   'hudChrome.wocSeason.standingsTitle': 'Прогноз лидеров по наградам',
   'hudChrome.wocSeason.statusActive': 'Активен',
@@ -6602,51 +6605,69 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'realmOp.open': 'Основать мир',
   'realmOp.panelTitle': 'Оператор мира',
   'realmOp.affiliate.bonusRealm': 'Плюс комиссия 15% в USDC с любого основанного ими мира.',
-  'realmOp.affiliate.bonusReferee': 'Игроки, пришедшие по вашей ссылке, получают +10% опыта и золота в первые 30 дней.',
-  'realmOp.affiliate.bonusReferrer': 'В этот период вы получаете +5% от их заработка прямо на своего персонажа.',
+  'realmOp.affiliate.bonusReferee':
+    'Игроки, пришедшие по вашей ссылке, получают +10% опыта и золота в первые 30 дней.',
+  'realmOp.affiliate.bonusReferrer':
+    'В этот период вы получаете +5% от их заработка прямо на своего персонажа.',
   'realmOp.affiliate.bonusTitle': 'Как платит ваша ссылка',
   'realmOp.affiliate.commission': 'Комиссия {pct}%',
   'realmOp.affiliate.copied': 'Скопировано',
   'realmOp.affiliate.copy': 'Копировать ссылку',
-  'realmOp.affiliate.earningsSoon': 'Комиссии в USDC начнут выплачиваться, когда заработает внутренняя экономика мира.',
-  'realmOp.affiliate.empty': 'Пока нет приглашённых миров. Поделитесь ссылкой, чтобы начать зарабатывать.',
+  'realmOp.affiliate.earningsSoon':
+    'Комиссии в USDC начнут выплачиваться, когда заработает внутренняя экономика мира.',
+  'realmOp.affiliate.empty':
+    'Пока нет приглашённых миров. Поделитесь ссылкой, чтобы начать зарабатывать.',
   'realmOp.affiliate.loading': 'Загрузка статистики приглашений...',
   'realmOp.affiliate.open': 'Реферальная программа',
   'realmOp.affiliate.referredCount': 'Активных приглашённых миров: {count}',
   'realmOp.affiliate.referredCountPlural': 'Активных приглашённых миров: {count}',
   'realmOp.affiliate.referredTitle': 'Приглашённые вами миры',
-  'realmOp.affiliate.rewardsEmpty': 'Приглашайте игроков, чтобы начать зарабатывать. Награды придут персонажу при следующем входе.',
+  'realmOp.affiliate.rewardsEmpty':
+    'Приглашайте игроков, чтобы начать зарабатывать. Награды придут персонажу при следующем входе.',
   'realmOp.affiliate.rewardsLifetime': 'Всего заработано: {xp} опыта и {gold}',
-  'realmOp.affiliate.rewardsPending': 'Ожидает выплаты: {xp} опыта и {gold}, будут начислены при следующем входе',
+  'realmOp.affiliate.rewardsPending':
+    'Ожидает выплаты: {xp} опыта и {gold}, будут начислены при следующем входе',
   'realmOp.affiliate.rewardsReferred': 'Приглашено игроков: {count}',
   'realmOp.affiliate.rewardsTitle': 'Ваши награды за приглашения',
-  'realmOp.affiliate.subtitle': 'Поделитесь одной ссылкой. Пришедшие по ней игроки получают бонус к опыту и золоту, вы зарабатываете с их дохода и получаете 15% с любого основанного ими мира.',
+  'realmOp.affiliate.subtitle':
+    'Поделитесь одной ссылкой. Пришедшие по ней игроки получают бонус к опыту и золоту, вы зарабатываете с их дохода и получаете 15% с любого основанного ими мира.',
   'realmOp.affiliate.title': 'Реферальная и партнёрская программа',
-  'realmOp.affiliate.unavailable': 'Статистика приглашений сейчас недоступна. Повторите попытку позже.',
+  'realmOp.affiliate.unavailable':
+    'Статистика приглашений сейчас недоступна. Повторите попытку позже.',
   'realmOp.affiliate.yourLink': 'Ваша реферальная ссылка',
-  'realmOp.buy.bondNote': 'Также держите {amount} $WOC в привязанном кошельке всё время жизни мира, иначе мир будет утрачен.',
-  'realmOp.buy.bondWhy': 'Этот постоянный залог отделён от оплачиваемой {currency}: он сохраняет вашу заинтересованность, пока вы управляете миром.',
+  'realmOp.buy.bondNote':
+    'Также держите {amount} $WOC в привязанном кошельке всё время жизни мира, иначе мир будет утрачен.',
+  'realmOp.buy.bondWhy':
+    'Этот постоянный залог отделён от оплачиваемой {currency}: он сохраняет вашу заинтересованность, пока вы управляете миром.',
   'realmOp.buy.currencyLabel': 'Оплата в',
   'realmOp.buy.currencyUnavailable': '{currency} сейчас недоступна (нет маршрута обмена).',
-  'realmOp.buy.finalNote': 'Покупка окончательна и не возвращается. В отличие от стейка, при закрытии мира она не возвращается.',
-  'realmOp.buy.note': 'Вы подписываете одну транзакцию на {amount} {currency}, чтобы основать этот мир. Мир активируется сразу.',
-  'realmOp.buy.splitNote': '{treasuryPct}% платежа идёт в казну, остальное выкупает и сжигает $WOC.',
+  'realmOp.buy.finalNote':
+    'Покупка окончательна и не возвращается. В отличие от стейка, при закрытии мира она не возвращается.',
+  'realmOp.buy.note':
+    'Вы подписываете одну транзакцию на {amount} {currency}, чтобы основать этот мир. Мир активируется сразу.',
+  'realmOp.buy.splitNote':
+    '{treasuryPct}% платежа идёт в казну, остальное выкупает и сжигает $WOC.',
   'realmOp.buy.submit': 'Купить и основать',
   'realmOp.buy.submitConnect': 'Подключите кошелёк для покупки',
-  'realmOp.buy.unavailable': 'Покупка мира сейчас недоступна. Вместо этого застейкайте $WOC, чтобы основать его.',
+  'realmOp.buy.unavailable':
+    'Покупка мира сейчас недоступна. Вместо этого застейкайте $WOC, чтобы основать его.',
   'realmOp.err.bad_signature': 'Подпись платежа недействительна. Начните заново.',
-  'realmOp.err.bond_required': 'Для покупки этого уровня нужно держать {amount} $WOC в привязанном кошельке. Пополните и повторите.',
-  'realmOp.err.buy_unavailable': 'Покупка мира сейчас недоступна. Вместо этого застейкайте $WOC, чтобы основать его.',
+  'realmOp.err.bond_required':
+    'Для покупки этого уровня нужно держать {amount} $WOC в привязанном кошельке. Пополните и повторите.',
+  'realmOp.err.buy_unavailable':
+    'Покупка мира сейчас недоступна. Вместо этого застейкайте $WOC, чтобы основать его.',
   'realmOp.err.buyback_short': 'Оплаченная сумма не совпадает с вашей котировкой.',
   'realmOp.err.generic': 'Что-то пошло не так. Попробуйте ещё раз.',
   'realmOp.err.invalid_amount': 'Недопустимая сумма стейка. Выберите уровень и повторите.',
   'realmOp.err.invalid_currency': 'Выберите SOL или USDC и повторите.',
-  'realmOp.err.invalid_realm_name': 'Такое имя мира не допускается. Используйте буквы, цифры, пробелы или дефисы.',
+  'realmOp.err.invalid_realm_name':
+    'Такое имя мира не допускается. Используйте буквы, цифры, пробелы или дефисы.',
   'realmOp.err.invalid_tier': 'Выберите уровень и повторите.',
   'realmOp.err.legs_collide': 'Не удалось проверить платёж. Начните заново.',
   'realmOp.err.link_wallet': 'Сначала привяжите кошелёк к аккаунту.',
   'realmOp.err.memo_mismatch': 'Этот платёж не соответствует вашей котировке. Начните заново.',
-  'realmOp.err.not_finalized': 'Ваш платёж ещё не финализирован. Попробуйте подтвердить чуть позже.',
+  'realmOp.err.not_finalized':
+    'Ваш платёж ещё не финализирован. Попробуйте подтвердить чуть позже.',
   'realmOp.err.not_realm_owner': 'Вы не управляете этим миром.',
   'realmOp.err.not_your_quote': 'Эта котировка принадлежит другому аккаунту.',
   'realmOp.err.payment_already_recorded': 'Этот платёж уже был учтён.',
@@ -6662,14 +6683,18 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'realmOp.err.realm_not_found': 'Этот мир больше не существует.',
   'realmOp.err.stake_already_recorded': 'Этот стейк уже был учтён.',
   'realmOp.err.stake_below_minimum': 'Стейк ниже минимального уровня. Выберите уровень выше.',
-  'realmOp.err.stake_not_released_onchain': 'Сначала высвободите стейк в блокчейне, затем завершите закрытие.',
-  'realmOp.err.stake_service_unavailable': 'Стейкинг временно недоступен. Попробуйте подтвердить чуть позже.',
-  'realmOp.err.supply_unavailable': 'Данные о предложении $WOC временно недоступны. Повторите попытку позже.',
+  'realmOp.err.stake_not_released_onchain':
+    'Сначала высвободите стейк в блокчейне, затем завершите закрытие.',
+  'realmOp.err.stake_service_unavailable':
+    'Стейкинг временно недоступен. Попробуйте подтвердить чуть позже.',
+  'realmOp.err.supply_unavailable':
+    'Данные о предложении $WOC временно недоступны. Повторите попытку позже.',
   'realmOp.err.timelock_not_elapsed': 'Таймлок стейка ещё не истёк.',
   'realmOp.err.token_2022': 'Этот минт $WOC не поддерживается для стейкинга.',
   'realmOp.err.treasury_short': 'Оплаченная сумма не совпадает с вашей котировкой.',
   'realmOp.err.tx_failed': 'Транзакция стейка не прошла в блокчейне.',
-  'realmOp.err.tx_not_finalized': 'Ваш стейк ещё не финализирован. Попробуйте подтвердить чуть позже.',
+  'realmOp.err.tx_not_finalized':
+    'Ваш стейк ещё не финализирован. Попробуйте подтвердить чуть позже.',
   'realmOp.err.wallet_mismatch': 'Подключите кошелёк, привязанный к вашему аккаунту.',
   'realmOp.err.wrong_payer': 'Стейк должен быть подписан вашим привязанным кошельком.',
   'realmOp.err.wrong_vault_amount': 'Заблокированная сумма не совпадает с вашей котировкой.',
@@ -6684,36 +6709,47 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'realmOp.flow.quoting': 'Резервируем ваш мир...',
   'realmOp.flow.released': 'Мир закрыт. Имя снова свободно.',
   'realmOp.flow.releasing': 'Завершаем закрытие...',
-  'realmOp.found.affiliateNote': 'Приглашение от партнёра. Он получает комиссию 15% с дохода этого мира.',
-  'realmOp.found.badgeNote': 'Застейканные $WOC продолжают учитываться в значке держателя, так что основание мира никогда не понизит ваш уровень.',
+  'realmOp.found.affiliateNote':
+    'Приглашение от партнёра. Он получает комиссию 15% с дохода этого мира.',
+  'realmOp.found.badgeNote':
+    'Застейканные $WOC продолжают учитываться в значке держателя, так что основание мира никогда не понизит ваш уровень.',
   'realmOp.found.methodBuy': 'Купить за SOL или USDC',
-  'realmOp.found.methodBuyHint': 'Разовый платёж в SOL или USDC. Покупка окончательна, возвращаемого стейка нет.',
+  'realmOp.found.methodBuyHint':
+    'Разовый платёж в SOL или USDC. Покупка окончательна, возвращаемого стейка нет.',
   'realmOp.found.methodLabel': 'Способ оплаты',
   'realmOp.found.methodStake': 'Застейкать $WOC',
-  'realmOp.found.methodStakeHint': 'Заблокируйте $WOC в эскроу. Возвращается полностью при закрытии.',
+  'realmOp.found.methodStakeHint':
+    'Заблокируйте $WOC в эскроу. Возвращается полностью при закрытии.',
   'realmOp.found.nameLabel': 'Имя мира',
   'realmOp.found.namePlaceholder': 'Назовите свой мир',
   'realmOp.found.nameTaken': 'Выберите другое имя; это уже занято.',
-  'realmOp.found.stakingNote': 'Вы подписываете одну транзакцию, блокирующую {amount} $WOC в эскроу. Верните их в любой момент после {days}-дневного таймлока, закрыв мир.',
+  'realmOp.found.stakingNote':
+    'Вы подписываете одну транзакцию, блокирующую {amount} $WOC в эскроу. Верните их в любой момент после {days}-дневного таймлока, закрыв мир.',
   'realmOp.found.submit': 'Застейкать и основать',
   'realmOp.found.submitConnect': 'Подключите кошелёк, чтобы основать',
-  'realmOp.found.subtitle': 'Застейкайте $WOC в некастодиальном эскроу, чтобы открыть и вести собственный мир.',
+  'realmOp.found.subtitle':
+    'Застейкайте $WOC в некастодиальном эскроу, чтобы открыть и вести собственный мир.',
   'realmOp.found.supplyNote': 'Цена каждого уровня — доля от текущего предложения $WOC.',
-  'realmOp.found.tierHint': 'Больший стейк открывает уровень выше: больше игроков, больший бюджет кастомизации и каналы выплат оператору.',
+  'realmOp.found.tierHint':
+    'Больший стейк открывает уровень выше: больше игроков, больший бюджет кастомизации и каналы выплат оператору.',
   'realmOp.found.tierLabel': 'Уровень стейка',
-  'realmOp.found.tiersUnavailable': 'Актуальные цены уровней сейчас недоступны. Повторите попытку позже.',
+  'realmOp.found.tiersUnavailable':
+    'Актуальные цены уровней сейчас недоступны. Повторите попытку позже.',
   'realmOp.found.title': 'Основать мир',
   'realmOp.found.typeLabel': 'Тип мира',
   'realmOp.mine.bondInfo': 'Залог: держите {amount} $WOC в привязанном кошельке.',
-  'realmOp.mine.bondWarning': 'Залог ниже требуемого. Держите {amount} $WOC и пополните до {date}, иначе этот мир будет утрачен.',
+  'realmOp.mine.bondWarning':
+    'Залог ниже требуемого. Держите {amount} $WOC и пополните до {date}, иначе этот мир будет утрачен.',
   'realmOp.mine.decommission': 'Закрыть',
-  'realmOp.mine.decommissionConfirm': 'Закрыть {name}? Мир уйдёт в офлайн, и начнётся {days}-дневный таймлок высвобождения стейка.',
+  'realmOp.mine.decommissionConfirm':
+    'Закрыть {name}? Мир уйдёт в офлайн, и начнётся {days}-дневный таймлок высвобождения стейка.',
   'realmOp.mine.eligible': 'Стейк можно высвободить {date}',
   'realmOp.mine.empty': 'Вы пока не управляете мирами. Основайте один выше, чтобы начать.',
   'realmOp.mine.enter': 'Войти',
   'realmOp.mine.loading': 'Загрузка ваших миров...',
   'realmOp.mine.release': 'Завершить закрытие',
-  'realmOp.mine.releaseHint': 'Высвободите стейк в блокчейне, затем завершите закрытие: мир будет закрыт, а имя освобождено.',
+  'realmOp.mine.releaseHint':
+    'Высвободите стейк в блокчейне, затем завершите закрытие: мир будет закрыт, а имя освобождено.',
   'realmOp.mine.tier': 'Уровень {tier}',
   'realmOp.mine.title': 'Мои миры',
   'realmOp.status.active': 'Активен',
@@ -6745,16 +6781,20 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.checklist.launch': 'Запуск',
   'launchpad.policy.cosmetic': 'Только косметика',
   'launchpad.policy.power': 'Плати и побеждай',
-  'launchpad.policy.powerBanner': 'Мир с платными преимуществами: после запуска этот токен может покупать игровую силу здесь.',
+  'launchpad.policy.powerBanner':
+    'Мир с платными преимуществами: после запуска этот токен может покупать игровую силу здесь.',
   'launchpad.register.title': 'Зарегистрировать токен мира',
-  'launchpad.register.subtitle': 'Назовите валюту, которую запустит этот мир. Регистрация задает только идентичность: минт, блокировки и ликвидность появятся в следующих фазах со своими гарантиями.',
+  'launchpad.register.subtitle':
+    'Назовите валюту, которую запустит этот мир. Регистрация задает только идентичность: минт, блокировки и ликвидность появятся в следующих фазах со своими гарантиями.',
   'launchpad.register.symbolLabel': 'Тикер токена',
   'launchpad.register.symbolPlaceholder': 'напр. MOON',
   'launchpad.register.policyLabel': 'Политика монетизации',
-  'launchpad.register.policyHint': 'Вариант «только косметика» сохраняет мир без платных преимуществ. «Плати и побеждай» помечается для каждого игрока и проходит проверку перед запуском.',
+  'launchpad.register.policyHint':
+    'Вариант «только косметика» сохраняет мир без платных преимуществ. «Плати и побеждай» помечается для каждого игрока и проходит проверку перед запуском.',
   'launchpad.register.submit': 'Зарегистрировать токен',
   'launchpad.vote.title': 'Должен ли этот мир запустить свой токен?',
-  'launchpad.vote.subtitle': 'Один голос на подтвержденный привязанный кошелек, вес равен $WOC на момент голосования. Голосование совещательное и бесплатное: транзакция не отправляется.',
+  'launchpad.vote.subtitle':
+    'Один голос на подтвержденный привязанный кошелек, вес равен $WOC на момент голосования. Голосование совещательное и бесплатное: транзакция не отправляется.',
   'launchpad.vote.openBtn': 'Открыть голосование сообщества',
   'launchpad.vote.yes': 'Голосовать за',
   'launchpad.vote.no': 'Голосовать против',
@@ -6769,7 +6809,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.vote.outcomePassed': 'Голосование пройдено. Предпродажа открыта.',
   'launchpad.vote.outcomeFailed': 'Голосов «за» меньше порога.',
   'launchpad.presale.title': 'Предпродажа',
-  'launchpad.presale.subtitle': 'Вносите SOL, USDC или $WOC на запуск. Средства идут напрямую в эскроу-кошелек основателя; сервер лишь проверяет транзакцию и никогда не хранит деньги.',
+  'launchpad.presale.subtitle':
+    'Вносите SOL, USDC или $WOC на запуск. Средства идут напрямую в эскроу-кошелек основателя; сервер лишь проверяет транзакцию и никогда не хранит деньги.',
   'launchpad.presale.stripeDeferred': 'Оплата картой на этой фазе недоступна.',
   'launchpad.presale.progress': '{pct}% мягкого потолка',
   'launchpad.presale.progressAria': 'Прогресс предпродажи к мягкому потолку',
@@ -6780,17 +6821,21 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.presale.contribute': 'Внести вклад',
   'launchpad.presale.contributeConnect': 'Подключите кошелек, чтобы внести вклад',
   'launchpad.presale.escrowNote': 'Эскроу-кошелек: {address}',
-  'launchpad.presale.refundTerms': 'Если предпродажа не достигнет мягкого потолка, основатель вернет взносы из эскроу-кошелька, и каждый возврат проверяется в блокчейне.',
+  'launchpad.presale.refundTerms':
+    'Если предпродажа не достигнет мягкого потолка, основатель вернет взносы из эскроу-кошелька, и каждый возврат проверяется в блокчейне.',
   'launchpad.presale.softCapMet': 'Мягкий потолок достигнут.',
   'launchpad.presale.finalize': 'Завершить предпродажу',
-  'launchpad.presale.finalizeHint': 'Завершает предпродажу: при достигнутом потолке статус «профинансировано», иначе открываются возвраты.',
+  'launchpad.presale.finalizeHint':
+    'Завершает предпродажу: при достигнутом потолке статус «профинансировано», иначе открываются возвраты.',
   'launchpad.presale.notConfigured': 'Основатель еще не открыл прием взносов.',
   'launchpad.presale.refundTitle': 'Возвраты',
-  'launchpad.presale.refundNote': 'Эта предпродажа не достигла мягкого потолка. Возвраты выплачиваются из эскроу-кошелька и проверяются в блокчейне.',
+  'launchpad.presale.refundNote':
+    'Эта предпродажа не достигла мягкого потолка. Возвраты выплачиваются из эскроу-кошелька и проверяются в блокчейне.',
   'launchpad.presale.refundRemaining': 'Взносов в ожидании проверенного возврата: {count}',
   'launchpad.presale.refundDone': 'По каждому взносу есть проверенный возврат.',
   'launchpad.presale.config.title': 'Открыть прием взносов',
-  'launchpad.presale.config.subtitle': 'Укажите эскроу-кошелек под вашим контролем и лимиты по каждой валюте. Пустая валюта отключается. Суммы в целых единицах.',
+  'launchpad.presale.config.subtitle':
+    'Укажите эскроу-кошелек под вашим контролем и лимиты по каждой валюте. Пустая валюта отключается. Суммы в целых единицах.',
   'launchpad.presale.config.escrowLabel': 'Адрес эскроу-кошелька',
   'launchpad.presale.config.softLabel': 'Мягкий потолок ({currency})',
   'launchpad.presale.config.raiseLabel': 'Потолок сбора ({currency})',
@@ -6817,7 +6862,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.vote_not_openable': 'Из этого состояния голосование открыть нельзя.',
   'launchpad.err.invalid_vote_choice': 'Выберите «за» или «против».',
   'launchpad.err.wallet_not_linked': 'Сначала подтвердите кошелек в аккаунте.',
-  'launchpad.err.vote_weight_unavailable': 'Не удалось прочитать ваш баланс $WOC. Попробуйте позже.',
+  'launchpad.err.vote_weight_unavailable':
+    'Не удалось прочитать ваш баланс $WOC. Попробуйте позже.',
   'launchpad.err.no_vote_weight': 'На подтвержденном кошельке нет целого $WOC для голосования.',
   'launchpad.err.already_voted': 'Голос с этого кошелька или аккаунта уже записан.',
   'launchpad.err.presale_not_open': 'Предпродажа не открыта.',
@@ -6826,7 +6872,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.presale_not_refunding': 'Эта предпродажа не в стадии возврата.',
   'launchpad.err.presale_unavailable': 'Предпродажа временно недоступна. Попробуйте позже.',
   'launchpad.err.invalid_escrow_wallet': 'Этот адрес эскроу-кошелька недопустим.',
-  'launchpad.err.invalid_presale_caps': 'Эти лимиты недопустимы. Каждой включенной валюте нужны мягкий потолок, потолок сбора не ниже него и лимит на кошелек.',
+  'launchpad.err.invalid_presale_caps':
+    'Эти лимиты недопустимы. Каждой включенной валюте нужны мягкий потолок, потолок сбора не ниже него и лимит на кошелек.',
   'launchpad.err.invalid_currency': 'Выберите SOL, USDC или $WOC.',
   'launchpad.err.currency_not_enabled': 'Эта предпродажа не принимает такую валюту.',
   'launchpad.err.invalid_amount': 'Введите корректную сумму.',
@@ -6862,7 +6909,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.launch.step.verify': 'Проверить в блокчейне',
   'launchpad.launch.step.list': 'Выход в продажу',
   'launchpad.launch.supply': 'Фиксированное предложение: {amount} {symbol}',
-  'launchpad.launch.allocLine': 'Публичная кривая {publicPct}%, ликвидность {liquidityPct}% (навсегда заблокирована при выпуске)',
+  'launchpad.launch.allocLine':
+    'Публичная кривая {publicPct}%, ликвидность {liquidityPct}% (навсегда заблокирована при выпуске)',
   'launchpad.launch.bucketLine':
     '{bucket}: {pct}%, {amount} {symbol}, клифф {cliff} мес. + линейно {linear} мес.',
   'launchpad.launch.bucket.founder': 'Основатель',
@@ -6870,12 +6918,14 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.launch.bucket.treasury': 'Казна мира',
   'launchpad.launch.lockProof': 'Блокировка ({bucket}):',
   'launchpad.launch.mintCreated': 'Минт:',
-  'launchpad.launch.verifiedNote': 'Все блокировки подтверждены в блокчейне. Токен сможет выйти в продажу после открытия кривой.',
+  'launchpad.launch.verifiedNote':
+    'Все блокировки подтверждены в блокчейне. Токен сможет выйти в продажу после открытия кривой.',
   'launchpad.launch.createTitle': 'Создать минт',
   'launchpad.launch.createHint':
     'Ваш кошелек оплачивает аренду и подписывает как владелец права выпуска. Сервер никогда не хранит ключ, способный перемещать средства: он лишь строит транзакцию, фиксирует адрес минта и проверяет результат в блокчейне.',
   'launchpad.launch.treasuryLabel': 'Кошелек казны мира',
-  'launchpad.launch.treasuryHint': 'Получает вестируемую долю казны мира. Используйте кошелек под управлением вашего мира.',
+  'launchpad.launch.treasuryHint':
+    'Получает вестируемую долю казны мира. Используйте кошелек под управлением вашего мира.',
   'launchpad.launch.nameLabel': 'Название токена (необязательно)',
   'launchpad.launch.uriLabel': 'URL метаданных (необязательно)',
   'launchpad.launch.createBtn': 'Создать минт',
@@ -6894,7 +6944,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.launch.check.lock_found': 'Эскроу блокировки найден',
   'launchpad.launch.check.lock_mint': 'Блокировка держит этот токен',
   'launchpad.launch.check.lock_recipient': 'Получатель блокировки совпадает',
-  'launchpad.launch.check.lock_immutable': 'Блокировка неизменяема (нельзя отменить или сменить получателя)',
+  'launchpad.launch.check.lock_immutable':
+    'Блокировка неизменяема (нельзя отменить или сменить получателя)',
   'launchpad.launch.check.lock_token_program': 'Блокировка использует верную программу токена',
   'launchpad.launch.check.lock_untouched': 'Блокировка не тронута и не отменялась',
   'launchpad.launch.check.lock_amount': 'Заблокированная сумма точна',
@@ -6910,7 +6961,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.flow.notVerified': 'Проверка выявила проблемы. Просмотрите чек-лист ниже.',
   'launchpad.err.mint_already_created': 'Минт уже создан.',
   'launchpad.err.presale_not_funded': 'Предпродажа еще не завершена успешно.',
-  'launchpad.err.levy_fund_unconfigured': 'Кошелек фонда платформы еще не настроен. Попробуйте позже.',
+  'launchpad.err.levy_fund_unconfigured':
+    'Кошелек фонда платформы еще не настроен. Попробуйте позже.',
   'launchpad.err.invalid_treasury_wallet': 'Этот адрес кошелька казны недействителен.',
   'launchpad.err.invalid_token_name': 'Название токена: от 1 до 32 обычных символов.',
   'launchpad.err.invalid_token_uri': 'URL метаданных должен быть https-адресом.',
@@ -6922,11 +6974,13 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.wrong_decimals': 'У минта не те десятичные знаки, что ожидались.',
   'launchpad.err.freeze_authority_set': 'У минта есть право заморозки. Его быть не должно.',
   'launchpad.err.bad_metadata_pointer': 'Указатель метаданных минта неверен или еще изменяем.',
-  'launchpad.err.metadata_symbol_mismatch': 'Символ в блокчейне не совпадает с зарегистрированным токеном.',
+  'launchpad.err.metadata_symbol_mismatch':
+    'Символ в блокчейне не совпадает с зарегистрированным токеном.',
   'launchpad.err.unexpected_extension': 'У минта есть недопустимое расширение.',
   'launchpad.err.launch_sig_replayed': 'Эта транзакция запуска уже использована.',
   'launchpad.err.mint_not_created': 'Сначала создайте и подтвердите минт.',
-  'launchpad.err.invalid_lock_address': 'Введите три разных действительных адреса эскроу блокировок.',
+  'launchpad.err.invalid_lock_address':
+    'Введите три разных действительных адреса эскроу блокировок.',
   'launchpad.err.launch_not_verifiable': 'Запуск еще не готов к проверке.',
   'launchpad.err.locks_not_verified': 'Блокировки еще не проверены в блокчейне.',
   'launchpad.err.not_listable': 'Из этого состояния токен не может выйти в продажу.',
@@ -6939,23 +6993,29 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.curve.progressAria': 'Прогресс к порогу миграции',
   'launchpad.curve.progress': 'Собрано {raised} из {threshold} до миграции',
   'launchpad.curve.migratedNote': 'Кривая достигла порога и мигрировала. Проверьте выпуск ниже.',
-  'launchpad.curve.graduatedNote': 'Выпуск завершен: пул ликвидности с навсегда заблокированным LP:',
+  'launchpad.curve.graduatedNote':
+    'Выпуск завершен: пул ликвидности с навсегда заблокированным LP:',
   'launchpad.curve.openBtn': 'Открыть кривую',
-  'launchpad.curve.openHint': 'Строит создание пула для подписи вашим кошельком. Хост кривой чеканит токен и держит предложение кривой; средства не проходят через этот сервер.',
+  'launchpad.curve.openHint':
+    'Строит создание пула для подписи вашим кошельком. Хост кривой чеканит токен и держит предложение кривой; средства не проходят через этот сервер.',
   'launchpad.curve.verifyBtn': 'Проверить листинг кривой',
-  'launchpad.curve.verifyHint': 'Когда транзакция создания пула подтвердится, проверьте ее, чтобы токен вышел в продажу.',
+  'launchpad.curve.verifyHint':
+    'Когда транзакция создания пула подтвердится, проверьте ее, чтобы токен вышел в продажу.',
   'launchpad.curve.graduateBtn': 'Проверить выпуск',
   'launchpad.flow.preparingCurve': 'Подготовка пула кривой...',
   'launchpad.flow.signingCurve': 'Подтвердите создание пула в кошельке...',
-  'launchpad.flow.curveSubmitted': 'Создание пула отправлено. После подтверждения проверьте листинг.',
+  'launchpad.flow.curveSubmitted':
+    'Создание пула отправлено. После подтверждения проверьте листинг.',
   'launchpad.flow.verifyingCurve': 'Проверка кривой в блокчейне...',
   'launchpad.flow.curveListed': 'Токен торгуется на кривой.',
   'launchpad.flow.verifyingGraduation': 'Проверка выпуска в блокчейне...',
   'launchpad.flow.graduated': 'Выпуск завершен: LP навсегда заблокирован.',
   'launchpad.err.launchpad_disabled': 'Лончпад кривой на этом сервере еще не включен.',
-  'launchpad.err.launchpad_config_unreadable': 'Не удалось прочитать конфигурацию запуска. Попробуйте позже.',
+  'launchpad.err.launchpad_config_unreadable':
+    'Не удалось прочитать конфигурацию запуска. Попробуйте позже.',
   'launchpad.err.curve_already_created': 'Кривая уже существует.',
-  'launchpad.err.host_requires_dbc_mint': 'Этот хост кривой сам создает токен; заранее отчеканенный токен не подходит.',
+  'launchpad.err.host_requires_dbc_mint':
+    'Этот хост кривой сам создает токен; заранее отчеканенный токен не подходит.',
   'launchpad.err.invalid_base_mint': 'Этот адрес базового минта недействителен.',
   'launchpad.err.curve_not_found': 'Пул кривой еще не найден в блокчейне. Попробуйте чуть позже.',
   'launchpad.err.wrong_curve_creator': 'Пул кривой должен быть создан вашим привязанным кошельком.',
@@ -6975,8 +7035,10 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.fund.empty': 'Фонд пока не держит токенов миров.',
   'launchpad.fund.aum': 'Общая стоимость: {amount} USD',
   'launchpad.fund.updated': 'Обновлено {time}',
-  'launchpad.fund.clampedNote': 'Крупное изменение за одно обновление удерживается до подтверждающего обновления.',
-  'launchpad.fund.policyNote': 'Каждая позиция вестируется по самому строгому графику в таблице капитализации (клифф 12 мес. + линейно 48 мес.), а распоряжение требует одобрения управления. Платформа не может сбросить эту долю.',
+  'launchpad.fund.clampedNote':
+    'Крупное изменение за одно обновление удерживается до подтверждающего обновления.',
+  'launchpad.fund.policyNote':
+    'Каждая позиция вестируется по самому строгому графику в таблице капитализации (клифф 12 мес. + линейно 48 мес.), а распоряжение требует одобрения управления. Платформа не может сбросить эту долю.',
   'launchpad.fund.tableAria': 'Позиции фонда',
   'launchpad.fund.colToken': 'Токен',
   'launchpad.fund.colAmount': 'Количество',
@@ -6990,5 +7052,29 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'launchpad.fund.confidence.high': 'Оценено (перекрестная проверка)',
   'launchpad.fund.confidence.medium': 'Оценено',
   'launchpad.fund.confidence.low': 'Оценено (низкая уверенность)',
-  'launchpad.fund.illiquidNote': 'Позиции без надежной цены: {count}. Показываются, но не учитываются.',
+  'launchpad.fund.illiquidNote':
+    'Позиции без надежной цены: {count}. Показываются, но не учитываются.',
+  'launchpad.flow.quotingPower': 'Получаем расчет конвертации...',
+  'launchpad.flow.powerQuoted': 'Вы получите {copper} меди. Подтвердите перевод в кошельке...',
+  'launchpad.flow.confirmingPower': 'Проверяем перевод в сети...',
+  'launchpad.flow.powerCredited': 'Персонажу начислено {copper} меди.',
+  'launchpad.flow.powerBanked':
+    'Начислено {copper} меди. Медь придет при следующем входе этого персонажа.',
+  'launchpad.power.title': 'Конвертация в медь',
+  'launchpad.power.subtitle':
+    'Этот мир с платными преимуществами конвертирует {symbol} в игровую медь. Токены отправляются в казну мира, а медь начисляется после финализации перевода в сети.',
+  'launchpad.power.charLabel': 'Персонаж-получатель',
+  'launchpad.power.amountLabel': 'Количество ({symbol})',
+  'launchpad.power.convertBtn': 'Конвертировать в медь',
+  'launchpad.power.convertConnect': 'Подключить кошелек и конвертировать',
+  'launchpad.power.noCharacters': 'Сначала создайте персонажа в этом мире, чтобы получить медь.',
+  'launchpad.err.power_disabled': 'Конвертация токенов в медь не включена на этом сервере.',
+  'launchpad.err.realm_not_power': 'Этот мир не допускает конвертацию токенов в медь.',
+  'launchpad.err.token_not_live': 'Сначала токен должен торговаться на кривой.',
+  'launchpad.err.power_rate_unset': 'Курс конвертации еще не настроен.',
+  'launchpad.err.power_sink_unavailable': 'Казна мира пока недоступна.',
+  'launchpad.err.amount_below_minimum': 'Это количество слишком мало для конвертации.',
+  'launchpad.err.character_not_found': 'Выберите одного из ваших персонажей в этом мире.',
+  'launchpad.err.sink_short': 'Перевод не покрывает указанное в расчете количество.',
+  'launchpad.err.credit_already_recorded': 'Эта транзакция уже зачислена.',
 };

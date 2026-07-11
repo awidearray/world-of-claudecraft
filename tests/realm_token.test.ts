@@ -44,7 +44,7 @@ function token(realmId: number, over: Partial<RealmToken> = {}): RealmToken {
 
 // In-memory RealmTokenDb fake implementing the interface the logic talks to.
 class UniqueViolation extends Error {}
-export class FakeRealmTokenDb implements RealmTokenDb {
+class FakeRealmTokenDb implements RealmTokenDb {
   rows = new Map<number, RealmToken>();
   async getRealmToken(realmId: number): Promise<RealmToken | null> {
     return this.rows.get(realmId) ?? null;
@@ -85,7 +85,7 @@ export class FakeRealmTokenDb implements RealmTokenDb {
   }
 }
 
-export const isFakeUnique = (err: unknown): boolean => err instanceof UniqueViolation;
+const isFakeUnique = (err: unknown): boolean => err instanceof UniqueViolation;
 
 describe('identity validation', () => {
   it('accepts ticker-style symbols and rejects the rest', () => {
@@ -371,6 +371,42 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
       'pay_tx_sig',
       'refund_tx_sig',
     ],
+    realm_power_quotes: [
+      'quote_id',
+      'realm_id',
+      'account_id',
+      'character_id',
+      'wallet',
+      'amount_base',
+      'copper_credit',
+      'sink_wallet',
+      'expires_at',
+    ],
+    realm_power_credits: [
+      'credit_id',
+      'realm_id',
+      'account_id',
+      'character_id',
+      'wallet',
+      'amount_base',
+      'copper_credit',
+      'pay_tx_sig',
+      'credited_at',
+    ],
+    realm_fee_claims: [
+      'claim_id',
+      'realm_id',
+      'pool_address',
+      'quote_mint',
+      'status',
+      'claim_tx_sig',
+      'claimed_base',
+      'operator_base',
+      'affiliate_base',
+      'treasury_base',
+      'buyback_base',
+      'distribute_tx_sig',
+    ],
   };
   function stubDb(drop?: { table: string; column: string }) {
     return {
@@ -414,5 +450,17 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
     await expect(
       assertRealmSchema(stubDb({ table: 'realm_token_launches', column: 'supply_base' }) as never),
     ).rejects.toThrow(/realm_token_launches.*supply_base/);
+  });
+
+  it('fails at boot when a power-credit column is dropped (phase 7)', async () => {
+    await expect(
+      assertRealmSchema(stubDb({ table: 'realm_power_credits', column: 'pay_tx_sig' }) as never),
+    ).rejects.toThrow(/realm_power_credits.*pay_tx_sig/);
+    await expect(
+      assertRealmSchema(stubDb({ table: 'realm_power_credits', column: 'credited_at' }) as never),
+    ).rejects.toThrow(/realm_power_credits.*credited_at/);
+    await expect(
+      assertRealmSchema(stubDb({ table: 'realm_power_quotes', column: 'copper_credit' }) as never),
+    ).rejects.toThrow(/realm_power_quotes.*copper_credit/);
   });
 });

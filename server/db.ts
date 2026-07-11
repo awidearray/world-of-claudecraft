@@ -28,6 +28,7 @@ import { REALM } from './realm';
 import { REALM_BUY_SCHEMA } from './realm_buy_db';
 import { assertRealmSchema, REALM_SCHEMA, seedDefaultRealm } from './realm_db';
 import { REALM_FEE_SCHEMA } from './realm_fee_db';
+import { REALM_POWER_SCHEMA } from './realm_power_db';
 import { REALM_PRESALE_SCHEMA } from './realm_presale_db';
 import { REALM_QUOTE_SCHEMA } from './realm_quote_db';
 import { REALM_STAKE_SCHEMA } from './realm_stake_db';
@@ -723,6 +724,7 @@ export async function ensureSchema(): Promise<void> {
     await client.query(REALM_PRESALE_SCHEMA); // realm_presales + quotes + contributions (launchpad phase 2)
     await client.query(REALM_FEE_SCHEMA); // realm_fee_claims ledger (launchpad phase 5, references realms)
     await client.query(LEVY_FUND_SCHEMA); // levy fund snapshot cache (launchpad phase 6, display-only)
+    await client.query(REALM_POWER_SCHEMA); // power-credit quotes + ledger (launchpad phase 7, references realms)
     await client.query(AFFILIATE_SCHEMA); // affiliate_codes + realm_affiliates (references realms + accounts)
     await client.query(REFERRAL_REWARDS_SCHEMA); // referral_progress + referral_rewards (references characters + accounts)
     // Fail fast at boot on realm schema drift (CREATE IF NOT EXISTS is a no-op

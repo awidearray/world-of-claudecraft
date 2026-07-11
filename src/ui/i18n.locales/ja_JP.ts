@@ -6459,13 +6459,16 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.wocSeason.colReward': '報酬（$WOC）',
   'hudChrome.wocSeason.emittedLabel': 'プールの {pct}% を支払い済み',
   'hudChrome.wocSeason.ended': 'このシーズンは終了しました。',
-  'hudChrome.wocSeason.invariant': '支払いがシーズンの収入を超えることはありません。買いが売りを上回ることがオンチェーンで保証されます。',
+  'hudChrome.wocSeason.invariant':
+    '支払いがシーズンの収入を超えることはありません。買いが売りを上回ることがオンチェーンで保証されます。',
   'hudChrome.wocSeason.menu': '$WOC シーズン',
   'hudChrome.wocSeason.none': '現在アクティブな報酬シーズンはありません。',
-  'hudChrome.wocSeason.noneHint': 'アリーナ手数料と買い戻しがプールに資金を入れ始めると、シーズンが開始されます。',
+  'hudChrome.wocSeason.noneHint':
+    'アリーナ手数料と買い戻しがプールに資金を入れ始めると、シーズンが開始されます。',
   'hudChrome.wocSeason.openEnded': '無期限',
   'hudChrome.wocSeason.poolLabel': '利用可能な報酬プール',
-  'hudChrome.wocSeason.projectedNote': '現在のプールとアリーナ順位からの予測です。最終支払いはシーズン終了時に確定します。',
+  'hudChrome.wocSeason.projectedNote':
+    '現在のプールとアリーナ順位からの予測です。最終支払いはシーズン終了時に確定します。',
   'hudChrome.wocSeason.sinkLabel': '供給済み',
   'hudChrome.wocSeason.standingsTitle': '上位獲得者の予測',
   'hudChrome.wocSeason.statusActive': '開催中',
@@ -6474,56 +6477,77 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.wocSeason.title': '$WOC 報酬シーズン',
   'realmOp.open': 'ワールドを設立',
   'realmOp.panelTitle': 'ワールド運営者',
-  'realmOp.affiliate.bonusRealm': 'さらに、彼らが設立したワールドから 15% の USDC コミッションを獲得できます。',
-  'realmOp.affiliate.bonusReferee': 'あなたのリンクから参加したプレイヤーは、最初の 30 日間 XP とゴールドが +10% になります。',
-  'realmOp.affiliate.bonusReferrer': 'その期間中、彼らの獲得分の +5% があなたのキャラクターに加算されます。',
+  'realmOp.affiliate.bonusRealm':
+    'さらに、彼らが設立したワールドから 15% の USDC コミッションを獲得できます。',
+  'realmOp.affiliate.bonusReferee':
+    'あなたのリンクから参加したプレイヤーは、最初の 30 日間 XP とゴールドが +10% になります。',
+  'realmOp.affiliate.bonusReferrer':
+    'その期間中、彼らの獲得分の +5% があなたのキャラクターに加算されます。',
   'realmOp.affiliate.bonusTitle': 'リンクの報酬の仕組み',
   'realmOp.affiliate.commission': '{pct}% のコミッション',
   'realmOp.affiliate.copied': 'コピーしました',
   'realmOp.affiliate.copy': 'リンクをコピー',
-  'realmOp.affiliate.earningsSoon': 'ワールド内収益が稼働すると、USDC コミッションの支払いが始まります。',
-  'realmOp.affiliate.empty': '紹介したワールドはまだありません。リンクを共有して獲得を始めましょう。',
+  'realmOp.affiliate.earningsSoon':
+    'ワールド内収益が稼働すると、USDC コミッションの支払いが始まります。',
+  'realmOp.affiliate.empty':
+    '紹介したワールドはまだありません。リンクを共有して獲得を始めましょう。',
   'realmOp.affiliate.loading': '紹介の統計を読み込み中...',
   'realmOp.affiliate.open': '紹介プログラム',
   'realmOp.affiliate.referredCount': '紹介した稼働中ワールド {count} 件',
   'realmOp.affiliate.referredCountPlural': '紹介した稼働中ワールド {count} 件',
   'realmOp.affiliate.referredTitle': '紹介したワールド',
-  'realmOp.affiliate.rewardsEmpty': 'プレイヤーを紹介して獲得を始めましょう。報酬は次回ログイン時にキャラクターへ付与されます。',
+  'realmOp.affiliate.rewardsEmpty':
+    'プレイヤーを紹介して獲得を始めましょう。報酬は次回ログイン時にキャラクターへ付与されます。',
   'realmOp.affiliate.rewardsLifetime': '累計 {xp} XP と {gold} を獲得',
   'realmOp.affiliate.rewardsPending': '{xp} XP と {gold} が保留中。次回ログイン時に付与されます',
   'realmOp.affiliate.rewardsReferred': '紹介したプレイヤー：{count}',
   'realmOp.affiliate.rewardsTitle': '紹介報酬',
-  'realmOp.affiliate.subtitle': 'リンクを 1 つ共有しましょう。参加したプレイヤーは XP とゴールドのブーストを獲得し、あなたは彼らの獲得分から報酬を得て、彼らが設立したワールドからは 15% を受け取れます。',
+  'realmOp.affiliate.subtitle':
+    'リンクを 1 つ共有しましょう。参加したプレイヤーは XP とゴールドのブーストを獲得し、あなたは彼らの獲得分から報酬を得て、彼らが設立したワールドからは 15% を受け取れます。',
   'realmOp.affiliate.title': '紹介・アフィリエイトプログラム',
-  'realmOp.affiliate.unavailable': '紹介の統計は現在利用できません。しばらくしてからもう一度お試しください。',
+  'realmOp.affiliate.unavailable':
+    '紹介の統計は現在利用できません。しばらくしてからもう一度お試しください。',
   'realmOp.affiliate.yourLink': 'あなたの紹介リンク',
-  'realmOp.buy.bondNote': 'さらに {amount} $WOC を保有し、ワールドの存続期間中はリンク済みウォレットに保持する必要があります。失うとワールドは失効します。',
-  'realmOp.buy.bondWhy': 'この継続ボンドは支払う {currency} とは別のものです。ワールドを運営する間、あなたの利害を結び付けておくためのものです。',
+  'realmOp.buy.bondNote':
+    'さらに {amount} $WOC を保有し、ワールドの存続期間中はリンク済みウォレットに保持する必要があります。失うとワールドは失効します。',
+  'realmOp.buy.bondWhy':
+    'この継続ボンドは支払う {currency} とは別のものです。ワールドを運営する間、あなたの利害を結び付けておくためのものです。',
   'realmOp.buy.currencyLabel': '支払い通貨',
-  'realmOp.buy.currencyUnavailable': '{currency} は現在利用できません（スワップ経路がありません）。',
-  'realmOp.buy.finalNote': '購入は最終的なもので返金できません。ステークと異なり、ワールドを廃止しても返還されません。',
-  'realmOp.buy.note': '{amount} {currency} を支払うトランザクションに 1 回署名して、このワールドを設立します。ワールドは即時に有効になります。',
-  'realmOp.buy.splitNote': '支払いの {treasuryPct}% はトレジャリーに入り、残りは $WOC の買い戻しと焼却に使われます。',
+  'realmOp.buy.currencyUnavailable':
+    '{currency} は現在利用できません（スワップ経路がありません）。',
+  'realmOp.buy.finalNote':
+    '購入は最終的なもので返金できません。ステークと異なり、ワールドを廃止しても返還されません。',
+  'realmOp.buy.note':
+    '{amount} {currency} を支払うトランザクションに 1 回署名して、このワールドを設立します。ワールドは即時に有効になります。',
+  'realmOp.buy.splitNote':
+    '支払いの {treasuryPct}% はトレジャリーに入り、残りは $WOC の買い戻しと焼却に使われます。',
   'realmOp.buy.submit': '購入して設立',
   'realmOp.buy.submitConnect': '購入するにはウォレットを接続',
-  'realmOp.buy.unavailable': 'ワールドの購入は現在利用できません。代わりに $WOC をステークして設立してください。',
+  'realmOp.buy.unavailable':
+    'ワールドの購入は現在利用できません。代わりに $WOC をステークして設立してください。',
   'realmOp.err.bad_signature': 'その支払い署名は無効です。最初からやり直してください。',
-  'realmOp.err.bond_required': 'このティアを購入するにはリンク済みウォレットに {amount} $WOC が必要です。補充してからもう一度お試しください。',
-  'realmOp.err.buy_unavailable': 'ワールドの購入は現在利用できません。代わりに $WOC をステークして設立してください。',
+  'realmOp.err.bond_required':
+    'このティアを購入するにはリンク済みウォレットに {amount} $WOC が必要です。補充してからもう一度お試しください。',
+  'realmOp.err.buy_unavailable':
+    'ワールドの購入は現在利用できません。代わりに $WOC をステークして設立してください。',
   'realmOp.err.buyback_short': '支払われた金額が見積もりと一致しません。',
   'realmOp.err.generic': '問題が発生しました。もう一度お試しください。',
-  'realmOp.err.invalid_amount': 'そのステーク額は無効です。ティアを選んでからもう一度お試しください。',
+  'realmOp.err.invalid_amount':
+    'そのステーク額は無効です。ティアを選んでからもう一度お試しください。',
   'realmOp.err.invalid_currency': 'SOL か USDC を選んでからもう一度お試しください。',
-  'realmOp.err.invalid_realm_name': 'そのワールド名は使用できません。英数字、スペース、ハイフンを使ってください。',
+  'realmOp.err.invalid_realm_name':
+    'そのワールド名は使用できません。英数字、スペース、ハイフンを使ってください。',
   'realmOp.err.invalid_tier': 'ティアを選んでからもう一度お試しください。',
   'realmOp.err.legs_collide': '支払いを検証できませんでした。最初からやり直してください。',
   'realmOp.err.link_wallet': '先にウォレットをアカウントにリンクしてください。',
   'realmOp.err.memo_mismatch': 'その支払いは見積もりと一致しません。最初からやり直してください。',
-  'realmOp.err.not_finalized': '支払いはまだ最終確定していません。しばらくしてからもう一度確認してください。',
+  'realmOp.err.not_finalized':
+    '支払いはまだ最終確定していません。しばらくしてからもう一度確認してください。',
   'realmOp.err.not_realm_owner': 'あなたはそのワールドの運営者ではありません。',
   'realmOp.err.not_your_quote': 'その見積もりは別のアカウントのものです。',
   'realmOp.err.payment_already_recorded': 'その支払いはすでに記録されています。',
-  'realmOp.err.price_unavailable': 'ライブ価格は現在利用できません。しばらくしてからもう一度お試しください。',
+  'realmOp.err.price_unavailable':
+    'ライブ価格は現在利用できません。しばらくしてからもう一度お試しください。',
   'realmOp.err.quote_expired': '見積もりの有効期限が切れました。最初からやり直してください。',
   'realmOp.err.quote_not_found': '見積もりが見つかりませんでした。最初からやり直してください。',
   'realmOp.err.rate_limited': 'リクエストが多すぎます。少し待ってからもう一度お試しください。',
@@ -6534,15 +6558,20 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'realmOp.err.realm_not_decommissioning': 'そのワールドは廃止処理中ではありません。',
   'realmOp.err.realm_not_found': 'そのワールドはもう存在しません。',
   'realmOp.err.stake_already_recorded': 'そのステークはすでに記録されています。',
-  'realmOp.err.stake_below_minimum': 'そのステークは最低ティアを下回っています。より高いティアを選んでください。',
-  'realmOp.err.stake_not_released_onchain': '先にオンチェーンでステークを解放してから、最終処理を行ってください。',
-  'realmOp.err.stake_service_unavailable': 'ステーキングは一時的に利用できません。しばらくしてからもう一度確認してください。',
-  'realmOp.err.supply_unavailable': '$WOC の供給量データは一時的に利用できません。しばらくしてからもう一度お試しください。',
+  'realmOp.err.stake_below_minimum':
+    'そのステークは最低ティアを下回っています。より高いティアを選んでください。',
+  'realmOp.err.stake_not_released_onchain':
+    '先にオンチェーンでステークを解放してから、最終処理を行ってください。',
+  'realmOp.err.stake_service_unavailable':
+    'ステーキングは一時的に利用できません。しばらくしてからもう一度確認してください。',
+  'realmOp.err.supply_unavailable':
+    '$WOC の供給量データは一時的に利用できません。しばらくしてからもう一度お試しください。',
   'realmOp.err.timelock_not_elapsed': 'ステークのタイムロックがまだ経過していません。',
   'realmOp.err.token_2022': 'この $WOC ミントはステーキングに対応していません。',
   'realmOp.err.treasury_short': '支払われた金額が見積もりと一致しません。',
   'realmOp.err.tx_failed': 'ステークのトランザクションがオンチェーンで失敗しました。',
-  'realmOp.err.tx_not_finalized': 'ステークはまだ最終確定していません。しばらくしてからもう一度確認してください。',
+  'realmOp.err.tx_not_finalized':
+    'ステークはまだ最終確定していません。しばらくしてからもう一度確認してください。',
   'realmOp.err.wallet_mismatch': 'アカウントにリンクしたウォレットを接続してください。',
   'realmOp.err.wrong_payer': 'ステークはリンク済みウォレットで署名する必要があります。',
   'realmOp.err.wrong_vault_amount': 'ロックされた額が見積もりと一致しません。',
@@ -6557,36 +6586,46 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'realmOp.flow.quoting': 'ワールドを予約しています...',
   'realmOp.flow.released': 'ワールドを閉鎖しました。その名前は再び使用できます。',
   'realmOp.flow.releasing': '閉鎖処理を完了しています...',
-  'realmOp.found.affiliateNote': 'アフィリエイトの紹介によるものです。彼らはこのワールドの収益から 15% のコミッションを得ます。',
-  'realmOp.found.badgeNote': 'ステークした $WOC はホルダーバッジに引き続きカウントされるため、ワールドを設立してもティアが下がることはありません。',
+  'realmOp.found.affiliateNote':
+    'アフィリエイトの紹介によるものです。彼らはこのワールドの収益から 15% のコミッションを得ます。',
+  'realmOp.found.badgeNote':
+    'ステークした $WOC はホルダーバッジに引き続きカウントされるため、ワールドを設立してもティアが下がることはありません。',
   'realmOp.found.methodBuy': 'SOL か USDC で購入',
-  'realmOp.found.methodBuyHint': 'SOL か USDC で 1 回だけ支払います。最終購入で、回収できるステークはありません。',
+  'realmOp.found.methodBuyHint':
+    'SOL か USDC で 1 回だけ支払います。最終購入で、回収できるステークはありません。',
   'realmOp.found.methodLabel': '支払い方法',
   'realmOp.found.methodStake': '$WOC をステーク',
   'realmOp.found.methodStakeHint': '$WOC をエスクローにロックします。廃止時に全額返還されます。',
   'realmOp.found.nameLabel': 'ワールド名',
   'realmOp.found.namePlaceholder': 'ワールドに名前を付ける',
   'realmOp.found.nameTaken': '別の名前を選んでください。その名前は使われています。',
-  'realmOp.found.stakingNote': '{amount} $WOC をエスクローにロックするトランザクションに 1 回署名します。廃止後、{days} 日のタイムロック経過後にいつでも回収できます。',
+  'realmOp.found.stakingNote':
+    '{amount} $WOC をエスクローにロックするトランザクションに 1 回署名します。廃止後、{days} 日のタイムロック経過後にいつでも回収できます。',
   'realmOp.found.submit': 'ステークして設立',
   'realmOp.found.submitConnect': '設立するにはウォレットを接続',
-  'realmOp.found.subtitle': '$WOC をノンカストディアルのエスクローにステークして、自分のワールドを開設・運営しましょう。',
+  'realmOp.found.subtitle':
+    '$WOC をノンカストディアルのエスクローにステークして、自分のワールドを開設・運営しましょう。',
   'realmOp.found.supplyNote': '各ティアの価格は $WOC の現在供給量に対する割合で決まります。',
-  'realmOp.found.tierHint': 'ステークが大きいほど高いティアが解放されます。より多くのプレイヤー、より多くのカスタマイズ予算、運営者向け収益レールが手に入ります。',
+  'realmOp.found.tierHint':
+    'ステークが大きいほど高いティアが解放されます。より多くのプレイヤー、より多くのカスタマイズ予算、運営者向け収益レールが手に入ります。',
   'realmOp.found.tierLabel': 'ステークティア',
-  'realmOp.found.tiersUnavailable': 'ティアのライブ価格は現在利用できません。しばらくしてからもう一度お試しください。',
+  'realmOp.found.tiersUnavailable':
+    'ティアのライブ価格は現在利用できません。しばらくしてからもう一度お試しください。',
   'realmOp.found.title': 'ワールドを設立',
   'realmOp.found.typeLabel': 'ワールドタイプ',
   'realmOp.mine.bondInfo': 'ボンド：リンク済みウォレットに {amount} $WOC を保有。',
-  'realmOp.mine.bondWarning': 'ボンドが必要額を下回っています。{amount} $WOC を保有し、{date} までに補充しないとこのワールドは失効します。',
+  'realmOp.mine.bondWarning':
+    'ボンドが必要額を下回っています。{amount} $WOC を保有し、{date} までに補充しないとこのワールドは失効します。',
   'realmOp.mine.decommission': '廃止',
-  'realmOp.mine.decommissionConfirm': '{name} を廃止しますか？ワールドはオフラインになり、{days} 日のステーク解放タイムロックが始まります。',
+  'realmOp.mine.decommissionConfirm':
+    '{name} を廃止しますか？ワールドはオフラインになり、{days} 日のステーク解放タイムロックが始まります。',
   'realmOp.mine.eligible': 'ステークは {date} に解放可能',
   'realmOp.mine.empty': 'まだワールドを運営していません。上で設立して始めましょう。',
   'realmOp.mine.enter': '入る',
   'realmOp.mine.loading': 'ワールドを読み込み中...',
   'realmOp.mine.release': '閉鎖を完了',
-  'realmOp.mine.releaseHint': 'オンチェーンでステークを解放してから最終処理を行うと、ワールドが閉鎖され名前が解放されます。',
+  'realmOp.mine.releaseHint':
+    'オンチェーンでステークを解放してから最終処理を行うと、ワールドが閉鎖され名前が解放されます。',
   'realmOp.mine.tier': '{tier} ティア',
   'realmOp.mine.title': 'マイワールド',
   'realmOp.status.active': 'アクティブ',
@@ -6618,16 +6657,20 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.checklist.launch': 'ローンチ',
   'launchpad.policy.cosmetic': 'コスメティックのみ',
   'launchpad.policy.power': 'ペイ・トゥ・ウィン',
-  'launchpad.policy.powerBanner': 'ペイ・トゥ・ウィンのワールド：ローンチ後、このトークンでゲーム上の力を購入できる場合があります。',
+  'launchpad.policy.powerBanner':
+    'ペイ・トゥ・ウィンのワールド：ローンチ後、このトークンでゲーム上の力を購入できる場合があります。',
   'launchpad.register.title': 'ワールドトークンを登録',
-  'launchpad.register.subtitle': 'このワールドが発行する通貨の名前を決めます。登録はアイデンティティのみ：ミント、ロック、流動性はそれぞれの保護機構とともに後のフェーズで導入されます。',
+  'launchpad.register.subtitle':
+    'このワールドが発行する通貨の名前を決めます。登録はアイデンティティのみ：ミント、ロック、流動性はそれぞれの保護機構とともに後のフェーズで導入されます。',
   'launchpad.register.symbolLabel': 'トークンシンボル',
   'launchpad.register.symbolPlaceholder': '例：MOON',
   'launchpad.register.policyLabel': 'マネタイズポリシー',
-  'launchpad.register.policyHint': '「コスメティックのみ」を選ぶとこのワールドはペイ・トゥ・ウィンなしを維持します。「ペイ・トゥ・ウィン」は全プレイヤーに明示され、ローンチ前にゲートされます。',
+  'launchpad.register.policyHint':
+    '「コスメティックのみ」を選ぶとこのワールドはペイ・トゥ・ウィンなしを維持します。「ペイ・トゥ・ウィン」は全プレイヤーに明示され、ローンチ前にゲートされます。',
   'launchpad.register.submit': 'トークンを登録',
   'launchpad.vote.title': 'このワールドはトークンをローンチすべきですか？',
-  'launchpad.vote.subtitle': '検証済みリンクウォレットごとに1票、投票時に保有する $WOC で加重されます。投票は勧告的かつ無料：トランザクションは送信されません。',
+  'launchpad.vote.subtitle':
+    '検証済みリンクウォレットごとに1票、投票時に保有する $WOC で加重されます。投票は勧告的かつ無料：トランザクションは送信されません。',
   'launchpad.vote.openBtn': 'コミュニティ投票を開始',
   'launchpad.vote.yes': '賛成に投票',
   'launchpad.vote.no': '反対に投票',
@@ -6642,7 +6685,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.vote.outcomePassed': '投票は可決されました。プレセールが解放されました。',
   'launchpad.vote.outcomeFailed': '賛成がしきい値を下回っています。',
   'launchpad.presale.title': 'プレセール',
-  'launchpad.presale.subtitle': 'SOL、USDC、または $WOC でローンチに貢献します。資金は創設者のエスクローウォレットに直接送られ、このサーバーはトランザクションを検証するだけで資金を保持しません。',
+  'launchpad.presale.subtitle':
+    'SOL、USDC、または $WOC でローンチに貢献します。資金は創設者のエスクローウォレットに直接送られ、このサーバーはトランザクションを検証するだけで資金を保持しません。',
   'launchpad.presale.stripeDeferred': 'このフェーズではカード決済は利用できません。',
   'launchpad.presale.progress': 'ソフトキャップの {pct}%',
   'launchpad.presale.progressAria': 'ソフトキャップに向けたプレセール進捗',
@@ -6653,17 +6697,21 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.presale.contribute': '貢献する',
   'launchpad.presale.contributeConnect': 'ウォレットを接続して貢献',
   'launchpad.presale.escrowNote': 'エスクローウォレット：{address}',
-  'launchpad.presale.refundTerms': 'プレセールがソフトキャップに届かない場合、創設者はエスクローウォレットから返金し、各返金はオンチェーンで検証されてから計上されます。',
+  'launchpad.presale.refundTerms':
+    'プレセールがソフトキャップに届かない場合、創設者はエスクローウォレットから返金し、各返金はオンチェーンで検証されてから計上されます。',
   'launchpad.presale.softCapMet': 'ソフトキャップ達成。',
   'launchpad.presale.finalize': 'プレセールを確定',
-  'launchpad.presale.finalizeHint': 'プレセールを終了します：ソフトキャップ達成なら達成扱い、未達なら返金が始まります。',
+  'launchpad.presale.finalizeHint':
+    'プレセールを終了します：ソフトキャップ達成なら達成扱い、未達なら返金が始まります。',
   'launchpad.presale.notConfigured': '創設者はまだ貢献受付を開始していません。',
   'launchpad.presale.refundTitle': '返金',
-  'launchpad.presale.refundNote': 'このプレセールはソフトキャップに届きませんでした。返金はエスクローウォレットから支払われ、オンチェーンで検証されます。',
+  'launchpad.presale.refundNote':
+    'このプレセールはソフトキャップに届きませんでした。返金はエスクローウォレットから支払われ、オンチェーンで検証されます。',
   'launchpad.presale.refundRemaining': '返金検証待ちの貢献：{count}',
   'launchpad.presale.refundDone': 'すべての貢献に検証済みの返金があります。',
   'launchpad.presale.config.title': '貢献受付を開始',
-  'launchpad.presale.config.subtitle': '自分が管理するエスクローウォレットと通貨ごとの上限を設定します。空欄の通貨は無効になります。金額は通貨単位です。',
+  'launchpad.presale.config.subtitle':
+    '自分が管理するエスクローウォレットと通貨ごとの上限を設定します。空欄の通貨は無効になります。金額は通貨単位です。',
   'launchpad.presale.config.escrowLabel': 'エスクローウォレットのアドレス',
   'launchpad.presale.config.softLabel': 'ソフトキャップ（{currency}）',
   'launchpad.presale.config.raiseLabel': '調達上限（{currency}）',
@@ -6681,7 +6729,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.not_realm_owner': 'そのワールドを運営していません。',
   'launchpad.err.realm_not_found': 'そのワールドはもう存在しません。',
   'launchpad.err.realm_not_active': 'そのワールドはアクティブではありません。',
-  'launchpad.err.invalid_token_symbol': '大文字と数字からなる 2 から 10 文字のティッカーを選んでください。',
+  'launchpad.err.invalid_token_symbol':
+    '大文字と数字からなる 2 から 10 文字のティッカーを選んでください。',
   'launchpad.err.invalid_token_icon': 'そのトークンアイコンは無効です。',
   'launchpad.err.invalid_token_policy': 'マネタイズポリシーを選択してください。',
   'launchpad.err.token_already_registered': 'このワールドには登録済みのトークンがあります。',
@@ -6690,16 +6739,19 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.vote_not_openable': 'この状態からは投票を開始できません。',
   'launchpad.err.invalid_vote_choice': '賛成か反対を選んでください。',
   'launchpad.err.wallet_not_linked': 'まずアカウントでウォレットを検証してください。',
-  'launchpad.err.vote_weight_unavailable': '$WOC 残高を読み取れませんでした。しばらくしてからもう一度お試しください。',
+  'launchpad.err.vote_weight_unavailable':
+    '$WOC 残高を読み取れませんでした。しばらくしてからもう一度お試しください。',
   'launchpad.err.no_vote_weight': '検証済みウォレットに投票に使える 1 $WOC 以上がありません。',
   'launchpad.err.already_voted': 'このウォレットまたはアカウントの投票は記録済みです。',
   'launchpad.err.presale_not_open': 'プレセールは開いていません。',
   'launchpad.err.presale_not_configured': '創設者はまだ貢献受付を開始していません。',
   'launchpad.err.presale_already_configured': '貢献受付はすでに開始されています。',
   'launchpad.err.presale_not_refunding': 'このプレセールは返金中ではありません。',
-  'launchpad.err.presale_unavailable': 'プレセールは一時的に利用できません。しばらくしてからもう一度お試しください。',
+  'launchpad.err.presale_unavailable':
+    'プレセールは一時的に利用できません。しばらくしてからもう一度お試しください。',
   'launchpad.err.invalid_escrow_wallet': 'そのエスクローウォレットのアドレスは無効です。',
-  'launchpad.err.invalid_presale_caps': 'その上限は無効です。有効な通貨ごとにソフトキャップ、それ以上の調達上限、ウォレットごとの上限が必要です。',
+  'launchpad.err.invalid_presale_caps':
+    'その上限は無効です。有効な通貨ごとにソフトキャップ、それ以上の調達上限、ウォレットごとの上限が必要です。',
   'launchpad.err.invalid_currency': 'SOL、USDC、または $WOC を選んでください。',
   'launchpad.err.currency_not_enabled': 'このプレセールはその通貨を受け付けていません。',
   'launchpad.err.invalid_amount': '有効な金額を入力してください。',
@@ -6715,10 +6767,12 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.err.wrong_refunder': '返金はエスクローウォレットから支払われる必要があります。',
   'launchpad.err.refund_short': '返金額が貢献をカバーしていません。',
   'launchpad.err.bad_signature': 'そのトランザクション署名は無効です。最初からやり直してください。',
-  'launchpad.err.not_finalized': 'トランザクションはまだファイナライズされていません。少し待ってからもう一度お試しください。',
+  'launchpad.err.not_finalized':
+    'トランザクションはまだファイナライズされていません。少し待ってからもう一度お試しください。',
   'launchpad.err.tx_failed': 'トランザクションはチェーン上で失敗しました。',
   'launchpad.err.token_2022': 'そのトークンプログラムはここではサポートされていません。',
-  'launchpad.err.memo_mismatch': 'そのトランザクションは見積もりと一致しません。最初からやり直してください。',
+  'launchpad.err.memo_mismatch':
+    'そのトランザクションは見積もりと一致しません。最初からやり直してください。',
   'launchpad.err.wrong_payer': 'トランザクションはリンク済みウォレットで署名する必要があります。',
   'launchpad.err.escrow_short': '支払われた金額が見積もりと一致しません。',
   'launchpad.err.missing_quoteId_or_paySig': '確認情報が不完全でした。最初からやり直してください。',
@@ -6735,7 +6789,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.launch.step.verify': 'オンチェーン検証',
   'launchpad.launch.step.list': '公開',
   'launchpad.launch.supply': '固定供給量: {amount} {symbol}',
-  'launchpad.launch.allocLine': 'パブリックカーブ {publicPct}%、流動性 {liquidityPct}%(卒業時に永久ロック)',
+  'launchpad.launch.allocLine':
+    'パブリックカーブ {publicPct}%、流動性 {liquidityPct}%(卒業時に永久ロック)',
   'launchpad.launch.bucketLine':
     '{bucket}: {pct}%、{amount} {symbol}、クリフ {cliff} か月 + 線形 {linear} か月',
   'launchpad.launch.bucket.founder': 'ファウンダー',
@@ -6743,12 +6798,14 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.launch.bucket.treasury': 'レルム財務',
   'launchpad.launch.lockProof': '{bucket}のロック:',
   'launchpad.launch.mintCreated': 'ミント:',
-  'launchpad.launch.verifiedNote': 'すべてのロックがオンチェーンで検証されました。カーブが開けばトークンは公開できます。',
+  'launchpad.launch.verifiedNote':
+    'すべてのロックがオンチェーンで検証されました。カーブが開けばトークンは公開できます。',
   'launchpad.launch.createTitle': 'ミントを作成',
   'launchpad.launch.createHint':
     'あなたのウォレットが手数料を支払い、ミント権限として署名します。サーバーは資金を動かせる鍵を一切保持しません。トランザクションの構築、ミントアドレスの固定、オンチェーンでの検証だけを行います。',
   'launchpad.launch.treasuryLabel': 'レルム財務ウォレット',
-  'launchpad.launch.treasuryHint': 'ベスティングされるレルム財務分を受け取ります。レルムが管理するウォレットを使ってください。',
+  'launchpad.launch.treasuryHint':
+    'ベスティングされるレルム財務分を受け取ります。レルムが管理するウォレットを使ってください。',
   'launchpad.launch.nameLabel': 'トークン名(任意)',
   'launchpad.launch.uriLabel': 'メタデータURL(任意)',
   'launchpad.launch.createBtn': 'ミントを作成',
@@ -6780,26 +6837,31 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.flow.mintDone': 'ミントを作成し検証しました。',
   'launchpad.flow.verifying': 'オンチェーンでロックを検証しています...',
   'launchpad.flow.verified': 'ローンチを検証しました。すべてのロックがオンチェーンにあります。',
-  'launchpad.flow.notVerified': '検証で問題が見つかりました。下のチェックリストを確認してください。',
+  'launchpad.flow.notVerified':
+    '検証で問題が見つかりました。下のチェックリストを確認してください。',
   'launchpad.err.mint_already_created': 'ミントは作成済みです。',
   'launchpad.err.presale_not_funded': 'プレセールはまだ調達を完了していません。',
-  'launchpad.err.levy_fund_unconfigured': 'プラットフォームのファンドウォレットが未設定です。後でもう一度お試しください。',
+  'launchpad.err.levy_fund_unconfigured':
+    'プラットフォームのファンドウォレットが未設定です。後でもう一度お試しください。',
   'launchpad.err.invalid_treasury_wallet': 'その財務ウォレットアドレスは無効です。',
   'launchpad.err.invalid_token_name': 'トークン名は 1 から 32 文字の標準文字です。',
   'launchpad.err.invalid_token_uri': 'メタデータURLは https アドレスである必要があります。',
-  'launchpad.err.chain_unavailable': 'チェーンに接続できませんでした。しばらくしてからお試しください。',
+  'launchpad.err.chain_unavailable':
+    'チェーンに接続できませんでした。しばらくしてからお試しください。',
   'launchpad.err.launch_not_prepared': '先にミントトランザクションを準備してください。',
   'launchpad.err.mint_not_in_tx': 'そのトランザクションは固定されたミントを作成していません。',
   'launchpad.err.mint_not_found': 'ミントアカウントをオンチェーンで読み取れませんでした。',
   'launchpad.err.wrong_token_program': 'ミントが想定のトークンプログラム下にありません。',
   'launchpad.err.wrong_decimals': 'ミントの小数桁数が想定と異なります。',
   'launchpad.err.freeze_authority_set': 'ミントに凍結権限が設定されています。凍結権限は不可です。',
-  'launchpad.err.bad_metadata_pointer': 'ミントのメタデータポインタが誤っているか、まだ変更可能です。',
+  'launchpad.err.bad_metadata_pointer':
+    'ミントのメタデータポインタが誤っているか、まだ変更可能です。',
   'launchpad.err.metadata_symbol_mismatch': 'オンチェーンのシンボルが登録トークンと一致しません。',
   'launchpad.err.unexpected_extension': 'ミントに許可されていない拡張が付いています。',
   'launchpad.err.launch_sig_replayed': 'そのローンチトランザクションは使用済みです。',
   'launchpad.err.mint_not_created': '先にミントを作成して確認してください。',
-  'launchpad.err.invalid_lock_address': '相異なる有効なロックエスクローアドレスを 3 つ入力してください。',
+  'launchpad.err.invalid_lock_address':
+    '相異なる有効なロックエスクローアドレスを 3 つ入力してください。',
   'launchpad.err.launch_not_verifiable': 'ローンチはまだ検証できる状態ではありません。',
   'launchpad.err.locks_not_verified': 'ロックはまだオンチェーンで検証されていません。',
   'launchpad.err.not_listable': 'この状態ではトークンを公開できません。',
@@ -6811,12 +6873,15 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.curve.poolLabel': 'カーブプール:',
   'launchpad.curve.progressAria': '移行しきい値への進捗',
   'launchpad.curve.progress': '移行まで {raised} / {threshold} 調達済み',
-  'launchpad.curve.migratedNote': 'カーブはしきい値に達し移行しました。下で卒業を検証してください。',
+  'launchpad.curve.migratedNote':
+    'カーブはしきい値に達し移行しました。下で卒業を検証してください。',
   'launchpad.curve.graduatedNote': '卒業済み: LP が永久ロックされた流動性プール:',
   'launchpad.curve.openBtn': 'カーブを開く',
-  'launchpad.curve.openHint': 'ウォレットが署名するプール作成を構築します。カーブホストがトークンを鋳造しカーブ供給を保持します。資金はこのサーバーを経由しません。',
+  'launchpad.curve.openHint':
+    'ウォレットが署名するプール作成を構築します。カーブホストがトークンを鋳造しカーブ供給を保持します。資金はこのサーバーを経由しません。',
   'launchpad.curve.verifyBtn': 'カーブ上場を検証',
-  'launchpad.curve.verifyHint': 'プール作成トランザクションが確定したら、検証してトークンを上場します。',
+  'launchpad.curve.verifyHint':
+    'プール作成トランザクションが確定したら、検証してトークンを上場します。',
   'launchpad.curve.graduateBtn': '卒業を検証',
   'launchpad.flow.preparingCurve': 'カーブプールを準備しています...',
   'launchpad.flow.signingCurve': 'ウォレットでプール作成を承認してください...',
@@ -6825,13 +6890,18 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.flow.curveListed': 'トークンはカーブ上でライブになりました。',
   'launchpad.flow.verifyingGraduation': 'オンチェーンで卒業を検証しています...',
   'launchpad.flow.graduated': '卒業しました。LP は永久ロックされています。',
-  'launchpad.err.launchpad_disabled': 'このサーバーではカーブローンチパッドはまだ有効ではありません。',
-  'launchpad.err.launchpad_config_unreadable': 'ローンチ設定を読み取れませんでした。しばらくしてからお試しください。',
+  'launchpad.err.launchpad_disabled':
+    'このサーバーではカーブローンチパッドはまだ有効ではありません。',
+  'launchpad.err.launchpad_config_unreadable':
+    'ローンチ設定を読み取れませんでした。しばらくしてからお試しください。',
   'launchpad.err.curve_already_created': 'カーブは既に存在します。',
-  'launchpad.err.host_requires_dbc_mint': 'このカーブホストはトークンを自ら作成します。事前鋳造トークンは入れられません。',
+  'launchpad.err.host_requires_dbc_mint':
+    'このカーブホストはトークンを自ら作成します。事前鋳造トークンは入れられません。',
   'launchpad.err.invalid_base_mint': 'そのベースミントアドレスは無効です。',
-  'launchpad.err.curve_not_found': 'カーブプールがまだオンチェーンで見つかりません。しばらくしてからお試しください。',
-  'launchpad.err.wrong_curve_creator': 'カーブプールはリンクしたウォレットで作成する必要があります。',
+  'launchpad.err.curve_not_found':
+    'カーブプールがまだオンチェーンで見つかりません。しばらくしてからお試しください。',
+  'launchpad.err.wrong_curve_creator':
+    'カーブプールはリンクしたウォレットで作成する必要があります。',
   'launchpad.err.not_live': 'トークンはカーブ上でライブではありません。',
   'launchpad.err.not_migrated': 'カーブは移行しきい値に達していません。',
   'launchpad.err.graduation_not_found': '卒業後の流動性プールがまだオンチェーンで見つかりません。',
@@ -6849,7 +6919,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.fund.aum': '総額: {amount} USD',
   'launchpad.fund.updated': '更新 {time}',
   'launchpad.fund.clampedNote': '一度の更新での大きな変動は、確認の更新を待って保留されています。',
-  'launchpad.fund.policyNote': 'すべての保有分はキャップテーブルで最も厳しいスケジュール(クリフ 12 か月 + 線形 48 か月)でベスティングされ、処分はガバナンスの承認が必要です。プラットフォームはこの持分を投げ売りできません。',
+  'launchpad.fund.policyNote':
+    'すべての保有分はキャップテーブルで最も厳しいスケジュール(クリフ 12 か月 + 線形 48 か月)でベスティングされ、処分はガバナンスの承認が必要です。プラットフォームはこの持分を投げ売りできません。',
   'launchpad.fund.tableAria': 'ファンド保有銘柄',
   'launchpad.fund.colToken': 'トークン',
   'launchpad.fund.colAmount': '数量',
@@ -6863,5 +6934,32 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'launchpad.fund.confidence.high': '価格あり(クロスチェック済み)',
   'launchpad.fund.confidence.medium': '価格あり',
   'launchpad.fund.confidence.low': '価格あり(信頼度低)',
-  'launchpad.fund.illiquidNote': '信頼できる価格のない保有分: {count}。表示はされますが集計されません。',
+  'launchpad.fund.illiquidNote':
+    '信頼できる価格のない保有分: {count}。表示はされますが集計されません。',
+  'launchpad.flow.quotingPower': '変換の見積もりを取得しています...',
+  'launchpad.flow.powerQuoted':
+    '{copper} カッパーを受け取ります。ウォレットで送金を承認してください...',
+  'launchpad.flow.confirmingPower': 'チェーン上で送金を検証しています...',
+  'launchpad.flow.powerCredited': 'キャラクターに {copper} カッパーを付与しました。',
+  'launchpad.flow.powerBanked':
+    '{copper} カッパーを記帳しました。そのキャラクターの次回ログイン時に届きます。',
+  'launchpad.power.title': 'カッパーに変換',
+  'launchpad.power.subtitle':
+    'このペイ・トゥ・ウィンのワールドでは {symbol} をゲーム内カッパーに変換できます。トークンはワールドのトレジャリーに送られ、送金がチェーン上で最終確定した後にカッパーが付与されます。',
+  'launchpad.power.charLabel': '受け取るキャラクター',
+  'launchpad.power.amountLabel': '数量({symbol})',
+  'launchpad.power.convertBtn': 'カッパーに変換',
+  'launchpad.power.convertConnect': 'ウォレットを接続して変換',
+  'launchpad.power.noCharacters':
+    'カッパーを受け取るには、まずこのワールドでキャラクターを作成してください。',
+  'launchpad.err.power_disabled':
+    'このサーバーではトークンからカッパーへの変換が有効になっていません。',
+  'launchpad.err.realm_not_power': 'このワールドではトークンからカッパーへの変換はできません。',
+  'launchpad.err.token_not_live': 'トークンはまずカーブ上でライブになる必要があります。',
+  'launchpad.err.power_rate_unset': '変換レートがまだ設定されていません。',
+  'launchpad.err.power_sink_unavailable': 'ワールドのトレジャリーはまだ利用できません。',
+  'launchpad.err.amount_below_minimum': 'その数量は少なすぎて変換できません。',
+  'launchpad.err.character_not_found': 'このワールドのあなたのキャラクターを選んでください。',
+  'launchpad.err.sink_short': '送金が見積もり数量に達していません。',
+  'launchpad.err.credit_already_recorded': 'そのトランザクションはすでに付与済みです。',
 };

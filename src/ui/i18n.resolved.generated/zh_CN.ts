@@ -375,7 +375,21 @@ export const zh_CN: EnTranslations = {
       "verifyingCurve": "正在链上验证曲线...",
       "curveListed": "代币已在曲线上线。",
       "verifyingGraduation": "正在链上验证毕业...",
-      "graduated": "已毕业:LP 已永久锁定。"
+      "graduated": "已毕业:LP 已永久锁定。",
+      "quotingPower": "正在为您的兑换报价...",
+      "powerQuoted": "您将获得 {copper} 铜币。请在钱包中批准转账...",
+      "confirmingPower": "正在链上验证您的转账...",
+      "powerCredited": "已向您的角色发放 {copper} 铜币。",
+      "powerBanked": "已记入 {copper} 铜币。该角色下次登录时到账。"
+    },
+    "power": {
+      "title": "兑换铜币",
+      "subtitle": "此付费变强服务器可将 {symbol} 兑换为游戏内铜币。代币将发送至服务器金库,转账在链上最终确认后发放铜币。",
+      "charLabel": "发放到角色",
+      "amountLabel": "数量({symbol})",
+      "convertBtn": "兑换铜币",
+      "convertConnect": "连接钱包并兑换",
+      "noCharacters": "请先在此服务器创建角色以接收铜币。"
     },
     "err": {
       "not_realm_owner": "您不是该服务器的运营者。",
@@ -460,6 +474,15 @@ export const zh_CN: EnTranslations = {
       "not_damm_v2": "发射配置不会毕业到锁定池。",
       "no_locked_vesting": "发射配置不含锁定归属。",
       "no_migration_threshold": "发射配置没有迁移阈值。",
+      "power_disabled": "本服务器未启用代币兑换铜币。",
+      "realm_not_power": "此服务器不允许代币兑换铜币。",
+      "token_not_live": "代币必须先在曲线上线。",
+      "power_rate_unset": "兑换汇率尚未配置。",
+      "power_sink_unavailable": "服务器金库尚不可用。",
+      "amount_below_minimum": "数量太小,无法兑换。",
+      "character_not_found": "请选择您在此服务器的角色。",
+      "sink_short": "转账未达到报价数量。",
+      "credit_already_recorded": "该交易已发放过。",
       "rate_limited": "请求过多。请放慢速度后再试。",
       "wallet_mismatch": "请连接您账户所关联的钱包。",
       "generic": "出了点问题。请重试。"
@@ -596,6 +619,9 @@ export const zh_CN: EnTranslations = {
     }
   },
   "hudChrome": {
+    "money": {
+      "realmCurrency": "{amount} {symbol}"
+    },
     "spectate": {
       "banner": "正在观察 {name}"
     },

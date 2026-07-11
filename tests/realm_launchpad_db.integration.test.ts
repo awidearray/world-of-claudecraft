@@ -36,7 +36,8 @@ run('launchpad tables against real Postgres', () => {
     presaleDb = await import('../server/realm_presale_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
-      `DROP TABLE IF EXISTS realm_fee_claims, levy_fund_holdings, levy_fund_marks, levy_fund_meta,
+      `DROP TABLE IF EXISTS realm_power_credits, realm_power_quotes,
+         realm_fee_claims, levy_fund_holdings, levy_fund_marks, levy_fund_meta,
          realm_presale_contributions, realm_presale_quotes, realm_presales,
          realm_votes, realm_token_launches, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
     );
@@ -510,6 +511,75 @@ run('launchpad tables against real Postgres', () => {
     expect(recent).toEqual([40, 39, 38, 37, 36]);
     const all = await store.recentMarks('FundMintA', 100);
     expect(all.length).toBeLessThanOrEqual(32);
+  });
+
+  it('power credits (phase 7): quote round-trip, ledger UNIQUE, claim/un-claim', async () => {
+    const powerDb = await import('../server/realm_power_db');
+    const store = powerDb.realmPowerStore(db.pool);
+    const expiresAt = new Date(Date.now() + 60_000);
+    await store.createQuote({
+      quoteId: 'pq-int-1',
+      realmId,
+      accountId: voterId,
+      characterId: 4242,
+      wallet: 'POWERWALLET',
+      amountBase: 10n ** 19n, // NUMERIC(30,0) round-trips past BIGINT headroom
+      copperCredit: 1_000_000_000n,
+      sinkWallet: 'TREASW',
+      expiresAt,
+    });
+    const quote = await store.getQuote('pq-int-1');
+    expect(quote).toMatchObject({
+      realmId,
+      accountId: voterId,
+      characterId: 4242,
+      wallet: 'POWERWALLET',
+      amountBase: 10n ** 19n,
+      copperCredit: 1_000_000_000n,
+      sinkWallet: 'TREASW',
+    });
+    expect(quote?.expiresAt.getTime()).toBe(expiresAt.getTime());
+    await store.deleteQuote('pq-int-1');
+    expect(await store.getQuote('pq-int-1')).toBeNull();
+
+    // Ledger-first credit: born uncredited, UNIQUE(pay_tx_sig) rejects replay.
+    const credit = {
+      realmId,
+      accountId: voterId,
+      characterId: 4242,
+      wallet: 'POWERWALLET',
+      amountBase: 3_000_000_000n,
+      copperCredit: 300n,
+      payTxSig: 'powersig_int_1',
+    };
+    await store.insertCredit(credit);
+    let dup: unknown;
+    await store.insertCredit(credit).catch((e) => {
+      dup = e;
+    });
+    expect(httpUtil.isUniqueViolation(dup)).toBe(true);
+    await store.insertCredit({ ...credit, payTxSig: 'powersig_int_2', copperCredit: 50n });
+
+    // Claim marks every uncredited row exactly once (concurrent-safe by the
+    // credited_at IS NULL guard) and sums the copper.
+    const claimed = await powerDb.claimPowerCredits(db.pool, 4242);
+    expect(claimed.copper).toBe(350);
+    expect(claimed.creditIds).toHaveLength(2);
+    expect(await powerDb.claimPowerCredits(db.pool, 4242)).toEqual({ creditIds: [], copper: 0 });
+
+    // Un-claim (the grant could not apply) re-banks the rows for the next join.
+    await powerDb.unclaimPowerCredits(db.pool, claimed.creditIds);
+    const reclaimed = await powerDb.claimPowerCredits(db.pool, 4242);
+    expect(reclaimed.copper).toBe(350);
+  });
+
+  it('assertRealmSchema fails at boot when a power column is dropped', async () => {
+    await db.pool.query('ALTER TABLE realm_power_credits DROP COLUMN credited_at');
+    await expect(realmDb.assertRealmSchema(db.pool)).rejects.toThrow(
+      /realm_power_credits.*credited_at/,
+    );
+    await db.pool.query('ALTER TABLE realm_power_credits ADD COLUMN credited_at TIMESTAMPTZ');
+    await expect(realmDb.assertRealmSchema(db.pool)).resolves.toBeUndefined();
   });
 
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {

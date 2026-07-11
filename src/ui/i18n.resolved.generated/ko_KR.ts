@@ -375,7 +375,21 @@ export const ko_KR: EnTranslations = {
       "verifyingCurve": "온체인에서 커브를 검증하는 중...",
       "curveListed": "토큰이 커브에서 라이브 상태입니다.",
       "verifyingGraduation": "온체인에서 졸업을 검증하는 중...",
-      "graduated": "졸업 완료: LP가 영구 잠겼습니다."
+      "graduated": "졸업 완료: LP가 영구 잠겼습니다.",
+      "quotingPower": "변환 견적을 받는 중...",
+      "powerQuoted": "{copper} 코퍼를 받게 됩니다. 지갑에서 전송을 승인하세요...",
+      "confirmingPower": "체인에서 전송을 확인하는 중...",
+      "powerCredited": "캐릭터에게 {copper} 코퍼를 지급했습니다.",
+      "powerBanked": "{copper} 코퍼가 기록되었습니다. 해당 캐릭터가 다음에 접속할 때 지급됩니다."
+    },
+    "power": {
+      "title": "코퍼로 변환",
+      "subtitle": "이 페이 투 윈 월드는 {symbol}을(를) 게임 내 코퍼로 변환합니다. 토큰은 월드 트레저리로 전송되며, 전송이 체인에서 최종 확정된 후 코퍼가 지급됩니다.",
+      "charLabel": "지급받을 캐릭터",
+      "amountLabel": "수량({symbol})",
+      "convertBtn": "코퍼로 변환",
+      "convertConnect": "지갑 연결 후 변환",
+      "noCharacters": "코퍼를 받으려면 먼저 이 월드에서 캐릭터를 만드세요."
     },
     "err": {
       "not_realm_owner": "해당 월드를 운영하고 있지 않습니다.",
@@ -460,6 +474,15 @@ export const ko_KR: EnTranslations = {
       "not_damm_v2": "런치 구성이 잠금 풀로 졸업하지 않습니다.",
       "no_locked_vesting": "런치 구성에 잠긴 베스팅이 없습니다.",
       "no_migration_threshold": "런치 구성에 이전 임계값이 없습니다.",
+      "power_disabled": "이 서버에서는 토큰-코퍼 변환이 활성화되어 있지 않습니다.",
+      "realm_not_power": "이 월드는 토큰-코퍼 변환을 허용하지 않습니다.",
+      "token_not_live": "토큰이 먼저 커브에서 라이브 상태여야 합니다.",
+      "power_rate_unset": "변환 비율이 아직 설정되지 않았습니다.",
+      "power_sink_unavailable": "월드 트레저리를 아직 사용할 수 없습니다.",
+      "amount_below_minimum": "수량이 너무 적어 변환할 수 없습니다.",
+      "character_not_found": "이 월드에 있는 본인 캐릭터를 선택하세요.",
+      "sink_short": "전송 금액이 견적 수량에 미치지 못합니다.",
+      "credit_already_recorded": "해당 트랜잭션은 이미 지급 처리되었습니다.",
       "rate_limited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
       "wallet_mismatch": "계정에 연결한 지갑을 연결하세요.",
       "generic": "문제가 발생했습니다. 다시 시도하세요."
@@ -596,6 +619,9 @@ export const ko_KR: EnTranslations = {
     }
   },
   "hudChrome": {
+    "money": {
+      "realmCurrency": "{amount} {symbol}"
+    },
     "spectate": {
       "banner": "{name} 관전 중"
     },

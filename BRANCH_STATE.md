@@ -391,6 +391,68 @@ PRECONDITION to enabling the page on mainnet (PRD section 10); the keeper is
 dark until LEVY_FUND_WALLET is configured, so nothing is published until ops
 turns it on.
 
+## Phase 7: in-world currency re-skin + policy-gated power credits
+
+Files, display half: `realmCurrency()` added to the `IWorldCosmetics` facet
+(`src/world_api/cosmetics.ts`) and implemented in BOTH worlds (offline `Sim`
+returns null: the classic gold/silver/copper display; `ClientWorld` mirrors
+the `currency` field the server now sends on EVERY `hello` frame, fresh join
+and seamless reconnect both). `server/main.ts` resolves the identity at boot
+and every 5 minutes from the registry (`getLiveRealmByName` +
+`realmTokenConfig`) and pushes it via `GameServer.setRealmCurrency`; the hud
+money readout (`moneyHtml`) renders `{amount} {symbol}` + the token icon
+through `hudChrome.money.realmCurrency` when set. DISPLAY ONLY: the wire
+still carries opaque copper, the sim never sees a mint/decimal/price, and the
+IWORLD_MEMBERS pin grew 204 -> 205 with the facet parity suite green.
+
+Files, credit half: `server/realm_power.ts` (config gates
+`REALM_POWER_CREDIT_ENABLED` + `REALM_POWER_COPPER_PER_TOKEN`, BOTH required
+or the surface answers `power_disabled`/`power_rate_unset`; the shared
+`powerGate` re-checked on EVERY quote AND confirm: registered token, policy
+=== 'power' (THE bright line: cosmetic realms, including the canonical realm,
+can never convert), status live/graduated, mint created, rate set, launch row
+for the treasury sink; `preparePowerQuote` pins wallet + character ownership
++ floor(amount * rate / 10^9); `confirmPowerCredit` verifies the finalized
+transfer with the SCOPED Token-2022 parser (memo == quoteId, feePayer ==
+linked wallet, sink delta >= quoted amount) then writes the credit
+LEDGER-FIRST), `server/realm_power_db.ts` (`realm_power_quotes` +
+`realm_power_credits` with UNIQUE(pay_tx_sig); rows born uncredited,
+`claimPowerCredits` marks credited-once under a `credited_at IS NULL` guard,
+`unclaimPowerCredits` re-banks a grant that could not apply). The copper
+grant runs through `GameServer.loadPowerCredits` -> `sim.grantBonus` (the
+same opaque-copper API as every other server grant) on join and on the
+confirm route's live poke (`grantPendingPowerCredits`); a player who left
+mid-claim is un-claimed, never loses the credit. Routes: POST
+`/api/realms/:id/token/power/quote` + `/confirm` (inventoried + classified).
+Client: `src/net/realm_power.ts` (pure Token-2022 ATA-idempotent +
+TransferChecked + memo builder), `signAndSendPowerCredit` in `wallet.ts`,
+`quoteRealmPower`/`confirmRealmPower` on `Api`, and the launchpad panel's
+convert section (character picker + amount; rendered ONLY on a power realm
+with a live token, labeled with the pay-to-win banner already in place).
+`.env.example` documents all three knobs; `launchpad.power.*` +
+`launchpad.err.*` power codes + five non-Latin M16 fills.
+
+Acceptance:
+- `tests/realm_power.test.ts` (18): THE monetization_policy gate on quote AND
+  the flip-to-cosmetic-after-quote re-check on confirm; both config knobs
+  fail-closed; exact floor math incl. dust-to-zero; every verifier failure
+  (bad sig, unfinalized, reverted, memo, payer, sink short, legacy-program
+  transfer never counts); ledger-first happy path; pay-sig replay dies on the
+  UNIQUE and burns the quote.
+- Real Postgres (`realm_launchpad_db.integration.test.ts`, 15 green): quote
+  NUMERIC(30,0) round-trip past BIGINT headroom, ledger UNIQUE replay,
+  claim-once/un-claim/re-claim semantics, and the boot drift guard on a
+  dropped power column (live ALTER + assertRealmSchema).
+- `tests/world_api_parity.test.ts` (306): realmCurrency pinned into the
+  cosmetics facet + both-worlds structural parity at 205 members.
+- tsc clean; architecture + S3 + M16 + i18n freshness + launchpad-view
+  SERVER_CODES coverage green; biome error-free on changed files.
+
+Phase 7 gate status: DARK BY DEFAULT twice over (flag + rate) and per-realm
+by policy; conversion sits in the same high-reg-risk band as the wager
+features and stays off until the phase 8 counsel + geo gate clears it. The
+canonical realm registers no `power` policy, so it can never convert.
+
 ## Invariant confirmations
 
 - `src/sim/` purity: NOTHING was added to `src/sim/` (no mint, RPC, decimals,
