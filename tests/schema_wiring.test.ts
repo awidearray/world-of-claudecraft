@@ -13,15 +13,26 @@ const h = vi.hoisted(() => {
   // can flip it to null to exercise the throw; every other query returns empty rows
   // (the existing assertions only inspect `calls`, so they are unaffected).
   const state = { rateLimitsExists: true };
-  const query = vi.fn((sql: string) => {
+  const query = vi.fn(async (sql: string, params?: unknown[]) => {
     calls.push(String(sql));
     if (String(sql).includes('to_regclass')) {
-      return Promise.resolve({
+      return {
         rows: [{ reg: state.rateLimitsExists ? 'public.rate_limits' : null }],
         rowCount: 1,
-      });
+      };
     }
-    return Promise.resolve({ rows: [], rowCount: 0 });
+    // The realm-registry boot drift guard (assertRealmSchema, run inside
+    // ensureSchema) reads information_schema.columns per required table and
+    // halts boot on a missing column. Answer from REQUIRED_REALM_COLUMNS
+    // itself, the same source of truth the guard checks, so this recording
+    // client models a correct schema and stays green when tables grow.
+    if (String(sql).includes('information_schema.columns')) {
+      const { REQUIRED_REALM_COLUMNS } = await import('../server/realm_db');
+      const table = String(params?.[0] ?? '');
+      const cols = (REQUIRED_REALM_COLUMNS as Record<string, readonly string[]>)[table] ?? [];
+      return { rows: cols.map((column_name) => ({ column_name })), rowCount: cols.length };
+    }
+    return { rows: [], rowCount: 0 };
   });
   return {
     calls,

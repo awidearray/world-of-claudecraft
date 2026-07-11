@@ -58,6 +58,8 @@ export type HttpMethod = (typeof HTTP_METHODS)[number];
 //                 (bearerActiveAccount in main, fullSessionAccount in oauth)
 //   admin         an admin account (isAdminAccount)
 //   secret-deploy the x-woc-deploy-secret shared secret (RESTART_COUNTDOWN_SECRET)
+//   secret-woc-ops the x-woc-ops-secret shared secret (WOC_OPS_SECRET), the
+//                 season-roll ops jobs; 404 when season ops are not wired in
 //   secret-discord the x-woc-discord-secret shared secret (DISCORD_BOT_SECRET)
 //   secret-daily-reward the x-woc-daily-reward-secret shared secret
 //                 (WOC_DAILY_REWARD_SERVICE_SECRET). Unlike the other two secret
@@ -72,6 +74,7 @@ export const AUTH_SCOPE = {
   full: 'full',
   admin: 'admin',
   secretDeploy: 'secret-deploy',
+  secretWocOps: 'secret-woc-ops',
   secretDiscord: 'secret-discord',
   secretDailyReward: 'secret-daily-reward',
   devGated: 'dev-gated',
@@ -2097,6 +2100,28 @@ export const SURFACE_INVENTORY: readonly SurfaceRoute[] = [
     handler: 'handleInternalApi arm: /internal/restart-countdown',
     contentType: PROBLEM_JSON,
     authScope: AUTH_SCOPE.secretDeploy,
+    limiter: null,
+    requireOwnedExpected: null,
+  },
+  // $WOC season ops (the #479/#480 season-roll jobs): open/close a reward
+  // season, gated by WOC_OPS_SECRET; 404 when season ops are not wired in.
+  {
+    dispatcher: DISPATCH.internal,
+    method: 'POST',
+    path: '/internal/woc/season/open',
+    handler: 'handleInternalApi arm: /internal/woc/season/open',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.secretWocOps,
+    limiter: null,
+    requireOwnedExpected: null,
+  },
+  {
+    dispatcher: DISPATCH.internal,
+    method: 'POST',
+    path: '/internal/woc/season/close',
+    handler: 'handleInternalApi arm: /internal/woc/season/close',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.secretWocOps,
     limiter: null,
     requireOwnedExpected: null,
   },

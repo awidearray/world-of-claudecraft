@@ -181,7 +181,7 @@ export async function listRealmIdsByStatus(db: Queryable, status: RealmStatus): 
 // no-op against a pre-existing table that is missing a newer column, so a drifted
 // schema would otherwise start silently and only fail at query time. Assert the
 // columns the realm code depends on exist, and fail fast at boot if not.
-const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
+export const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
   realms: [
     'realm_id',
     'name',

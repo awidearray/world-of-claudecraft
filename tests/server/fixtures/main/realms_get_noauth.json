@@ -1,7 +1,7 @@
 {
-  "body": "{\"characters\":{},\"current\":\"Claudemoon\",\"realms\":[{\"name\":\"Claudemoon\",\"type\":\"Normal\",\"url\":\"\"}]}",
+  "body": "{\"characters\":{},\"current\":\"Claudemoon\",\"realms\":[{\"currency\":{\"decimals\":6,\"icon\":\"\",\"mint\":\"3WjLscH2JsXLEFJZRA9z8ti8yRGxWGKbqymPd7UicRth\",\"monetizationPolicy\":\"cosmetic\",\"realmToken\":false,\"status\":\"none\",\"symbol\":\"WOC\"},\"name\":\"Claudemoon\",\"owned\":false,\"realmId\":\"<ID>\",\"status\":\"active\",\"tier\":0,\"type\":\"Normal\",\"url\":\"\"}]}",
   "headers": {
-    "content-length": 98,
+    "content-length": 326,
     "content-type": "application/json",
     "cross-origin-opener-policy": "same-origin",
     "cross-origin-resource-policy": "same-origin",

@@ -1401,7 +1401,13 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       // realms (#475). Env entries stay canonical and come first; active
       // registry realms not pinned in env follow. Existing clients read
       // name/url/type; the extra realmId/status/owned/tier fields are additive.
-      const merged = mergeRealmDirectory(REALM_DIRECTORY, await listRealmsForDirectory(pool));
+      // FAIL-OPEN like the token read below: the realm list is the front door,
+      // so a registry read failure serves the env directory rather than a 500
+      // (registry realms reappear on the next request once the DB recovers).
+      const registryRealms = await listRealmsForDirectory(pool).catch(
+        () => [] as Awaited<ReturnType<typeof listRealmsForDirectory>>,
+      );
+      const merged = mergeRealmDirectory(REALM_DIRECTORY, registryRealms);
       // Launchpad phase 0: attach each realm's currency identity (its registered
       // token, falling back to the $WOC display currency). Additive field, and
       // FAIL-OPEN: a token-registry read failure must never take down the realm
@@ -3149,7 +3155,7 @@ export async function startServer(): Promise<http.Server> {
   warmLeaderboards();
   setInterval(warmLeaderboards, LEADERBOARD_TTL_MS).unref();
 
-  // Buyback keeper: drain the marketplace USDC vault on a cadence — swap to $WOC,
+  // Buyback keeper: drain the marketplace USDC vault on a cadence: swap to $WOC,
   // then BURN it (deflationary) or TOP UP the #480 reward pool (recorded as a
   // verified buyback inflow on the flow ledger). runCycle recovers any in-flight
   // batch first, so the boot call resolves a crash mid-settle before new work.
@@ -3158,8 +3164,8 @@ export async function startServer(): Promise<http.Server> {
   const payoutKeeper = buildPayoutKeeper();
   if (payoutKeeper) {
     // Two layers of mutual exclusion so the vault is never swapped twice at once:
-    // (1) keeperBusy — in-process single-flight, so a slow cycle can't overlap its
-    //     own next interval tick; (2) withPayoutKeeperLock — a cross-process
+    // (1) keeperBusy, in-process single-flight, so a slow cycle can't overlap its
+    //     own next interval tick; (2) withPayoutKeeperLock, a cross-process
     //     Postgres advisory lock, so sibling realm processes sharing this vault +
     //     DB don't each run a cycle. Either layer alone leaves a double-swap window.
     let keeperBusy = false;
