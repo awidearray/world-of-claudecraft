@@ -348,6 +348,31 @@ export interface RealmTokenPage {
   isOwner?: boolean;
 }
 
+// The public Levy Street Fund portfolio (GET /api/levy-fund), display-only.
+export interface LevyPortfolioWire {
+  aumUsd: number;
+  aumSol: number | null;
+  holdingCount: number;
+  includedCount: number;
+  clamped: boolean;
+  solUsd: number | null;
+  updatedAt: string | null;
+  holdings: Array<{
+    realmId: number;
+    mint: string;
+    symbol: string;
+    amount: string;
+    priceUsd: number | null;
+    valueUsd: number | null;
+    valueSol: number | null;
+    weightBps: number;
+    source: string;
+    illiquid: boolean;
+    note: string | null;
+    lockAddress: string | null;
+  }>;
+}
+
 // A signed presale contribution quote (POST .../token/presale/quote): pay
 // exactly amountBase of `currency` to `escrowWallet` in one transaction tagged
 // with `memo`, then post the finalized signature to .../presale/confirm.
@@ -554,6 +579,13 @@ export class Api {
   // The realm's full token status page: identity + vote tally + presale info.
   realmToken(realmId: number): Promise<RealmTokenPage> {
     return this.get(`/api/realms/${realmId}/token`);
+  }
+
+  // The public, display-only Levy Street Fund portfolio (launchpad phase 6).
+  // No auth: the transparency is the point. The payload carries no control
+  // field (it is a treasury we show, never a fund we sell).
+  levyFund(): Promise<LevyPortfolioWire> {
+    return this.get('/api/levy-fund');
   }
 
   // Owner registers the realm token identity (no chain writes in this phase).

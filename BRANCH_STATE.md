@@ -1,6 +1,6 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 5 of
+Realm Token Launchpad, phases 0 to 6 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
@@ -29,7 +29,8 @@ the bottom).
 | 1c0c24b5d | 2 | `feat(realm-presale)`: asset-only non-custodial presale + surface-inventory registration |
 | 2ae0ef47c | 1+2 UI | `feat(ui)`: launchpad panel + view-core + i18n domain + wiring |
 | 224d03e87 | 3 | `feat(realm-mint)`: Token-2022 mint factory, allocation locks, listing gate |
-| (HEAD) | 4+5 | `feat(realm-curve)`: Meteora DBC launch + DAMM v2 graduation + fee keeper |
+| ffdc994e3 | 4+5 | `feat(realm-curve)`: Meteora DBC launch + DAMM v2 graduation + fee keeper |
+| (HEAD) | 6 | `feat(levy-fund)`: display-only Levy Street Fund portfolio + tiered valuation |
 
 ## Phase 0: registry + identity
 
@@ -327,6 +328,58 @@ The `/internal/woc/fee/*` pair is legacy-only WOC_OPS ops, joining the existing
 `/internal/woc/season/*` pair in the same waived-inventory category (they cannot
 be surface-inventoried without RouteDef registration; a pre-existing gate
 conflict, not new debt).
+
+## Phase 6: Levy Street Fund + tiered valuation
+
+Files: `server/token_valuation.ts` (the pure tiered valuation over an injected
+`PriceSources` seam: pre-grad size-aware curve mark, post-grad Jupiter v3
+cross-checked against Birdeye + DEX Screener, Pyth SOL/USD with a confidence
+band, the sqrtPrice math, the rolling median, the AUM clamp; EXCLUDE never
+zero), `server/levy_fund.ts` (the display-only fund logic + valuation refresh),
+`server/levy_fund_db.ts` (`levy_fund_snapshots` + `levy_fund_holdings` +
+`levy_fund_marks` caches), `server/levy_fund_sources.ts` (the real Jupiter /
+Birdeye / DEX Screener / Pyth / venue fetches, all fail-soft to illiquid),
+`src/ui/levy_fund_view.ts` (the pure portfolio render model, registered in
+UI_PURE_CORES), `src/ui/levy_fund_panel.ts` (the thin display-only DOM consumer).
+
+THE ABSOLUTE LINE (PRD sections 8 + 14): the fund is DISPLAY-ONLY. It mints NO
+fund-share token, sells NO claim, offers NO redemption; there is no buy / sell /
+deposit / withdraw / redeem path anywhere in the module, the DB, the route, or
+the panel. The only writes are the valuation keeper's cached snapshots; the only
+reads are the public portfolio page. A source-scan test pins the absence.
+
+The fund holds the levy allocation (default 8 percent, capped 10) of every
+launched realm token, vested to the Levy Street Fund wallet through the phase-3
+Jupiter Lock (the levy lock's recipient is `levyFundWallet()`, both on the
+direct-mint and curve paths). The valuation keeper (boot-started interval,
+default 30s per PRD) enumerates every launched realm token's levy allocation,
+prices each on the tiered pipeline, median-smooths per mint, clamps the
+single-refresh AUM jump, and writes a snapshot. `GET /api/levy-fund` (PUBLIC,
+no auth) serves the latest snapshot; the panel renders the AUM header + one
+sorted row per holding (illiquid rows excluded from AUM, kept visible with a
+tag).
+
+Acceptance:
+- `tests/token_valuation.test.ts` (13 tests): sqrtPrice math, the pre-grad and
+  post-grad tiers, every exclusion path (curve cannot quote size, no Jupiter
+  route, cross-check divergence, liquidity floor, no cross source, unreliable
+  Pyth) EXCLUDING never zeroing, the rolling median, the AUM clamp.
+- `tests/levy_fund.test.ts` (9 tests): the refresh values a graduated holding
+  with weights, EXCLUDES an illiquid holding from AUM while keeping its row, the
+  per-mint median, the AUM clamp against the previous snapshot, the empty state,
+  and the source-scan securities bright line (no redeem / share / sell symbols).
+- `tests/levy_fund_view.test.ts` (4 tests): the render model, value-desc sort
+  with illiquid last, weight percents, empty state.
+- Real-DB integration (in `realm_launchpad_db.integration.test.ts`, now 16
+  tests): snapshot round-trip + latest read, rolling marks bounded + oldest-
+  first, holding sources surfacing only listed realms.
+- `tests/architecture.test.ts` green (the view-core is registered in
+  UI_PURE_CORES; no DOM / nondeterminism in it).
+
+Entry-point follow-up: the panel + Api method (`Api.levyFund`) are complete and
+tested; a HUD host hook to open the panel from the realm directory is a UI
+follow-up (needs a running dev server to verify), mirroring the phases-0-to-2
+"player entry point" follow-up.
 
 ## UI (panel for phases 0 to 2)
 

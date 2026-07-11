@@ -265,6 +265,9 @@ import {
   listRealmsByAffiliate,
 } from './affiliate_db';
 import { activeSeasonStatus, closeSeason, openSeason } from './flow_ledger_db';
+import { levyPortfolio, refreshLevyFund } from './levy_fund';
+import { levyFundStore } from './levy_fund_db';
+import { realPriceSources } from './levy_fund_sources';
 import { withPayoutKeeperLock, withRealmBuybackKeeperLock } from './payout_db';
 import { buildPayoutKeeper } from './payout_keeper';
 import { mergeRealmDirectory, REALM_ORIGINS, resolveRealmType } from './realm';
@@ -349,6 +352,9 @@ import { SeasonBodyCache } from './woc_season_api';
 // How often the buyback keeper ticks. Its own policy decides whether a tick does
 // anything (threshold / cadence / fee floor), so this is just the poll interval.
 const PAYOUT_KEEPER_TICK_MS = Number(process.env.BUYBACK_KEEPER_TICK_MS ?? 5 * 60 * 1000);
+// The Levy Street Fund portfolio refresh cadence (default 30s, PRD section 8:
+// a 15 to 60 second cache cadence for the public dashboard).
+const LEVY_FUND_TICK_MS = Number(process.env.LEVY_FUND_TICK_MS ?? 30 * 1000);
 // /api/woc/season is public and polled by every client; SeasonBodyCache keeps the
 // (cheap) read off the DB hot path with a short TTL. Season + pool change slowly,
 // so a few seconds of staleness is fine.
@@ -1454,6 +1460,14 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       const info = await realmTiersInfo();
       if (!info) return json(res, 503, { error: 'supply_unavailable' });
       return json(res, 200, info);
+    }
+    // Levy Street Fund portfolio (launchpad phase 6): the PUBLIC, DISPLAY-ONLY
+    // holdings page, read from the latest cached snapshot (never the chain, so
+    // it is fast and rate-limit-safe). No auth: the transparency is the point.
+    // There is NO buy / sell / redeem field in the payload by design (PRD 8).
+    if (req.method === 'GET' && url === '/api/levy-fund') {
+      const portfolio = await levyPortfolio(levyFundStore());
+      return json(res, 200, portfolio);
     }
     // Stake-to-provision (#475). Quote: validate name + cap + tier and reserve a
     // provisioning realm; the client then locks `amount` $WOC into the returned
@@ -3141,6 +3155,31 @@ export async function startServer(): Promise<http.Server> {
     void feeTick();
     setInterval(() => void feeTick(), PAYOUT_KEEPER_TICK_MS).unref();
     console.log('realm fee keeper enabled');
+  }
+
+  // Levy Street Fund valuation keeper (launchpad phase 6): refresh the
+  // display-only holdings snapshot the public portfolio page reads. Enabled
+  // whenever the launch venue is configured (the fund holds curve-launched
+  // realm tokens); a no-holdings refresh is a cheap no-op. The keeper only
+  // WRITES cached snapshots: there is no buy / sell / redeem path anywhere.
+  if (launchpadVenueName() !== null) {
+    const levyStore = levyFundStore();
+    const levySources = realPriceSources(launchpadVenueForFees());
+    let levyBusy = false;
+    const levyTick = async () => {
+      if (levyBusy) return;
+      levyBusy = true;
+      try {
+        await refreshLevyFund({ store: levyStore, sources: levySources });
+      } catch (err) {
+        console.error('levy fund valuation cycle failed:', err);
+      } finally {
+        levyBusy = false;
+      }
+    };
+    void levyTick();
+    setInterval(() => void levyTick(), LEVY_FUND_TICK_MS).unref();
+    console.log('levy fund valuation keeper enabled');
   }
   console.log('database ready');
 

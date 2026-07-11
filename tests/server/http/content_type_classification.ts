@@ -105,6 +105,7 @@ export const API_CONTENT_TYPE: Readonly<Record<string, ContentTypeClass>> = {
   '/api/affiliate/me': PROBLEM_JSON,
   '/api/affiliate/realms': PROBLEM_JSON,
   '/api/referral/summary': PROBLEM_JSON,
+  '/api/levy-fund': PROBLEM_JSON,
   '/api/woc/season': PROBLEM_JSON,
   '/api/search': PROBLEM_JSON,
   '/api/reports': PROBLEM_JSON,

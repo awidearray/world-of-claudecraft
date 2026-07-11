@@ -36,7 +36,8 @@ run('launchpad tables against real Postgres', () => {
     presaleDb = await import('../server/realm_presale_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
-      `DROP TABLE IF EXISTS realm_fee_distributions, realm_fee_accruals, realm_launch_quotes,
+      `DROP TABLE IF EXISTS levy_fund_holdings, levy_fund_snapshots, levy_fund_marks,
+         realm_fee_distributions, realm_fee_accruals, realm_launch_quotes,
          realm_presale_contributions, realm_presale_quotes, realm_presales,
          realm_votes, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
     );
@@ -595,6 +596,92 @@ run('launchpad tables against real Postgres', () => {
     expect(feeRealms.some((r) => r.realmId === realmB && r.poolAddress === 'FeeCurvePool')).toBe(
       true,
     );
+  });
+
+  it('phase 6 levy fund: snapshot round-trip, latest read, rolling marks, holding sources', async () => {
+    const levyDb = await import('../server/levy_fund_db');
+    // A launched realm token with a levy allocation is a fund holding source.
+    const lr = (
+      await realmDb.createProvisioningRealm(db.pool, {
+        name: 'Levy Realm',
+        type: 'Normal',
+        ownerAccountId: ownerId,
+        tier: 1,
+      })
+    ).realmId;
+    await realmDb.activateRealm(db.pool, lr);
+    await tokenDb.insertRealmToken(db.pool, {
+      realmId: lr,
+      symbol: 'LEVY',
+      icon: '',
+      monetizationPolicy: 'cosmetic',
+    });
+    await tokenDb.setRealmTokenStatus(db.pool, lr, ['prelaunch'], 'funded');
+    await tokenDb.recordCurveLaunch(db.pool, lr, {
+      mint: 'LevyMint',
+      launchTxSig: 'levysig',
+      curveAddress: 'LevyCfg',
+      poolAddress: 'LevyPool',
+      feeClaimerPda: 'FeeVault',
+      supplyBase: 10n ** 18n,
+      founderAllocBase: 12n * 10n ** 16n,
+      levyAllocBase: 8n * 10n ** 16n,
+      treasuryAllocBase: 10n ** 17n,
+    });
+    // Not a source until it lists (status live/graduated).
+    expect(await levyDb.levyHoldingSources(db.pool)).toEqual([]);
+    await tokenDb.setRealmTokenStatus(db.pool, lr, ['funded'], 'live');
+    const srcs = await levyDb.levyHoldingSources(db.pool);
+    expect(srcs).toHaveLength(1);
+    expect(srcs[0]).toMatchObject({
+      mint: 'LevyMint',
+      levyAllocBase: 8n * 10n ** 16n,
+      status: 'live',
+    });
+
+    // Rolling marks accumulate and read oldest-first, bounded per mint.
+    await levyDb.insertMark(db.pool, 'LevyMint', 0.01);
+    await levyDb.insertMark(db.pool, 'LevyMint', 0.012);
+    await levyDb.insertMark(db.pool, 'LevyMint', 0.011);
+    expect(await levyDb.recentMarks(db.pool, 'LevyMint', 2)).toEqual([0.012, 0.011]);
+
+    // A snapshot round-trips (totals + holdings), and latestSnapshot reads it.
+    const snapId = await levyDb.insertSnapshot(db.pool, {
+      aumUsd: 800_000,
+      aumSol: 5_333,
+      holdingCount: 1,
+      includedCount: 1,
+      clamped: false,
+      solUsd: 150,
+      holdings: [
+        {
+          realmId: lr,
+          mint: 'LevyMint',
+          symbol: 'LEVY',
+          amountBase: 8n * 10n ** 16n,
+          decimals: 9,
+          priceUsd: 0.01,
+          valueUsd: 800_000,
+          valueSol: 5_333,
+          weightBps: 10_000,
+          source: 'jupiter_v3',
+          illiquid: false,
+          note: null,
+          lockAddress: 'LevyLock',
+        },
+      ],
+    });
+    expect(snapId).toBeGreaterThan(0);
+    expect(await levyDb.previousAum(db.pool)).toBe(800_000);
+    const latest = await levyDb.latestSnapshot(db.pool);
+    expect(latest?.aumUsd).toBe(800_000);
+    expect(latest?.holdings).toHaveLength(1);
+    expect(latest?.holdings[0]).toMatchObject({
+      mint: 'LevyMint',
+      amountBase: 8n * 10n ** 16n,
+      valueUsd: 800_000,
+      illiquid: false,
+    });
   });
 
   it('assertRealmSchema fails at boot when a phase-3 launch column is dropped', async () => {
