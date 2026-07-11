@@ -380,9 +380,9 @@ run('launchpad tables against real Postgres', () => {
     expect(await store.markLocksVerified(realmId)).toBe(true);
     expect(await store.markLocksVerified(realmId)).toBe(false);
     // Verified locks are pinned: address updates match nothing afterward.
-    expect(
-      await store.setLockAddresses(realmId, { founder: 'X', levy: 'Y', treasury: 'Z' }),
-    ).toBe(false);
+    expect(await store.setLockAddresses(realmId, { founder: 'X', levy: 'Y', treasury: 'Z' })).toBe(
+      false,
+    );
     const done = await store.getLaunch(realmId);
     expect(done?.founderLockAddress).toBe('FL');
     expect(done?.locksVerifiedAt).not.toBeNull();
@@ -393,8 +393,65 @@ run('launchpad tables against real Postgres', () => {
     await expect(realmDb.assertRealmSchema(db.pool)).rejects.toThrow(
       /realm_token_launches.*locks_verified_at/,
     );
-    await db.pool.query('ALTER TABLE realm_token_launches ADD COLUMN locks_verified_at TIMESTAMPTZ');
+    await db.pool.query(
+      'ALTER TABLE realm_token_launches ADD COLUMN locks_verified_at TIMESTAMPTZ',
+    );
     await expect(realmDb.assertRealmSchema(db.pool)).resolves.toBeUndefined();
+  });
+
+  it('fee-claim ledger (phase 5): sig-anchored intent, pinned legs, unique guards', async () => {
+    const feeDb = await import('../server/realm_fee_db');
+    const store = feeDb.realmFeeStore(db.pool);
+    expect(
+      await store.createClaim({
+        claimId: 'fee-int-1',
+        realmId,
+        poolAddress: 'PoolAddr',
+        quoteMint: '',
+        claimTxSig: 'feesig_int_1',
+      }),
+    ).toBe(true);
+    // A replayed claim signature is swallowed by ON CONFLICT, never inserted.
+    expect(
+      await store.createClaim({
+        claimId: 'fee-int-2',
+        realmId,
+        poolAddress: 'PoolAddr',
+        quoteMint: '',
+        claimTxSig: 'feesig_int_1',
+      }),
+    ).toBe(false);
+
+    await store.markClaimed('fee-int-1', {
+      claimedBase: 10n ** 19n, // NUMERIC round-trips past BIGINT headroom
+      operatorWallet: 'OpWallet',
+      affiliateWallet: null,
+      split: {
+        operatorBase: 5n * 10n ** 18n,
+        affiliateBase: 0n,
+        treasuryBase: 2n * 10n ** 18n,
+        buybackBase: 3n * 10n ** 18n,
+      },
+    });
+    let open = await store.openClaims();
+    expect(open).toHaveLength(1);
+    expect(open[0]).toMatchObject({
+      status: 'claimed',
+      claimedBase: 10n ** 19n,
+      operatorWallet: 'OpWallet',
+      buybackBase: 3n * 10n ** 18n,
+    });
+
+    await store.markDistributing('fee-int-1', 'distsig_int_1');
+    open = await store.openClaims();
+    expect(open[0].status).toBe('distributing');
+    expect(open[0].distributeBroadcastAt).not.toBeNull();
+    await store.markDistributed('fee-int-1');
+    expect(await store.openClaims()).toHaveLength(0);
+
+    // The live/graduated fee-target read follows realm_tokens state; this
+    // realm's token is still pre-launch here, so no targets surface.
+    expect(await feeDb.listFeeTargets(db.pool)).toEqual([]);
   });
 
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {

@@ -261,10 +261,15 @@ export function resetActiveConfigForTests(): void {
 import {
   affiliateRealmCount,
   getOrCreateAffiliateCode,
+  getRealmAffiliate,
   listRealmsByAffiliate,
 } from './affiliate_db';
 import { activeSeasonStatus, closeSeason, openSeason } from './flow_ledger_db';
-import { withPayoutKeeperLock, withRealmBuybackKeeperLock } from './payout_db';
+import {
+  withPayoutKeeperLock,
+  withRealmBuybackKeeperLock,
+  withRealmFeeKeeperLock,
+} from './payout_db';
 import { buildPayoutKeeper } from './payout_keeper';
 import { mergeRealmDirectory, REALM_ORIGINS, resolveRealmType } from './realm';
 import { confirmBuyQuote, prepareBuyQuote, realmBuyInfo } from './realm_buy';
@@ -276,6 +281,13 @@ import {
   listRealmsForOwner,
   rolesForAccountOnRealm,
 } from './realm_db';
+import { listFeeTargets as listRealmFeeTargets, realmFeeStore } from './realm_fee_db';
+import {
+  feeSplitBps,
+  feeThresholdBase,
+  RealmFeeKeeper,
+  realmFeeKeeperConfigured,
+} from './realm_fee_keeper';
 import {
   type CurveDeps,
   confirmCurve,
@@ -284,7 +296,7 @@ import {
   prepareCurve,
   realmLaunchpadHost,
 } from './realm_launchpad';
-import { liveDbcGateway } from './realm_launchpad_dbc';
+import { liveDbcGateway, liveRealmFeeGateway } from './realm_launchpad_dbc';
 import {
   configurePresale,
   confirmPresaleContribution,
@@ -3018,6 +3030,67 @@ export async function startServer(): Promise<http.Server> {
     console.log(
       `realm buyback keeper enabled (${realmBuybackKeepers.map((k) => k.label).join(', ')})`,
     );
+  }
+
+  // Realm-token fee keeper (launchpad phase 5): claims each live realm token
+  // pool's DBC partner fees and distributes the operator / affiliate / global
+  // treasury / buy-and-burn split. The burn leg lands in the realm buyback
+  // vault above, whose keeper swaps + burns it. No-op unless the fee-claimer
+  // key, a treasury wallet, and the buyback vault are all configured; runs
+  // under its own cross-process advisory lock so sibling realm processes never
+  // double-claim a pool.
+  if (realmFeeKeeperConfigured()) {
+    const feeTreasury = (
+      process.env.REALM_FEE_TREASURY_WALLET ??
+      process.env.WOC_TREASURY ??
+      ''
+    ).trim();
+    const feeKeeper = new RealmFeeKeeper({
+      gateway: liveRealmFeeGateway((process.env.REALM_FEE_CLAIMER_SECRET ?? '').trim()),
+      store: realmFeeStore(pool),
+      listFeeTargets: () => listRealmFeeTargets(pool),
+      readQuoteMint: async () => {
+        const host = realmLaunchpadHost({ liveGateway: liveDbcGateway });
+        if (!host) return null;
+        const config = await host.readPartnerConfig();
+        return config ? config.quoteMint : null;
+      },
+      operatorWallet: async (realmId: number) => {
+        const realm = await getRealmById(pool, realmId);
+        if (!realm || realm.ownerAccountId === null) return null;
+        const wallet = await walletForAccount(realm.ownerAccountId);
+        return wallet ? wallet.pubkey : null;
+      },
+      affiliateFor: async (realmId: number) => {
+        const affiliate = await getRealmAffiliate(pool, realmId);
+        if (!affiliate || affiliate.bps <= 0) return null;
+        const wallet = await walletForAccount(affiliate.affiliateAccountId);
+        return wallet ? { wallet: wallet.pubkey, bps: affiliate.bps } : null;
+      },
+      treasuryWallet: feeTreasury,
+      buybackWallet: (process.env.REALM_BUYBACK_VAULT ?? '').trim(),
+      split: feeSplitBps(),
+      thresholdBase: (quoteMint: string) => feeThresholdBase(quoteMint),
+      nativeFeeReserve: 100_000n,
+      now: () => Date.now(),
+      newClaimId: () => crypto.randomUUID(),
+      staleMs: 10 * 60 * 1000,
+    });
+    let feeKeeperBusy = false;
+    const feeTick = async () => {
+      if (feeKeeperBusy) return;
+      feeKeeperBusy = true;
+      try {
+        await withRealmFeeKeeperLock(() => feeKeeper.runCycle());
+      } catch (err) {
+        console.error('realm fee keeper cycle failed:', err);
+      } finally {
+        feeKeeperBusy = false;
+      }
+    };
+    void feeTick();
+    setInterval(() => void feeTick(), PAYOUT_KEEPER_TICK_MS).unref();
+    console.log('realm token fee keeper enabled');
   }
   console.log('database ready');
 

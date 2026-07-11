@@ -101,13 +101,24 @@ export async function createBuybackBatch(b: {
   const res = await pool.query(
     `INSERT INTO buyback_batches (batch_id, mode, source, usdc_in, buy_tx_sig, season_id, dest, status)
      VALUES ($1,$2,$3,$4,$5,$6,$7,'swapping') ON CONFLICT DO NOTHING`,
-    [b.batchId, b.mode, b.source, b.usdcIn.toString(), b.buyTxSig, b.seasonId ?? null, b.dest ?? null],
+    [
+      b.batchId,
+      b.mode,
+      b.source,
+      b.usdcIn.toString(),
+      b.buyTxSig,
+      b.seasonId ?? null,
+      b.dest ?? null,
+    ],
   );
   return (res.rowCount ?? 0) === 1;
 }
 
 export async function markBatchSwapped(batchId: string, wocBought: bigint): Promise<void> {
-  await pool.query(`UPDATE buyback_batches SET status = 'swapped', woc_bought = $2 WHERE batch_id = $1`, [batchId, wocBought.toString()]);
+  await pool.query(
+    `UPDATE buyback_batches SET status = 'swapped', woc_bought = $2 WHERE batch_id = $1`,
+    [batchId, wocBought.toString()],
+  );
 }
 
 export async function markBatchSettling(batchId: string, settleTxSig: string): Promise<void> {
@@ -133,13 +144,17 @@ export async function markBatchFailed(batchId: string, reason: string): Promise<
 
 // In-flight batches (anything not terminal) for crash recovery, oldest first.
 export async function openBuybackBatches(): Promise<PayoutBatchRow[]> {
-  const res = await pool.query(`SELECT * FROM buyback_batches WHERE status IN ('swapping','swapped','settling') ORDER BY created_at`);
+  const res = await pool.query(
+    `SELECT * FROM buyback_batches WHERE status IN ('swapping','swapped','settling') ORDER BY created_at`,
+  );
   return res.rows.map(mapBatch);
 }
 
 // Timestamp of the most recent completed settlement (drives the batch cadence).
 export async function lastSettleAt(): Promise<number | null> {
-  const res = await pool.query(`SELECT MAX(executed_at) AS at FROM buyback_batches WHERE status = 'settled'`);
+  const res = await pool.query(
+    `SELECT MAX(executed_at) AS at FROM buyback_batches WHERE status = 'settled'`,
+  );
   const at = res.rows[0]?.at;
   return at == null ? null : new Date(at as string).getTime();
 }
@@ -180,6 +195,14 @@ export async function withPayoutKeeperLock<T>(fn: () => Promise<T>): Promise<T |
 const REALM_BUYBACK_KEEPER_LOCK_KEY = 0x57_4f_43_04; // "WOC\x04"
 export async function withRealmBuybackKeeperLock<T>(fn: () => Promise<T>): Promise<T | null> {
   return withAdvisoryLock(REALM_BUYBACK_KEEPER_LOCK_KEY, fn);
+}
+
+// The realm-token fee keeper (launchpad phase 5) claims DBC partner fees with
+// its own ops key; sibling realm processes must not double-claim a pool, so it
+// takes its own distinct lock.
+const REALM_FEE_KEEPER_LOCK_KEY = 0x57_4f_43_05; // "WOC\x05"
+export async function withRealmFeeKeeperLock<T>(fn: () => Promise<T>): Promise<T | null> {
+  return withAdvisoryLock(REALM_FEE_KEEPER_LOCK_KEY, fn);
 }
 
 async function withAdvisoryLock<T>(key: number, fn: () => Promise<T>): Promise<T | null> {

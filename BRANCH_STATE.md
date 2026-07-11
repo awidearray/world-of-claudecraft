@@ -1,11 +1,12 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 4 of
+Realm Token Launchpad, phases 0 to 5 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
-the bottom). Phases 3 (mint factory + locks) and 4 (bonding curve + DAMM v2
-graduation) are recorded below the phase 0 to 2 record.
+the bottom). Phases 3 (mint factory + locks), 4 (bonding curve + DAMM v2
+graduation), and 5 (fee keeper + revenue split) are recorded below the phase
+0 to 2 record.
 
 ## Locked decisions honored
 
@@ -286,6 +287,56 @@ preferred shape before mainnet. (2) The partner config itself is created by
 platform ops with their own key (the SDK's partner.createConfig): the
 feeClaimer recorded there is ops-owned; the per-realm PDA identity is stored
 on realm_tokens.fee_claimer_pda for phase 5 attribution.
+
+## Phase 5: realm-token fee keeper + revenue split
+
+Files: `server/realm_fee_keeper.ts` (PURE orchestration + split math: treasury
+and buyback legs floored, the affiliate cut carved out of the operator's GROSS
+share at the realm's attributed bps, the operator absorbs every remainder so
+the four legs sum to exactly the claim; env caps treasury/buyback 5000 each
+with a combined 8000 cap so the operator floor is 2000 bps; per-quote-asset
+claim thresholds so dust never burns tx fees), `server/realm_fee_db.ts`
+(the `realm_fee_claims` ledger: LEDGER-FIRST rows with `claim_tx_sig` UNIQUE
+written before broadcast and `distribute_tx_sig` UNIQUE, the split legs PINNED
+on the row so recovery executes the recorded ledger and a later affiliate
+change can never rewrite a recorded claim; `listFeeTargets` = live/graduated
+tokens with a curve), the live gateway in `realm_launchpad_dbc.ts`
+(`liveRealmFeeGateway`: reads `partnerQuoteFee` off the pool state, builds +
+signs the SDK's `claimPartnerTradingFee` with the ops-owned fee-claimer key,
+quote fees only; measures what actually arrived via the finalized-tx delta
+parsers, native measured net of the tx fee so it never over-distributes;
+builds the one distribution tx: native transfers, or ATA-idempotent +
+TransferChecked legs), and `withRealmFeeKeeperLock` (advisory key WOC\x05) in
+payout_db.ts. Boot wiring in main.ts mirrors the buyback keepers: in-process
+single-flight + the cross-process advisory lock, fail-closed unless the
+claimer secret + treasury wallet + REALM_BUYBACK_VAULT are all set. The
+buy-and-burn leg lands in the EXISTING realm buyback vault whose #475 keeper
+swaps + burns it (the pluggable terminal step: this keeper never swaps).
+Fail-closed everywhere: no operator wallet -> the pool is skipped BEFORE any
+claim (fees stay accrued on-chain); unreadable config -> the cycle skips.
+
+Acceptance:
+- `tests/realm_fee_keeper.test.ts` (17): exact split sums at adversarial
+  amounts with hostile affiliate bps clamped; env caps + the operator floor;
+  the full claim -> distribute happy path with the exact four legs broadcast;
+  affiliate folding when unattributed; the native fee reserve deducted before
+  splitting; skips (threshold / unlinked operator / dark config); reverted
+  claims failed with fees left on-chain; recovery strictly by recorded
+  signature (claim recovered without re-claiming, distribution re-issued from
+  the PINNED legs not a recomputation, landed distributions confirmed without
+  re-send, replayed claim signature never tracked twice, no new claims while
+  one is in flight: the no-double-spend acceptance).
+- Real Postgres 16: the fee-claim ledger round-trip (sig-anchored intent, ON
+  CONFLICT replay swallow, NUMERIC past-BIGINT amounts, open-claim reads,
+  broadcast stamps) in the integration suite (12 green).
+- assertRealmSchema extended to realm_fee_claims; tsc clean; server bundle
+  builds; biome clean. Dependency added: bn.js 5.2.5 (explicit; the SDK's
+  claim API takes BN amounts).
+
+Phase 5 gate status: exercised end-to-end against the injected gateway/store
+fakes plus real Postgres; a devnet/mainnet drain of a real seeded pool rides
+the phase 4 dry-run gate (owner sign-off) since it needs a live DBC pool
+under the partner config.
 
 ## Invariant confirmations
 

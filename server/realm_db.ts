@@ -274,6 +274,22 @@ const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
     'pay_tx_sig',
     'refund_tx_sig',
   ],
+  // Fee-claim ledger (phase 5): both signatures are UNIQUE recovery anchors
+  // and the split legs are the executed ledger.
+  realm_fee_claims: [
+    'claim_id',
+    'realm_id',
+    'pool_address',
+    'quote_mint',
+    'status',
+    'claim_tx_sig',
+    'claimed_base',
+    'operator_base',
+    'affiliate_base',
+    'treasury_base',
+    'buyback_base',
+    'distribute_tx_sig',
+  ],
 };
 
 export async function assertRealmSchema(db: Queryable): Promise<void> {
