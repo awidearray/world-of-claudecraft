@@ -29,6 +29,7 @@ import { assertRealmSchema, REALM_SCHEMA, seedDefaultRealm } from './realm_db';
 import { REALM_QUOTE_SCHEMA } from './realm_quote_db';
 import { REALM_STAKE_SCHEMA } from './realm_stake_db';
 import { REALM_TOKEN_SCHEMA } from './realm_token_db';
+import { REALM_VOTE_SCHEMA } from './realm_vote_db';
 import { chooseArchiveName } from './reclaim_name';
 import { REFERRAL_REWARDS_SCHEMA } from './referral_db';
 import { SOCIAL_SCHEMA } from './social_db';
@@ -715,6 +716,7 @@ export async function ensureSchema(): Promise<void> {
     await client.query(REALM_QUOTE_SCHEMA);
     await client.query(REALM_BUY_SCHEMA); // realm_buy_quotes + realm_purchases (references realms + accounts)
     await client.query(REALM_TOKEN_SCHEMA); // realm_tokens registry (launchpad phase 0, references realms)
+    await client.query(REALM_VOTE_SCHEMA); // realm_votes launch-vote ledger (launchpad phase 1)
     await client.query(AFFILIATE_SCHEMA); // affiliate_codes + realm_affiliates (references realms + accounts)
     await client.query(REFERRAL_REWARDS_SCHEMA); // referral_progress + referral_rewards (references characters + accounts)
     // Fail fast at boot on realm schema drift (CREATE IF NOT EXISTS is a no-op

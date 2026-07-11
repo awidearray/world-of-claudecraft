@@ -21,6 +21,7 @@ run('launchpad tables against real Postgres', () => {
   let db: typeof import('../server/db');
   let realmDb: typeof import('../server/realm_db');
   let tokenDb: typeof import('../server/realm_token_db');
+  let voteDb: typeof import('../server/realm_vote_db');
   let httpUtil: typeof import('../server/http_util');
   let ownerId: number;
   let voterId: number;
@@ -30,6 +31,7 @@ run('launchpad tables against real Postgres', () => {
     db = await import('../server/db');
     realmDb = await import('../server/realm_db');
     tokenDb = await import('../server/realm_token_db');
+    voteDb = await import('../server/realm_vote_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
       `DROP TABLE IF EXISTS realm_presale_contributions, realm_presale_quotes, realm_presales,
@@ -107,6 +109,64 @@ run('launchpad tables against real Postgres', () => {
          CHECK (monetization_policy IN ('cosmetic', 'power'))`,
     );
     await expect(realmDb.assertRealmSchema(db.pool)).resolves.toBeUndefined();
+  });
+
+  it('records weighted votes with both per-wallet and per-account uniques', async () => {
+    await voteDb.insertVote(db.pool, {
+      realmId,
+      accountId: voterId,
+      wallet: 'VOTERWALLET_A',
+      choice: 'yes',
+      weightWoc: 1_000_000n,
+    });
+    // Same wallet, different account: rejected.
+    const other = (await db.createAccount(`lp_other_${Date.now()}`, 'hash')).id;
+    let dupWallet: unknown;
+    await voteDb
+      .insertVote(db.pool, {
+        realmId,
+        accountId: other,
+        wallet: 'VOTERWALLET_A',
+        choice: 'no',
+        weightWoc: 1n,
+      })
+      .catch((e) => {
+        dupWallet = e;
+      });
+    expect(httpUtil.isUniqueViolation(dupWallet)).toBe(true);
+    // Same account, rotated wallet: rejected.
+    let dupAccount: unknown;
+    await voteDb
+      .insertVote(db.pool, {
+        realmId,
+        accountId: voterId,
+        wallet: 'VOTERWALLET_B',
+        choice: 'no',
+        weightWoc: 1n,
+      })
+      .catch((e) => {
+        dupAccount = e;
+      });
+    expect(httpUtil.isUniqueViolation(dupAccount)).toBe(true);
+
+    // Whale-scale weight round-trips as bigint; the tally groups by choice.
+    await voteDb.insertVote(db.pool, {
+      realmId,
+      accountId: other,
+      wallet: 'VOTERWALLET_C',
+      choice: 'no',
+      weightWoc: 9_007_199_254_740_993n,
+    });
+    const tally = await voteDb.tallyVotes(db.pool, realmId);
+    expect(tally).toEqual({
+      yesWeight: 1_000_000n,
+      noWeight: 9_007_199_254_740_993n,
+      voteCount: 2,
+    });
+    expect(await voteDb.getVoteForAccount(db.pool, realmId, voterId)).toEqual({
+      choice: 'yes',
+      weightWoc: 1_000_000n,
+    });
   });
 
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {

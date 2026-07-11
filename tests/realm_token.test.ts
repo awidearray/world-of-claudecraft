@@ -326,6 +326,7 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
       'monetization_policy',
       'launch_tx_sig',
     ],
+    realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
   };
   function stubDb(drop?: { table: string; column: string }) {
     return {

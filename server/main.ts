@@ -226,7 +226,12 @@ import {
   handleWalletUnlink,
 } from './wallet';
 import { allowedCorsOrigin, isWebClientRequest } from './web_login_guard';
-import { handleWocBalance, parseWocBalanceQuery, setEscrowedWocSource } from './woc_balance';
+import {
+  cachedWocBalance,
+  handleWocBalance,
+  parseWocBalanceQuery,
+  setEscrowedWocSource,
+} from './woc_balance';
 import { createWsAuth } from './ws_auth';
 import { bufferHandshakeMessages } from './ws_buffer';
 
@@ -287,6 +292,8 @@ import {
   registerRealmToken,
 } from './realm_token';
 import { listRealmTokens, realmTokenDb } from './realm_token_db';
+import { castVote, openVote, type VoteDeps, voteStatus } from './realm_vote';
+import { realmVoteDb } from './realm_vote_db';
 import { referralRewardSummary } from './referral_db';
 import { rewardTierBpsFromEnv } from './reward_tiers';
 import { WOC_DECIMALS } from './woc_config';
@@ -1500,12 +1507,18 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, result);
     }
-    // ── Realm token launchpad (phase 0): registry + identity ──────────────────
+    // ── Realm token launchpad (phases 0 to 1): registry + launch vote ─────────
     // All routes follow the branch's realm route pattern: bearer auth, typed
     // `error` codes the client maps to launchpad.err.* keys, no chain writes on
     // the server (verify-only), rate limits on anything that touches an RPC.
     const launchpadDeps = () => ({
       tokens: realmTokenDb(pool),
+      votes: realmVoteDb(pool),
+      walletForAccount: async (accountId: number) => {
+        const w = await walletForAccount(accountId);
+        return w ? { pubkey: w.pubkey } : null;
+      },
+      wocBalance: (pubkey: string) => cachedWocBalance(pubkey),
       rolesForAccountOnRealm: (realmId: number, accountId: number) =>
         rolesForAccountOnRealm(pool, realmId, accountId),
       realmStatus: async (realmId: number) => {
@@ -1522,6 +1535,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       const realmId = Number(realmTokenMatch[1]);
       const token = await deps.tokens.getRealmToken(realmId);
       if (!token) return json(res, 200, { token: null, vote: null, presale: null });
+      const vote = await voteStatus(deps as VoteDeps, { realmId, accountId });
       const roles = await rolesForAccountOnRealm(pool, realmId, accountId);
       return json(res, 200, {
         token: {
@@ -1533,7 +1547,7 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
           mint: token.mint,
           decimals: token.decimals,
         },
-        vote: null,
+        vote: vote.ok ? vote.vote : null,
         presale: null,
         isOwner: roles.includes('owner'),
       });
@@ -1553,6 +1567,42 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { status: result.token.status, symbol: result.token.symbol });
+    }
+    const realmVoteOpenMatch = /^\/api\/realms\/(\d+)\/token\/vote\/open$/.exec(url);
+    if (req.method === 'POST' && realmVoteOpenMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const result = await openVote(launchpadDeps(), {
+        accountId,
+        realmId: Number(realmVoteOpenMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { status: result.status });
+    }
+    const realmVoteMatch = /^\/api\/realms\/(\d+)\/token\/vote$/.exec(url);
+    if (req.method === 'GET' && realmVoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const result = await voteStatus(launchpadDeps() as VoteDeps, {
+        realmId: Number(realmVoteMatch[1]),
+        accountId,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { vote: result.vote });
+    }
+    if (req.method === 'POST' && realmVoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      // Casting reads the voter's on-chain $WOC balance; rate-limit the RPC touch.
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await castVote(launchpadDeps() as VoteDeps, {
+        accountId,
+        realmId: Number(realmVoteMatch[1]),
+        choice: typeof body.choice === 'string' ? body.choice : '',
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { vote: result.vote });
     }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {
