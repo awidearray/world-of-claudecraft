@@ -265,9 +265,10 @@ import {
   listRealmsByAffiliate,
 } from './affiliate_db';
 import { activeSeasonStatus, closeSeason, openSeason } from './flow_ledger_db';
-import { levyPortfolio, refreshLevyFund } from './levy_fund';
+import { type LevyFundStore, levyPortfolio, refreshLevyFund } from './levy_fund';
 import { levyFundStore } from './levy_fund_db';
 import { realPriceSources } from './levy_fund_sources';
+import { counselSignoffRecorded, screenMoneyRequest } from './money_geo_gate';
 import { withPayoutKeeperLock, withRealmBuybackKeeperLock } from './payout_db';
 import { buildPayoutKeeper } from './payout_keeper';
 import { mergeRealmDirectory, REALM_ORIGINS, resolveRealmType } from './realm';
@@ -341,10 +342,24 @@ import {
   realLaunchChain,
 } from './realm_token_mint';
 import { launchQuoteStore } from './realm_token_mint_db';
+import { SOLANA_RPC_URL } from './solana_rpc';
 
 // The stub launch venue holds its fixed-rate pools in memory, so one instance
 // serves the whole process (REALM_LAUNCHPAD_VENUE=stub, pre-mainnet only).
 const stubVenueSingleton = new StubLaunchVenue();
+
+// The empty Levy Fund store: served for the portfolio page on mainnet before
+// the counsel Investment-Company-Act sign-off (PRD section 8). latestSnapshot
+// null yields the empty "not enabled yet" portfolio; the other members are
+// never reached on the read path.
+const EMPTY_LEVY_STORE: LevyFundStore = {
+  holdingSources: async () => [],
+  recentMarks: async () => [],
+  insertMark: async () => {},
+  previousAum: async () => null,
+  insertSnapshot: async () => 0,
+  latestSnapshot: async () => null,
+};
 
 import { castVote, openVote, type VoteDeps, voteStatus } from './realm_vote';
 import { realmVoteDb } from './realm_vote_db';
@@ -1486,6 +1501,12 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
     // it is fast and rate-limit-safe). No auth: the transparency is the point.
     // There is NO buy / sell / redeem field in the payload by design (PRD 8).
     if (req.method === 'GET' && url === '/api/levy-fund') {
+      // PRD section 8: enabling the display-only portfolio page on a mainnet
+      // cluster requires the counsel Investment-Company-Act memo. On mainnet
+      // without it, serve the empty (not-enabled) state; devnet is ungated.
+      if (/mainnet/.test(SOLANA_RPC_URL) && !counselSignoffRecorded()) {
+        return json(res, 200, await levyPortfolio(EMPTY_LEVY_STORE));
+      }
       const portfolio = await levyPortfolio(levyFundStore());
       return json(res, 200, portfolio);
     }
@@ -1587,6 +1608,23 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       const result = await confirmBuyQuote(pool, { accountId, quoteId, paySig });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, result);
+    }
+    // ── Money-route geo + OFAC gate (launchpad phase 8) ───────────────────────
+    // Every MUTATING token-money route (vote cast, presale, mint, distribute,
+    // lock, curve, power-credit) is screened before it runs: a sanctioned
+    // country (edge geo) or a sanctioned payer wallet (OFAC SDN) is blocked
+    // with a 403. Flag-gated (MONEY_GEO_GATE_ENABLED): a no-op in dev and the
+    // asset-only early phases, enforcing on mainnet where counsel requires it.
+    const tokenMoneyRoute =
+      /^\/api\/realms\/(\d+)\/token\/(vote|presale|mint|distribute|lock|curve|power-credit)/.test(
+        url,
+      );
+    if (req.method === 'POST' && tokenMoneyRoute) {
+      const screenAccountId = await bearerActiveAccount(req, res);
+      if (screenAccountId === null) return;
+      const w = await walletForAccount(screenAccountId);
+      const verdict = screenMoneyRequest(req, w ? w.pubkey : null, SOLANA_RPC_URL);
+      if (!verdict.ok) return json(res, 403, { error: verdict.reason });
     }
     // ── Realm token launchpad (phases 0 to 2): registry + vote + presale ──────
     // All routes follow the branch's realm route pattern: bearer auth, typed

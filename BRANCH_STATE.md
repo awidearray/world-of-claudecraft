@@ -1,6 +1,6 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 7 of
+Realm Token Launchpad, phases 0 to 8 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
@@ -31,7 +31,8 @@ the bottom).
 | 224d03e87 | 3 | `feat(realm-mint)`: Token-2022 mint factory, allocation locks, listing gate |
 | ffdc994e3 | 4+5 | `feat(realm-curve)`: Meteora DBC launch + DAMM v2 graduation + fee keeper |
 | a344499b3 | 6 | `feat(levy-fund)`: display-only Levy Street Fund portfolio + tiered valuation |
-| (HEAD) | 7 | `feat(realm-currency)`: IWorld currency re-skin + power-realm token-to-copper |
+| 6cef3a417 | 7 | `feat(realm-currency)`: IWorld currency re-skin + power-realm token-to-copper |
+| (HEAD) | 8 | `feat(reg-hardening)`: OFAC/geo money gate + counsel gate + ToS + clean-score |
 
 ## Phase 0: registry + identity
 
@@ -433,6 +434,45 @@ Acceptance:
 
 GATE: the power path is the same high-reg-risk band as the wager features; it
 stays flag-default-off until the phase-8 counsel sign-off + geo screening.
+
+## Phase 8: regulatory hardening + mainnet gate
+
+Files: `server/money_geo_gate.ts` (the OFAC SDN + IP-geo money-route middleware +
+the counsel/mainnet gate helpers), `server/main.ts` (the screen applied to every
+mutating token-money route + the Levy Fund page counsel gate),
+`docs/legal/facilitator-tos.md` (the non-custodial facilitator terms for counsel
+review), `docs/legal/counsel-signoff.md` (the mainnet enablement checklist +
+sign-off record). Pay-to-win labeling was already surfaced from phase 0 (the
+directory currency carries `monetizationPolicy`; the launchpad catalog carries
+`policy.power` / `policy.powerBanner`).
+
+The gate posture (fail-closed on mainnet): `screenMoneyRequest` runs for every
+mutating token-money route (vote / presale / mint / distribute / lock / curve /
+power-credit). On a NON-mainnet cluster it passes (devnet money is not real). On
+MAINNET it requires BOTH the geo gate enabled (`MONEY_GEO_GATE_ENABLED=1`) AND
+the counsel sign-off recorded (`LAUNCHPAD_COUNSEL_SIGNOFF` non-empty); without
+either it returns 403 `geo_gate_required`. With both, it screens the edge
+country (Cloudflare CF-IPCountry, fail-closed on unknown) against
+`MONEY_BLOCKED_COUNTRIES` (defaults to the sanctioned set) and the payer wallet
+against the OFAC SDN list (`OFAC_SDN_WALLETS` / `OFAC_SDN_WALLETS_FILE`). The
+display-only Levy Fund page carries the same counsel gate on mainnet (PRD
+section 8's Investment-Company-Act memo precondition); `mainnetMoneyEnabled` is
+the single feature-gate helper every risky path composes.
+
+Acceptance:
+- `tests/money_geo_gate.test.ts` (16 tests): the pure verdict by cluster, the
+  mainnet gate+counsel requirement, the geo-blocked + sanctioned-wallet +
+  fail-closed-on-unknown branches, the SDN + country + counsel loaders, the edge
+  country resolution, the `mainnetMoneyEnabled` feature gate, AND the RugCheck /
+  Birdeye CLEAN-SCORE acceptance (a boring metadata-only mint scores clean by
+  construction via `mintRugSummary`; every rug vector reddens it).
+- Everything is flag-gated default-off; the money-route HTTP tests are
+  unaffected (no test drives a money route over HTTP).
+
+GATE (unchanged, human): mainnet enablement of the risky surfaces requires the
+counsel sign-off + the allocation split re-confirmed + the geo/OFAC lists +
+the phase-4 mainnet dry-run + ops-owned key material, all recorded in
+`docs/legal/counsel-signoff.md`. The code fails closed until they are.
 
 ## UI (panel for phases 0 to 2)
 
