@@ -273,6 +273,58 @@ export function launchView(l: LaunchWire, status: LaunchpadStatus): LaunchViewMo
   };
 }
 
+// ── Curve (phase 4) view ─────────────────────────────────────────────────────
+
+export interface CurveWire {
+  host: 'meteora-dbc' | 'fixed-rate-stub' | null;
+  config: {
+    quoteMint: string;
+    migrationQuoteThresholdBase: string;
+    partnerLockedLpBps: number;
+    creatorLockedLpBps: number;
+  } | null;
+  curve: {
+    poolAddress: string;
+    quoteReserveBase: string;
+    progressBps: number;
+    migrated: boolean;
+  } | null;
+  graduated: boolean;
+  poolAddress: string | null;
+  lpLockAddress: string | null;
+}
+
+export interface CurveViewModel {
+  host: 'meteora-dbc' | 'fixed-rate-stub' | null;
+  created: boolean;
+  poolAddress: string | null;
+  // 0..100 whole percent toward the migration threshold, for the progress bar.
+  progressPct: number;
+  raisedBase: bigint;
+  thresholdBase: bigint;
+  quoteDecimals: number; // SOL 9, SPL quote assets 6 (USDC-style display)
+  lockedLpBps: number;
+  migrated: boolean;
+  graduated: boolean;
+  dammPoolAddress: string | null;
+}
+
+export function curveView(c: CurveWire): CurveViewModel {
+  return {
+    host: c.host,
+    created: c.curve !== null,
+    poolAddress: c.curve?.poolAddress ?? null,
+    progressPct: Math.min(100, Math.floor((c.curve?.progressBps ?? 0) / 100)),
+    raisedBase: BigInt(c.curve?.quoteReserveBase ?? '0'),
+    thresholdBase: BigInt(c.config?.migrationQuoteThresholdBase ?? '0'),
+    quoteDecimals: (c.config?.quoteMint ?? '') === '' ? 9 : 6,
+    lockedLpBps: (c.config?.partnerLockedLpBps ?? 0) + (c.config?.creatorLockedLpBps ?? 0),
+    migrated: c.curve?.migrated ?? false,
+    graduated: c.graduated,
+    dammPoolAddress: c.poolAddress,
+  };
+}
+
 // Basis points as a whole-ish percent string ("12" or "12.5"), exact.
 export function bpsPercent(bps: number): string {
   const whole = Math.floor(bps / 100);

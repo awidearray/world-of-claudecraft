@@ -9,6 +9,7 @@ import { t } from '../src/ui/i18n';
 import { ERR_KEYS, messageForError, STATUS_KEYS } from '../src/ui/realm_launchpad';
 import {
   bpsPercent,
+  curveView,
   formatBaseAmount,
   type LaunchWire,
   launchpadChecklist,
@@ -304,6 +305,57 @@ describe('launchView', () => {
   });
 });
 
+describe('curveView', () => {
+  const wire = {
+    host: 'meteora-dbc' as const,
+    config: {
+      quoteMint: '',
+      migrationQuoteThresholdBase: '100000000000',
+      partnerLockedLpBps: 6000,
+      creatorLockedLpBps: 4000,
+    },
+    curve: {
+      poolAddress: 'Pool111',
+      quoteReserveBase: '25000000000',
+      progressBps: 2500,
+      migrated: false,
+    },
+    graduated: false,
+    poolAddress: null,
+    lpLockAddress: null,
+  };
+
+  it('maps the live curve state to the render model', () => {
+    const v = curveView(wire);
+    expect(v.created).toBe(true);
+    expect(v.progressPct).toBe(25);
+    expect(v.raisedBase).toBe(25_000_000_000n);
+    expect(v.thresholdBase).toBe(100_000_000_000n);
+    expect(v.quoteDecimals).toBe(9); // native SOL quote
+    expect(v.lockedLpBps).toBe(10_000);
+    expect(v.migrated).toBe(false);
+  });
+
+  it('handles the not-yet-created and graduated shapes', () => {
+    const bare = curveView({ ...wire, curve: null, config: null });
+    expect(bare.created).toBe(false);
+    expect(bare.progressPct).toBe(0);
+    expect(bare.thresholdBase).toBe(0n);
+
+    const grad = curveView({ ...wire, graduated: true, poolAddress: 'Damm111' });
+    expect(grad.graduated).toBe(true);
+    expect(grad.dammPoolAddress).toBe('Damm111');
+  });
+
+  it('displays SPL quote assets at 6 decimals', () => {
+    const usdc = curveView({
+      ...wire,
+      config: { ...wire.config, quoteMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
+    });
+    expect(usdc.quoteDecimals).toBe(6);
+  });
+});
+
 describe('bpsPercent', () => {
   it('renders whole and fractional percents exactly', () => {
     expect(bpsPercent(6000)).toBe('60');
@@ -393,6 +445,21 @@ describe('ERR_KEYS server-code coverage', () => {
     'locks_not_verified',
     'not_listable',
     'missing_sig',
+    // curve (phase 4): bonding-curve listing + graduation
+    'launchpad_disabled',
+    'launchpad_config_unreadable',
+    'curve_already_created',
+    'host_requires_dbc_mint',
+    'invalid_base_mint',
+    'curve_not_found',
+    'wrong_curve_creator',
+    'not_live',
+    'not_migrated',
+    'graduation_not_found',
+    'lp_not_permanently_locked',
+    'not_damm_v2',
+    'no_locked_vesting',
+    'no_migration_threshold',
     // route-level rate limit literal
     'too many requests, slow down',
   ];

@@ -277,6 +277,15 @@ import {
   rolesForAccountOnRealm,
 } from './realm_db';
 import {
+  type CurveDeps,
+  confirmCurve,
+  confirmGraduation,
+  curveInfo,
+  prepareCurve,
+  realmLaunchpadHost,
+} from './realm_launchpad';
+import { liveDbcGateway } from './realm_launchpad_dbc';
+import {
   configurePresale,
   confirmPresaleContribution,
   confirmPresaleRefund,
@@ -301,7 +310,13 @@ import {
   type RegisterDeps,
   registerRealmToken,
 } from './realm_token';
-import { listRealmTokens, realmTokenDb, realmTokenLaunchStore } from './realm_token_db';
+import {
+  listRealmTokens,
+  realmTokenDb,
+  realmTokenLaunchStore,
+  recordCurveListed,
+  recordGraduation,
+} from './realm_token_db';
 import {
   confirmMintCreate,
   launchStatus,
@@ -1779,6 +1794,77 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { verified: result.verified, checks: result.checks });
+    }
+    // ── Realm token curve (phase 4): bonding-curve listing + graduation ───────
+    // Flag-gated OFF by default (REALM_LAUNCHPAD_ENABLED; the mainnet dry-run
+    // needs the owner's sign-off before this is enabled anywhere real). All
+    // arms read the chain; all are rate-limited. The server signs nothing on
+    // this path (the founder signs the host-built pool creation).
+    const curveDeps = (): CurveDeps =>
+      ({
+        ...launchpadDeps(),
+        launches: realmTokenLaunchStore(pool),
+        host: realmLaunchpadHost({ liveGateway: liveDbcGateway }),
+        recordCurveListed: (
+          realmId: number,
+          fields: Parameters<CurveDeps['recordCurveListed']>[1],
+        ) => recordCurveListed(pool, realmId, fields),
+        recordGraduation: (realmId: number, fields: Parameters<CurveDeps['recordGraduation']>[1]) =>
+          recordGraduation(pool, realmId, fields),
+      }) as unknown as CurveDeps;
+    const realmCurveMatch = /^\/api\/realms\/(\d+)\/token\/curve$/.exec(url);
+    if (req.method === 'GET' && realmCurveMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await curveInfo(curveDeps(), { realmId: Number(realmCurveMatch[1]) });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { curve: result.curve });
+    }
+    const curvePrepareMatch = /^\/api\/realms\/(\d+)\/token\/curve\/prepare$/.exec(url);
+    if (req.method === 'POST' && curvePrepareMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await prepareCurve(curveDeps(), {
+        accountId,
+        realmId: Number(curvePrepareMatch[1]),
+        name: typeof body.name === 'string' ? body.name : undefined,
+        uri: typeof body.uri === 'string' ? body.uri : undefined,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, {
+        txBase64: result.txBase64,
+        baseMint: result.baseMint,
+        host: result.host,
+      });
+    }
+    const curveConfirmMatch = /^\/api\/realms\/(\d+)\/token\/curve\/confirm$/.exec(url);
+    if (req.method === 'POST' && curveConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await confirmCurve(curveDeps(), {
+        accountId,
+        realmId: Number(curveConfirmMatch[1]),
+        baseMint: typeof body.baseMint === 'string' ? body.baseMint : undefined,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { status: result.status, curveAddress: result.curveAddress });
+    }
+    const curveGraduationMatch = /^\/api\/realms\/(\d+)\/token\/curve\/graduation$/.exec(url);
+    if (req.method === 'POST' && curveGraduationMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await confirmGraduation(curveDeps(), {
+        accountId,
+        realmId: Number(curveGraduationMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { status: result.status, poolAddress: result.poolAddress });
     }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {

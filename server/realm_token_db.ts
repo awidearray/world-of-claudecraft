@@ -326,6 +326,44 @@ export async function markLocksVerified(db: Queryable, realmId: number): Promise
   return (res.rowCount ?? 0) > 0;
 }
 
+// ── Curve listing + graduation (phase 4) ─────────────────────────────────────
+
+// Bind the curve to the token at listing: sets the mint (when the host created
+// it, i.e. the DBC path; a phase 3 pre-set mint must match), the curve pool,
+// and the per-realm fee-claimer PDA. Guarded on "no curve yet" so a double
+// confirm matches nothing; a mint reused across realms violates the UNIQUE.
+export async function recordCurveListed(
+  db: Queryable,
+  realmId: number,
+  fields: { mint: string; curveAddress: string; feeClaimerPda: string },
+): Promise<boolean> {
+  const res = await db.query(
+    `UPDATE realm_tokens
+        SET mint = $2, curve_address = $3, fee_claimer_pda = $4, updated_at = now()
+      WHERE realm_id = $1 AND curve_address IS NULL AND status = 'funded'
+        AND (mint IS NULL OR mint = $2)`,
+    [realmId, fields.mint, fields.curveAddress, fields.feeClaimerPda],
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+// Record a verified graduation: the DAMM v2 pool + the permanent-lock proof
+// address, flipping live -> graduated in the same guarded statement.
+export async function recordGraduation(
+  db: Queryable,
+  realmId: number,
+  fields: { poolAddress: string; lpLockAddress: string },
+): Promise<RealmToken | null> {
+  const res = await db.query(
+    `UPDATE realm_tokens
+        SET pool_address = $2, lp_lock_address = $3, status = 'graduated', updated_at = now()
+      WHERE realm_id = $1 AND status = 'live'
+      RETURNING ${TOKEN_COLS}`,
+    [realmId, fields.poolAddress, fields.lpLockAddress],
+  );
+  return res.rows[0] ? rowToToken(res.rows[0]) : null;
+}
+
 // The pool-bound RealmTokenLaunchStore the routes use; tests substitute an
 // in-memory fake implementing the interface from realm_token_mint.ts.
 export function realmTokenLaunchStore(pool: Pool): RealmTokenLaunchStore {

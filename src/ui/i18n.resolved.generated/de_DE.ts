@@ -309,6 +309,21 @@ export const de_DE: EnTranslations = {
         "unknown": "Additional check"
       }
     },
+    "curve": {
+      "title": "Bonding Curve",
+      "subtitle": "The token trades on an open curve at one price for everyone. At the migration threshold it graduates to a liquidity pool whose LP is permanently locked.",
+      "lpLockLine": "{pct}% of the graduation LP is permanently locked by the launch configuration.",
+      "poolLabel": "Curve pool:",
+      "progressAria": "Progress toward the migration threshold",
+      "progress": "{raised} of {threshold} raised toward migration",
+      "migratedNote": "The curve reached its threshold and migrated. Verify the graduation below.",
+      "graduatedNote": "Graduated: liquidity pool with permanently locked LP:",
+      "openBtn": "Open the Curve",
+      "openHint": "Builds the pool creation for your wallet to sign. The curve host mints the token and holds the curve supply; nothing passes through this server.",
+      "verifyBtn": "Verify Curve Listing",
+      "verifyHint": "Once your pool creation transaction finalizes, verify it to list the token.",
+      "graduateBtn": "Verify Graduation"
+    },
     "flow": {
       "registering": "Registering the token...",
       "openingVote": "Opening the vote...",
@@ -325,7 +340,14 @@ export const de_DE: EnTranslations = {
       "mintDone": "Mint created and verified.",
       "verifying": "Verifying the locks on chain...",
       "verified": "Launch verified: every lock is on chain.",
-      "notVerified": "Verification found problems. Review the checklist below."
+      "notVerified": "Verification found problems. Review the checklist below.",
+      "preparingCurve": "Preparing the curve pool...",
+      "signingCurve": "Approve the pool creation in your wallet...",
+      "curveSubmitted": "Pool creation sent. Verify the listing once it finalizes.",
+      "verifyingCurve": "Verifying the curve on chain...",
+      "curveListed": "The token is live on its curve.",
+      "verifyingGraduation": "Verifying the graduation on chain...",
+      "graduated": "Graduated: the LP is permanently locked."
     },
     "err": {
       "not_realm_owner": "You do not operate that realm.",
@@ -396,6 +418,20 @@ export const de_DE: EnTranslations = {
       "locks_not_verified": "The locks are not verified on chain yet.",
       "not_listable": "The token cannot list from this state.",
       "missing_sig": "The confirmation was incomplete. Start again.",
+      "launchpad_disabled": "The curve launchpad is not enabled on this server yet.",
+      "launchpad_config_unreadable": "The launch configuration could not be read. Try again shortly.",
+      "curve_already_created": "The curve already exists.",
+      "host_requires_dbc_mint": "This curve host creates the token itself; a pre-minted token cannot enter it.",
+      "invalid_base_mint": "That base mint address is not valid.",
+      "curve_not_found": "The curve pool was not found on chain yet. Try again in a moment.",
+      "wrong_curve_creator": "The curve pool must be created by your linked wallet.",
+      "not_live": "The token is not live on a curve.",
+      "not_migrated": "The curve has not reached its migration threshold.",
+      "graduation_not_found": "The graduated liquidity pool was not found on chain yet.",
+      "lp_not_permanently_locked": "The liquidity is not permanently locked.",
+      "not_damm_v2": "The launch configuration does not graduate to the locked pool.",
+      "no_locked_vesting": "The launch configuration carries no locked vesting.",
+      "no_migration_threshold": "The launch configuration has no migration threshold.",
       "rate_limited": "Too many requests. Slow down and try again.",
       "wallet_mismatch": "Connect the wallet you linked to your account.",
       "generic": "Something went wrong. Try again."

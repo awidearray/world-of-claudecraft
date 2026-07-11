@@ -309,6 +309,21 @@ export const ja_JP: EnTranslations = {
         "unknown": "追加チェック"
       }
     },
+    "curve": {
+      "title": "ボンディングカーブ",
+      "subtitle": "トークンは誰でも同じ価格のオープンカーブで取引されます。移行しきい値に達すると、LP が永久ロックされる流動性プールへ卒業します。",
+      "lpLockLine": "ローンチ設定により、卒業 LP の {pct}% が永久ロックされます。",
+      "poolLabel": "カーブプール:",
+      "progressAria": "移行しきい値への進捗",
+      "progress": "移行まで {raised} / {threshold} 調達済み",
+      "migratedNote": "カーブはしきい値に達し移行しました。下で卒業を検証してください。",
+      "graduatedNote": "卒業済み: LP が永久ロックされた流動性プール:",
+      "openBtn": "カーブを開く",
+      "openHint": "ウォレットが署名するプール作成を構築します。カーブホストがトークンを鋳造しカーブ供給を保持します。資金はこのサーバーを経由しません。",
+      "verifyBtn": "カーブ上場を検証",
+      "verifyHint": "プール作成トランザクションが確定したら、検証してトークンを上場します。",
+      "graduateBtn": "卒業を検証"
+    },
     "flow": {
       "registering": "トークンを登録中...",
       "openingVote": "投票を開始中...",
@@ -325,7 +340,14 @@ export const ja_JP: EnTranslations = {
       "mintDone": "ミントを作成し検証しました。",
       "verifying": "オンチェーンでロックを検証しています...",
       "verified": "ローンチを検証しました。すべてのロックがオンチェーンにあります。",
-      "notVerified": "検証で問題が見つかりました。下のチェックリストを確認してください。"
+      "notVerified": "検証で問題が見つかりました。下のチェックリストを確認してください。",
+      "preparingCurve": "カーブプールを準備しています...",
+      "signingCurve": "ウォレットでプール作成を承認してください...",
+      "curveSubmitted": "プール作成を送信しました。確定後に上場を検証してください。",
+      "verifyingCurve": "オンチェーンでカーブを検証しています...",
+      "curveListed": "トークンはカーブ上でライブになりました。",
+      "verifyingGraduation": "オンチェーンで卒業を検証しています...",
+      "graduated": "卒業しました。LP は永久ロックされています。"
     },
     "err": {
       "not_realm_owner": "そのワールドを運営していません。",
@@ -396,6 +418,20 @@ export const ja_JP: EnTranslations = {
       "locks_not_verified": "ロックはまだオンチェーンで検証されていません。",
       "not_listable": "この状態ではトークンを公開できません。",
       "missing_sig": "確認が不完全でした。最初からやり直してください。",
+      "launchpad_disabled": "このサーバーではカーブローンチパッドはまだ有効ではありません。",
+      "launchpad_config_unreadable": "ローンチ設定を読み取れませんでした。しばらくしてからお試しください。",
+      "curve_already_created": "カーブは既に存在します。",
+      "host_requires_dbc_mint": "このカーブホストはトークンを自ら作成します。事前鋳造トークンは入れられません。",
+      "invalid_base_mint": "そのベースミントアドレスは無効です。",
+      "curve_not_found": "カーブプールがまだオンチェーンで見つかりません。しばらくしてからお試しください。",
+      "wrong_curve_creator": "カーブプールはリンクしたウォレットで作成する必要があります。",
+      "not_live": "トークンはカーブ上でライブではありません。",
+      "not_migrated": "カーブは移行しきい値に達していません。",
+      "graduation_not_found": "卒業後の流動性プールがまだオンチェーンで見つかりません。",
+      "lp_not_permanently_locked": "流動性は永久ロックされていません。",
+      "not_damm_v2": "ローンチ設定はロック付きプールへ卒業しません。",
+      "no_locked_vesting": "ローンチ設定にロックされたベスティングがありません。",
+      "no_migration_threshold": "ローンチ設定に移行しきい値がありません。",
       "rate_limited": "リクエストが多すぎます。少し待ってからもう一度お試しください。",
       "wallet_mismatch": "アカウントにリンクしたウォレットを接続してください。",
       "generic": "問題が発生しました。もう一度お試しください。"

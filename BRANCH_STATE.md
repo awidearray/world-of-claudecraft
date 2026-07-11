@@ -1,11 +1,11 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 3 of
+Realm Token Launchpad, phases 0 to 4 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
-the bottom). Phase 3 (mint factory + allocation/locks) is below the phase 0 to
-2 record.
+the bottom). Phases 3 (mint factory + locks) and 4 (bonding curve + DAMM v2
+graduation) are recorded below the phase 0 to 2 record.
 
 ## Locked decisions honored
 
@@ -218,6 +218,74 @@ ops-owned key material (root CLAUDE.md) and is not present. Everything
 chain-side is exercised through the injected `LaunchChainReader` fixtures; the
 dry-run should run before enabling the routes anywhere real (the factory is
 additionally fail-closed on `LEVY_FUND_WALLET`, unset by default).
+
+## Phase 4: bonding curve + DAMM v2 graduation (Launchpad seam)
+
+Files: `server/realm_launchpad.ts` (the thin `Launchpad` interface: partner
+config read, pool creation, curve state, graduation state; a Raydium adapter
+is a drop-in sibling), `server/realm_launchpad_dbc.ts` (the ONLY module that
+imports the Meteora SDKs: `@meteora-ag/dynamic-bonding-curve-sdk` 1.5.10 +
+`@meteora-ag/cp-amm-sdk` 1.4.4; every read maps failure to null, the one
+builder partial-signs with a transient base-mint keypair). Two hosts behind
+`realmLaunchpadHost()` (flag-gated OFF by default via
+`REALM_LAUNCHPAD_ENABLED`):
+
+- `meteora-dbc`: partner config read LIVE on every decision (quote mint, fee
+  claimer, migration threshold, LP-lock percentages: never hardcoded, pinned
+  by test that the threshold flows from the injected config read). Listing
+  requires the config's STRUCTURAL guarantees (`configGuaranteeIssues`): DAMM
+  v2 migration, partner+creator permanent-locked LP at or above
+  `REALM_LP_LOCK_MIN_BPS` (default the full 10000), a locked-vesting schedule
+  (the DBC creates it through the Jupiter Locker program at migration), and a
+  real threshold. Pool creation: the DBC program mints the token itself (the
+  SDK's createPool; base mint signs), so the founder co-signs the server-built
+  partial-signed tx; confirm verifies the pool ON-CHAIN under OUR config with
+  the founder as creator, records mint + curve + per-realm fee-claimer PDA
+  (`realmFeeClaimerPda`, a PDA of the realm escrow program, never an EOA) and
+  flips funded -> live. Graduation: curve reports migrated AND the live DAMM
+  v2 pool's permanentLockLiquidity share is at/above the floor -> live ->
+  graduated with pool + lock proof addresses pinned.
+- `fixed-rate-stub` (the PRD's devnet fixed-rate stub host): REFUSES mainnet,
+  lists the phase 3 pre-minted token only through the phase 3 gate (mint
+  confirmed + all three Jupiter Locks verified on-chain), never graduates.
+
+DB: `recordCurveListed` (guarded: no curve yet, funded, mint NULL-or-match)
+and `recordGraduation` (guarded CAS live -> graduated) in realm_token_db.ts.
+Routes: `GET .../token/curve`, `POST .../token/curve/prepare|confirm`,
+`POST .../token/curve/graduation`, all rate-limited, inventoried, classified.
+Client: curve Api methods + wire types, the curve panel section (live
+migration progress bar against the on-chain threshold, LP-lock share line,
+Solscan proof links, open-curve / verify-listing / verify-graduation founder
+flows), `curveView` pure core, `launchpad.curve.*` i18n + five non-Latin M16
+fills, 14 new error codes mapped in ERR_KEYS and pinned by the coverage test.
+
+Acceptance:
+- `tests/realm_launchpad_curve.test.ts` (22): exact progress math at the
+  boundaries; every structural guarantee flags; host factory OFF by default
+  and each selection path; stub refuses mainnet + requires the pre-minted
+  token + never graduates; Meteora adapter rejects pre-minted tokens and
+  foreign-config pools; stub listing runs the phase 3 verified-locks gate;
+  Meteora listing verifies pool binding (missing pool / foreign creator / bad
+  mint all rejected); graduation only when migrated AND fully
+  permanent-locked (partial lock rejected), double-graduation matches nothing.
+- `tests/realm_launchpad_view.test.ts` extended (curveView + the 14 new
+  codes); tsc clean; server esbuild bundle builds WITH the Meteora SDKs;
+  architecture + S3 + M16 suites green; biome clean on changed files.
+
+Phase 4 gate status: the PRD acceptance is a MAINNET dry-run (curve trades,
+migrates at threshold, LP provably locked) that requires the owner's explicit
+sign-off; not run here, and the whole surface ships default-off. Owner
+decisions surfaced for that dry-run: (1) launch-mode sequencing: on the DBC
+host the program mints the token, so the phase 3 factory path (pre-mint +
+three jup-locks before listing) applies to the stub/self-hosted mode, while
+DBC-native launches get their guarantees from the config (locked vesting =
+the founder bucket; LP permanently locked); the levy + treasury buckets for
+DBC-native launches must come from post-migration leftover withdrawal locked
+via phase 3's verifyLaunch, or from partner fee share (phase 5): confirm the
+preferred shape before mainnet. (2) The partner config itself is created by
+platform ops with their own key (the SDK's partner.createConfig): the
+feeClaimer recorded there is ops-owned; the per-realm PDA identity is stored
+on realm_tokens.fee_claimer_pda for phase 5 attribution.
 
 ## Invariant confirmations
 

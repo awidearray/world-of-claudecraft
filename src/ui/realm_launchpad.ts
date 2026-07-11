@@ -9,6 +9,7 @@
 
 import type {
   Api,
+  RealmCurveInfo,
   RealmLaunchCheck,
   RealmLaunchStatus,
   RealmPresaleQuote,
@@ -21,6 +22,8 @@ import type { TranslationKey } from './i18n';
 import { formatNumber, t } from './i18n';
 import {
   bpsPercent,
+  type CurveViewModel,
+  curveView,
   formatBaseAmount,
   type LaunchViewModel,
   launchpadChecklist,
@@ -180,6 +183,21 @@ export const ERR_KEYS = {
   locks_not_verified: 'launchpad.err.locks_not_verified',
   not_listable: 'launchpad.err.not_listable',
   missing_sig: 'launchpad.err.missing_sig',
+  // curve (phase 4): bonding-curve listing + graduation
+  launchpad_disabled: 'launchpad.err.launchpad_disabled',
+  launchpad_config_unreadable: 'launchpad.err.launchpad_config_unreadable',
+  curve_already_created: 'launchpad.err.curve_already_created',
+  host_requires_dbc_mint: 'launchpad.err.host_requires_dbc_mint',
+  invalid_base_mint: 'launchpad.err.invalid_base_mint',
+  curve_not_found: 'launchpad.err.curve_not_found',
+  wrong_curve_creator: 'launchpad.err.wrong_curve_creator',
+  not_live: 'launchpad.err.not_live',
+  not_migrated: 'launchpad.err.not_migrated',
+  graduation_not_found: 'launchpad.err.graduation_not_found',
+  lp_not_permanently_locked: 'launchpad.err.lp_not_permanently_locked',
+  not_damm_v2: 'launchpad.err.not_damm_v2',
+  no_locked_vesting: 'launchpad.err.no_locked_vesting',
+  no_migration_threshold: 'launchpad.err.no_migration_threshold',
   'too many requests, slow down': 'launchpad.err.rate_limited',
 } satisfies Record<string, TranslationKey>;
 
@@ -205,6 +223,10 @@ export class RealmLaunchpad {
   private page: RealmTokenPage | null = null;
   private launch: RealmLaunchStatus | null = null;
   private lastChecks: RealmLaunchCheck[] | null = null;
+  private curve: RealmCurveInfo | null = null;
+  // The DBC base mint returned by curve/prepare, held until the founder's
+  // creation transaction finalizes and .../curve/confirm verifies it.
+  private pendingCurveMint: string | null = null;
   private busy = false;
   private selectedCurrency: RealmPresaleRail['currency'] | null = null;
 
@@ -226,15 +248,26 @@ export class RealmLaunchpad {
     try {
       this.page = await this.host.api.realmToken(this.host.realm.realmId);
       const status = this.page.token?.status;
-      this.launch =
-        status === 'funded' || status === 'live' || status === 'graduated'
-          ? await this.host.api.realmLaunch(this.host.realm.realmId)
-          : null;
+      const launchable = status === 'funded' || status === 'live' || status === 'graduated';
+      this.launch = launchable ? await this.host.api.realmLaunch(this.host.realm.realmId) : null;
+      this.curve = launchable ? await this.fetchCurve() : null;
     } catch (err) {
       this.root.innerHTML = `<p class="ro-hint ro-hint-muted">${esc(messageForError(err))}</p>`;
       return;
     }
     this.render();
+  }
+
+  // The curve surface is flag-gated server-side (mainnet dry-run sign-off);
+  // a disabled host is an expected state the panel renders without, never an
+  // error that hides the rest of the page.
+  private async fetchCurve(): Promise<RealmCurveInfo | null> {
+    try {
+      return await this.host.api.realmCurve(this.host.realm.realmId);
+    } catch (err) {
+      if (err instanceof ApiError && err.message === 'launchpad_disabled') return null;
+      throw err;
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -264,6 +297,7 @@ export class RealmLaunchpad {
           this.launchHtml(launchView(this.launch, status as Parameters<typeof launchView>[1])),
         );
       }
+      if (this.curve) sections.push(this.curveHtml(curveView(this.curve), status));
     }
     sections.push(
       `<button id="lp-back" class="btn btn-secondary" type="button">${esc(t('launchpad.back'))}</button>`,
@@ -610,6 +644,63 @@ export class RealmLaunchpad {
       <ul class="lp-checks" aria-label="${esc(t('launchpad.launch.checksAria'))}">${rows}</ul>`;
   }
 
+  // The phase 4 curve section: live migration progress against the on-chain
+  // threshold, the LP-lock share the config commits to, graduation proof
+  // links, and the founder's open-curve / verify flows.
+  private curveHtml(v: CurveViewModel, status: string): string {
+    const page = this.page;
+    const lines: string[] = [];
+    lines.push(`<h4 class="ro-h">${esc(t('launchpad.curve.title'))}</h4>`);
+    lines.push(`<p class="ro-sub">${esc(t('launchpad.curve.subtitle'))}</p>`);
+    lines.push(
+      `<p class="ro-hint ro-hint-muted">${esc(
+        t('launchpad.curve.lpLockLine', { pct: bpsPercent(v.lockedLpBps) }),
+      )}</p>`,
+    );
+    if (v.created && v.poolAddress) {
+      lines.push(
+        `<p class="ro-hint lp-escrow">${esc(t('launchpad.curve.poolLabel'))} <a href="https://solscan.io/account/${esc(v.poolAddress)}" target="_blank" rel="noopener noreferrer">${esc(v.poolAddress)}</a></p>`,
+      );
+      lines.push(`
+        <div class="lp-bar" role="progressbar" aria-label="${esc(t('launchpad.curve.progressAria'))}"
+          aria-valuemin="0" aria-valuemax="100" aria-valuenow="${v.progressPct}">
+          <div class="lp-bar-fill" style="width:${v.progressPct}%"></div>
+        </div>
+        <p class="ro-hint">${esc(
+          t('launchpad.curve.progress', {
+            raised: formatBaseAmount(v.raisedBase, v.quoteDecimals),
+            threshold: formatBaseAmount(v.thresholdBase, v.quoteDecimals),
+          }),
+        )}</p>`);
+      if (v.migrated && !v.graduated) {
+        lines.push(`<p class="ro-hint">${esc(t('launchpad.curve.migratedNote'))}</p>`);
+      }
+    }
+    if (v.graduated && v.dammPoolAddress) {
+      lines.push(
+        `<p class="ro-hint lp-escrow">${esc(t('launchpad.curve.graduatedNote'))} <a href="https://solscan.io/account/${esc(v.dammPoolAddress)}" target="_blank" rel="noopener noreferrer">${esc(v.dammPoolAddress)}</a></p>`,
+      );
+    }
+    if (page?.isOwner) {
+      if (status === 'funded' && !v.created && !this.pendingCurveMint) {
+        lines.push(`
+          <button id="lp-curve-open" class="btn btn-primary" type="button">${esc(t('launchpad.curve.openBtn'))}</button>
+          <p class="ro-hint ro-hint-muted">${esc(t('launchpad.curve.openHint'))}</p>`);
+      }
+      if (this.pendingCurveMint) {
+        lines.push(`
+          <button id="lp-curve-verify" class="btn btn-primary" type="button">${esc(t('launchpad.curve.verifyBtn'))}</button>
+          <p class="ro-hint ro-hint-muted">${esc(t('launchpad.curve.verifyHint'))}</p>`);
+      }
+      if (status === 'live' && v.migrated && !v.graduated) {
+        lines.push(
+          `<button id="lp-curve-graduate" class="btn btn-primary" type="button">${esc(t('launchpad.curve.graduateBtn'))}</button>`,
+        );
+      }
+    }
+    return `<section class="lp-curve" aria-label="${esc(t('launchpad.curve.title'))}">${lines.join('')}</section>`;
+  }
+
   private presaleConfigHtml(): string {
     const railFields = (['SOL', 'USDC', 'WOC'] as const)
       .map(
@@ -650,6 +741,9 @@ export class RealmLaunchpad {
     this.on('#lp-finalize', () => void this.finalizeFlow());
     this.on('#lp-mint-create', () => void this.mintCreateFlow());
     this.on('#lp-verify-locks', () => void this.verifyLocksFlow());
+    this.on('#lp-curve-open', () => void this.openCurveFlow());
+    this.on('#lp-curve-verify', () => void this.verifyCurveFlow());
+    this.on('#lp-curve-graduate', () => void this.graduationFlow());
     const currency = this.root.querySelector<HTMLSelectElement>('#lp-currency');
     currency?.addEventListener('change', () => {
       this.selectedCurrency = currency.value as RealmPresaleRail['currency'];
@@ -809,6 +903,53 @@ export class RealmLaunchpad {
       await this.host.api.confirmRealmMint(this.host.realm.realmId, sig);
       await this.reload();
       this.setStatus(t('launchpad.flow.mintDone'), 'success');
+    });
+  }
+
+  // Open the bonding curve: the host builds the pool creation (Meteora needs
+  // the founder's co-signature; the stub needs no chain write and confirms
+  // immediately). The base mint is held until confirm verifies the pool.
+  private async openCurveFlow(): Promise<void> {
+    await this.run(async () => {
+      const wallet = await this.host.ensureWalletReady();
+      if (!wallet) return;
+      this.setStatus(t('launchpad.flow.preparingCurve'), 'info');
+      const prep = await this.host.api.prepareRealmCurve(this.host.realm.realmId);
+      if (prep.txBase64) {
+        this.setStatus(t('launchpad.flow.signingCurve'), 'info');
+        const sig = await this.host.signServerTransaction(prep.txBase64);
+        if (!sig) return; // cancelled in the wallet
+        this.pendingCurveMint = prep.baseMint;
+        this.render();
+        this.setStatus(t('launchpad.flow.curveSubmitted'), 'info');
+        return;
+      }
+      // The stub host has no chain write: confirm straight away.
+      this.setStatus(t('launchpad.flow.verifyingCurve'), 'info');
+      await this.host.api.confirmRealmCurve(this.host.realm.realmId);
+      await this.reload();
+      this.setStatus(t('launchpad.flow.curveListed'), 'success');
+    });
+  }
+
+  private async verifyCurveFlow(): Promise<void> {
+    const baseMint = this.pendingCurveMint;
+    if (!baseMint) return;
+    await this.run(async () => {
+      this.setStatus(t('launchpad.flow.verifyingCurve'), 'info');
+      await this.host.api.confirmRealmCurve(this.host.realm.realmId, baseMint);
+      this.pendingCurveMint = null;
+      await this.reload();
+      this.setStatus(t('launchpad.flow.curveListed'), 'success');
+    });
+  }
+
+  private async graduationFlow(): Promise<void> {
+    await this.run(async () => {
+      this.setStatus(t('launchpad.flow.verifyingGraduation'), 'info');
+      await this.host.api.confirmRealmGraduation(this.host.realm.realmId);
+      await this.reload();
+      this.setStatus(t('launchpad.flow.graduated'), 'success');
     });
   }
 

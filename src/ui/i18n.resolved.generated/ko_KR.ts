@@ -309,6 +309,21 @@ export const ko_KR: EnTranslations = {
         "unknown": "추가 확인"
       }
     },
+    "curve": {
+      "title": "본딩 커브",
+      "subtitle": "토큰은 모두에게 같은 가격의 공개 커브에서 거래됩니다. 이전 임계값에 도달하면 LP가 영구 잠기는 유동성 풀로 졸업합니다.",
+      "lpLockLine": "런치 구성이 졸업 LP의 {pct}%를 영구 잠급니다.",
+      "poolLabel": "커브 풀:",
+      "progressAria": "이전 임계값 진행률",
+      "progress": "이전까지 {raised} / {threshold} 모금됨",
+      "migratedNote": "커브가 임계값에 도달해 이전되었습니다. 아래에서 졸업을 검증하세요.",
+      "graduatedNote": "졸업 완료: LP가 영구 잠긴 유동성 풀:",
+      "openBtn": "커브 열기",
+      "openHint": "지갑이 서명할 풀 생성을 구성합니다. 커브 호스트가 토큰을 발행하고 커브 공급량을 보유하며, 자금은 이 서버를 거치지 않습니다.",
+      "verifyBtn": "커브 상장 검증",
+      "verifyHint": "풀 생성 트랜잭션이 확정되면 검증하여 토큰을 상장하세요.",
+      "graduateBtn": "졸업 검증"
+    },
     "flow": {
       "registering": "토큰 등록 중...",
       "openingVote": "투표 여는 중...",
@@ -325,7 +340,14 @@ export const ko_KR: EnTranslations = {
       "mintDone": "민트가 생성되고 검증되었습니다.",
       "verifying": "온체인에서 잠금을 검증하는 중...",
       "verified": "런치 검증 완료: 모든 잠금이 온체인에 있습니다.",
-      "notVerified": "검증에서 문제가 발견되었습니다. 아래 체크리스트를 확인하세요."
+      "notVerified": "검증에서 문제가 발견되었습니다. 아래 체크리스트를 확인하세요.",
+      "preparingCurve": "커브 풀을 준비하는 중...",
+      "signingCurve": "지갑에서 풀 생성을 승인하세요...",
+      "curveSubmitted": "풀 생성이 전송되었습니다. 확정 후 상장을 검증하세요.",
+      "verifyingCurve": "온체인에서 커브를 검증하는 중...",
+      "curveListed": "토큰이 커브에서 라이브 상태입니다.",
+      "verifyingGraduation": "온체인에서 졸업을 검증하는 중...",
+      "graduated": "졸업 완료: LP가 영구 잠겼습니다."
     },
     "err": {
       "not_realm_owner": "해당 월드를 운영하고 있지 않습니다.",
@@ -396,6 +418,20 @@ export const ko_KR: EnTranslations = {
       "locks_not_verified": "잠금이 아직 온체인에서 검증되지 않았습니다.",
       "not_listable": "이 상태에서는 토큰을 상장할 수 없습니다.",
       "missing_sig": "확인 정보가 불완전합니다. 처음부터 다시 시작하세요.",
+      "launchpad_disabled": "이 서버에서는 커브 런치패드가 아직 활성화되지 않았습니다.",
+      "launchpad_config_unreadable": "런치 구성을 읽을 수 없습니다. 잠시 후 다시 시도하세요.",
+      "curve_already_created": "커브가 이미 존재합니다.",
+      "host_requires_dbc_mint": "이 커브 호스트는 토큰을 직접 생성합니다. 사전 발행 토큰은 들어갈 수 없습니다.",
+      "invalid_base_mint": "해당 기본 민트 주소가 유효하지 않습니다.",
+      "curve_not_found": "커브 풀을 아직 온체인에서 찾을 수 없습니다. 잠시 후 다시 시도하세요.",
+      "wrong_curve_creator": "커브 풀은 연결된 지갑으로 생성해야 합니다.",
+      "not_live": "토큰이 커브에서 라이브 상태가 아닙니다.",
+      "not_migrated": "커브가 이전 임계값에 도달하지 않았습니다.",
+      "graduation_not_found": "졸업한 유동성 풀을 아직 온체인에서 찾을 수 없습니다.",
+      "lp_not_permanently_locked": "유동성이 영구 잠기지 않았습니다.",
+      "not_damm_v2": "런치 구성이 잠금 풀로 졸업하지 않습니다.",
+      "no_locked_vesting": "런치 구성에 잠긴 베스팅이 없습니다.",
+      "no_migration_threshold": "런치 구성에 이전 임계값이 없습니다.",
       "rate_limited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
       "wallet_mismatch": "계정에 연결한 지갑을 연결하세요.",
       "generic": "문제가 발생했습니다. 다시 시도하세요."

@@ -309,6 +309,21 @@ export const zh_TW: EnTranslations = {
         "unknown": "附加檢查"
       }
     },
+    "curve": {
+      "title": "聯合曲線",
+      "subtitle": "代幣在公開曲線上交易,人人同價。達到遷移門檻後,它將畢業進入流動性池,LP 永久鎖定。",
+      "lpLockLine": "發射設定將畢業 LP 的 {pct}% 永久鎖定。",
+      "poolLabel": "曲線池:",
+      "progressAria": "遷移門檻進度",
+      "progress": "已籌集 {raised},遷移目標 {threshold}",
+      "migratedNote": "曲線已達到門檻並完成遷移。請在下方驗證畢業。",
+      "graduatedNote": "已畢業:LP 永久鎖定的流動性池:",
+      "openBtn": "開啟曲線",
+      "openHint": "建構由您的錢包簽名的池建立交易。曲線主機鑄造代幣並持有曲線供應量;任何資金都不經過本伺服器。",
+      "verifyBtn": "驗證曲線上線",
+      "verifyHint": "池建立交易最終確認後,驗證它以使代幣上線。",
+      "graduateBtn": "驗證畢業"
+    },
     "flow": {
       "registering": "正在註冊代幣...",
       "openingVote": "正在開啟投票...",
@@ -325,7 +340,14 @@ export const zh_TW: EnTranslations = {
       "mintDone": "鑄幣已建立並通過驗證。",
       "verifying": "正在鏈上驗證鎖倉...",
       "verified": "發射已驗證:所有鎖倉均在鏈上。",
-      "notVerified": "驗證發現問題。請查看下方清單。"
+      "notVerified": "驗證發現問題。請查看下方清單。",
+      "preparingCurve": "正在準備曲線池...",
+      "signingCurve": "請在錢包中批准池建立...",
+      "curveSubmitted": "池建立已送出。最終確認後請驗證上線。",
+      "verifyingCurve": "正在鏈上驗證曲線...",
+      "curveListed": "代幣已在曲線上線。",
+      "verifyingGraduation": "正在鏈上驗證畢業...",
+      "graduated": "已畢業:LP 已永久鎖定。"
     },
     "err": {
       "not_realm_owner": "您不是該世界的營運者。",
@@ -396,6 +418,20 @@ export const zh_TW: EnTranslations = {
       "locks_not_verified": "鎖倉尚未在鏈上驗證。",
       "not_listable": "目前狀態下代幣無法上線。",
       "missing_sig": "確認資訊不完整。請重新開始。",
+      "launchpad_disabled": "本伺服器尚未啟用曲線發射台。",
+      "launchpad_config_unreadable": "無法讀取發射設定。請稍後再試。",
+      "curve_already_created": "曲線已存在。",
+      "host_requires_dbc_mint": "該曲線主機自行建立代幣;預先鑄造的代幣無法進入。",
+      "invalid_base_mint": "該基礎鑄幣地址無效。",
+      "curve_not_found": "尚未在鏈上找到曲線池。請稍後再試。",
+      "wrong_curve_creator": "曲線池必須由您的關聯錢包建立。",
+      "not_live": "代幣未在曲線上線。",
+      "not_migrated": "曲線尚未達到遷移門檻。",
+      "graduation_not_found": "尚未在鏈上找到畢業後的流動性池。",
+      "lp_not_permanently_locked": "流動性未被永久鎖定。",
+      "not_damm_v2": "發射設定不會畢業到鎖定池。",
+      "no_locked_vesting": "發射設定不含鎖定歸屬。",
+      "no_migration_threshold": "發射設定沒有遷移門檻。",
       "rate_limited": "請求過多。請放慢速度後再試。",
       "wallet_mismatch": "請連接您帳戶所關聯的錢包。",
       "generic": "出了點問題。請重試。"

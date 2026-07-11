@@ -429,6 +429,37 @@ export interface RealmLaunchCheck {
   detail: string;
 }
 
+// ── Realm token curve (phase 4) wire shapes ──────────────────────────────────
+
+// The live curve read (GET /api/realms/:id/token/curve): partner config
+// snapshot, curve state + migration progress, and graduation proof addresses.
+export interface RealmCurveInfo {
+  host: 'meteora-dbc' | 'fixed-rate-stub' | null;
+  config: {
+    quoteMint: string;
+    migrationQuoteThresholdBase: string;
+    partnerLockedLpBps: number;
+    creatorLockedLpBps: number;
+  } | null;
+  curve: {
+    poolAddress: string;
+    quoteReserveBase: string;
+    progressBps: number;
+    migrated: boolean;
+  } | null;
+  graduated: boolean;
+  poolAddress: string | null;
+  lpLockAddress: string | null;
+}
+
+// The prepared curve creation (POST .../token/curve/prepare). txBase64 is null
+// on the stub host (no chain write); on Meteora the founder co-signs it.
+export interface RealmCurvePrepare {
+  txBase64: string | null;
+  baseMint: string;
+  host: 'meteora-dbc' | 'fixed-rate-stub';
+}
+
 // The signed-in account's affiliate identity (GET /api/affiliate/me): a stable
 // code for building the /?aff= link, plus how many realms it has referred.
 export interface AffiliateInfo {
@@ -711,6 +742,32 @@ export class Api {
     locks?: { founderLock: string; levyLock: string; treasuryLock: string },
   ): Promise<{ verified: boolean; checks: RealmLaunchCheck[] }> {
     return this.post(`/api/realms/${realmId}/token/launch/verify`, locks ?? {});
+  }
+
+  // ── Realm token curve (phase 4) ─────────────────────────────────────────────
+
+  // The live curve state + partner config + migration progress.
+  async realmCurve(realmId: number): Promise<RealmCurveInfo> {
+    const d = await this.get(`/api/realms/${realmId}/token/curve`);
+    return d.curve;
+  }
+
+  // Owner requests the curve pool creation from the configured host.
+  prepareRealmCurve(realmId: number, name?: string, uri?: string): Promise<RealmCurvePrepare> {
+    return this.post(`/api/realms/${realmId}/token/curve/prepare`, { name, uri });
+  }
+
+  // Confirm the curve exists on-chain and list the token (funded -> live).
+  confirmRealmCurve(
+    realmId: number,
+    baseMint?: string,
+  ): Promise<{ status: string; curveAddress: string }> {
+    return this.post(`/api/realms/${realmId}/token/curve/confirm`, { baseMint });
+  }
+
+  // Verify graduation (DAMM v2 + permanently locked LP): live -> graduated.
+  confirmRealmGraduation(realmId: number): Promise<{ status: string; poolAddress: string }> {
+    return this.post(`/api/realms/${realmId}/token/curve/graduation`, {});
   }
 
   // The account's affiliate code + referred-realm count (code created on first call).

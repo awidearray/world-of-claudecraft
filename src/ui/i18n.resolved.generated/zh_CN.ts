@@ -309,6 +309,21 @@ export const zh_CN: EnTranslations = {
         "unknown": "附加检查"
       }
     },
+    "curve": {
+      "title": "联合曲线",
+      "subtitle": "代币在公开曲线上交易,人人同价。达到迁移阈值后,它将毕业进入流动性池,LP 永久锁定。",
+      "lpLockLine": "发射配置将毕业 LP 的 {pct}% 永久锁定。",
+      "poolLabel": "曲线池:",
+      "progressAria": "迁移阈值进度",
+      "progress": "已筹集 {raised},迁移目标 {threshold}",
+      "migratedNote": "曲线已达到阈值并完成迁移。请在下方验证毕业。",
+      "graduatedNote": "已毕业:LP 永久锁定的流动性池:",
+      "openBtn": "开启曲线",
+      "openHint": "构建由您的钱包签名的池创建交易。曲线主机铸造代币并持有曲线供应量;任何资金都不经过本服务器。",
+      "verifyBtn": "验证曲线上线",
+      "verifyHint": "池创建交易最终确认后,验证它以使代币上线。",
+      "graduateBtn": "验证毕业"
+    },
     "flow": {
       "registering": "正在注册代币...",
       "openingVote": "正在开启投票...",
@@ -325,7 +340,14 @@ export const zh_CN: EnTranslations = {
       "mintDone": "铸币已创建并通过验证。",
       "verifying": "正在链上验证锁仓...",
       "verified": "发射已验证:所有锁仓均在链上。",
-      "notVerified": "验证发现问题。请查看下方清单。"
+      "notVerified": "验证发现问题。请查看下方清单。",
+      "preparingCurve": "正在准备曲线池...",
+      "signingCurve": "请在钱包中批准池创建...",
+      "curveSubmitted": "池创建已发送。最终确认后请验证上线。",
+      "verifyingCurve": "正在链上验证曲线...",
+      "curveListed": "代币已在曲线上线。",
+      "verifyingGraduation": "正在链上验证毕业...",
+      "graduated": "已毕业:LP 已永久锁定。"
     },
     "err": {
       "not_realm_owner": "您不是该服务器的运营者。",
@@ -396,6 +418,20 @@ export const zh_CN: EnTranslations = {
       "locks_not_verified": "锁仓尚未在链上验证。",
       "not_listable": "当前状态下代币无法上线。",
       "missing_sig": "确认信息不完整。请重新开始。",
+      "launchpad_disabled": "本服务器尚未启用曲线发射台。",
+      "launchpad_config_unreadable": "无法读取发射配置。请稍后再试。",
+      "curve_already_created": "曲线已存在。",
+      "host_requires_dbc_mint": "该曲线主机自行创建代币;预先铸造的代币无法进入。",
+      "invalid_base_mint": "该基础铸币地址无效。",
+      "curve_not_found": "尚未在链上找到曲线池。请稍后再试。",
+      "wrong_curve_creator": "曲线池必须由您的关联钱包创建。",
+      "not_live": "代币未在曲线上线。",
+      "not_migrated": "曲线尚未达到迁移阈值。",
+      "graduation_not_found": "尚未在链上找到毕业后的流动性池。",
+      "lp_not_permanently_locked": "流动性未被永久锁定。",
+      "not_damm_v2": "发射配置不会毕业到锁定池。",
+      "no_locked_vesting": "发射配置不含锁定归属。",
+      "no_migration_threshold": "发射配置没有迁移阈值。",
       "rate_limited": "请求过多。请放慢速度后再试。",
       "wallet_mismatch": "请连接您账户所关联的钱包。",
       "generic": "出了点问题。请重试。"
