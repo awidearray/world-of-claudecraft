@@ -81,6 +81,7 @@ import {
 } from './net/char_sort';
 import { charselectPrimaryAction } from './net/charselect_action';
 import { EconomyClient, newIdempotencyKey, startClaudiumPurchase } from './net/economy_sdk';
+import { MerchClient, startMerchCheckout } from './net/merch_sdk';
 import {
   isAppleAuthorizationCancellation,
   isNativeIos,
@@ -193,6 +194,7 @@ import {
 } from './ui/i18n';
 import { defaultIconPrewarmEntries, prewarmIconCache } from './ui/icon_prewarm';
 import { iconDataUrl } from './ui/icons';
+import { MerchStorePage } from './ui/merch_store_page';
 import { applyNativeDeviceLanguage } from './ui/native_language';
 import { scheduleNativeUpdateCheck } from './ui/native_update_prompt';
 import { createMetricsSampler } from './ui/perf_metrics_sampler';
@@ -3205,7 +3207,14 @@ const hoverTimeouts: Record<string, number | null> = {
 };
 
 function switchMainView(targetId: string): void {
-  const views = ['#hero-view', '#highscores-view', '#news-view', '#download-view', '#account-view'];
+  const views = [
+    '#hero-view',
+    '#highscores-view',
+    '#news-view',
+    '#download-view',
+    '#store-view',
+    '#account-view',
+  ];
   const currentViewId = views.find((id) => {
     const el = $(id);
     return el && !el.hasAttribute('hidden');
@@ -3218,6 +3227,7 @@ function switchMainView(targetId: string): void {
     '#highscores-view': 'nav-btn-highscores',
     '#news-view': 'nav-btn-news',
     '#download-view': 'nav-btn-download',
+    '#store-view': 'nav-btn-store',
     '#account-view': 'nav-btn-account',
   };
 
@@ -7766,6 +7776,47 @@ function wireStartScreens(): void {
   });
   setupNavBtn(navBtnDownload, '#download-view');
   initDesktopDownload();
+  // Merch store: the SDK hits the game server's same-origin /api/merch/* routes,
+  // which proxy to the economy service and fail closed; the SDK itself returns
+  // typed unavailable states, never throws. The tab stays hidden unless the
+  // public catalog probe answers enabled:true (the MERCH_STORE_ENABLED gate; see
+  // docs/prd/woc/merch-store.md), so a store-off deploy renders an unchanged nav.
+  const navBtnStore = $('#nav-btn-store');
+  const merchClient = new MerchClient({ token: () => api.token, base: api.base });
+  const merchEconomy = new EconomyClient({ token: () => api.token, base: api.base });
+  let merchPage: MerchStorePage | null = null;
+  const ensureMerchStore = (): MerchStorePage => {
+    merchPage ??= new MerchStorePage({
+      root: () => $('#merch-store-root') as HTMLElement,
+      products: () => merchClient.products(),
+      claudiumBalance: async () => (await merchEconomy.balance()).balance,
+      orders: () => merchClient.orders(),
+      loggedIn: () => !!api.token,
+      checkout: (input) =>
+        startMerchCheckout(merchClient, input, {
+          stripe: (intent) =>
+            openStripeCheckout(intent, {
+              title: t('hudChrome.merch.checkoutTitle'),
+              close: t('hudChrome.claudium.checkoutClose'),
+              loading: t('hudChrome.claudium.checkoutLoading'),
+              failed: t('hudChrome.merch.checkoutFailed'),
+            }),
+          nativeSignAndSend: async (transactionBase64) => {
+            const wallet = await loadWallet();
+            return wallet.signAndSendTransactionBase64(transactionBase64);
+          },
+        }),
+    });
+    return merchPage;
+  };
+  setupNavBtn(navBtnStore, '#store-view', () => {
+    switchMainView('#store-view');
+    void ensureMerchStore().render();
+  });
+  void merchClient.products().then((catalog) => {
+    const item = document.getElementById('nav-item-store');
+    if (item) item.hidden = !catalog.enabled;
+  });
   setupNavBtn(navBtnLogin, '#hero-view', () => {
     show('#login-panel');
   });
