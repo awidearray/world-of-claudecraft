@@ -8,8 +8,11 @@ import { ApiError } from '../src/net/online';
 import { t } from '../src/ui/i18n';
 import { ERR_KEYS, messageForError, STATUS_KEYS } from '../src/ui/realm_launchpad';
 import {
+  bpsPercent,
   formatBaseAmount,
+  type LaunchWire,
   launchpadChecklist,
+  launchView,
   type PresaleWire,
   parseAmountToBase,
   presaleView,
@@ -168,6 +171,149 @@ describe('parseAmountToBase / formatBaseAmount (exact bigint round-trip)', () =>
   });
 });
 
+function launchWire(over: Partial<LaunchWire> = {}): LaunchWire {
+  return {
+    prepared: true,
+    mint: null,
+    pendingMint: 'PendingMint111111111111111111111111111111',
+    supplyBase: '1000000000000000000',
+    alloc: {
+      publicBps: 6000,
+      liquidityBps: 1000,
+      founderBps: 1200,
+      levyBps: 800,
+      treasuryBps: 1000,
+    },
+    split: {
+      publicBase: '600000000000000000',
+      liquidityBase: '100000000000000000',
+      founderBase: '120000000000000000',
+      levyBase: '80000000000000000',
+      treasuryBase: '100000000000000000',
+    },
+    lockTerms: [
+      {
+        bucket: 'founder',
+        recipient: 'Founder111',
+        amountBase: '120000000000000000',
+        cliffMonths: 12,
+        linearMonths: 36,
+        frequencySeconds: '2629746',
+        cliffUnlockAmount: '0',
+        amountPerPeriod: '3333333333333333',
+        numberOfPeriod: '36',
+      },
+      {
+        bucket: 'levy',
+        recipient: 'Levy111',
+        amountBase: '80000000000000000',
+        cliffMonths: 12,
+        linearMonths: 48,
+        frequencySeconds: '2629746',
+        cliffUnlockAmount: '0',
+        amountPerPeriod: '1666666666666666',
+        numberOfPeriod: '48',
+      },
+      {
+        bucket: 'treasury',
+        recipient: 'Treasury111',
+        amountBase: '100000000000000000',
+        cliffMonths: 6,
+        linearMonths: 24,
+        frequencySeconds: '2629746',
+        cliffUnlockAmount: '0',
+        amountPerPeriod: '4166666666666666',
+        numberOfPeriod: '24',
+      },
+    ],
+    lockAddresses: { founder: null, levy: null, treasury: null },
+    mintConfirmed: false,
+    locksVerified: false,
+    ...over,
+  };
+}
+
+describe('launchView', () => {
+  it('maps the pinned economics into bucket rows', () => {
+    const v = launchView(launchWire(), 'funded');
+    expect(v.supplyBase).toBe(1_000_000_000_000_000_000n);
+    expect(v.publicBps).toBe(6000);
+    expect(v.buckets.map((b) => b.bucket)).toEqual(['founder', 'levy', 'treasury']);
+    expect(v.buckets[0].shareBps).toBe(1200);
+    expect(v.buckets[1].cliffMonths).toBe(12);
+    expect(v.buckets[1].linearMonths).toBe(48);
+    expect(v.buckets[2].amountBase).toBe(100_000_000_000_000_000n);
+  });
+
+  it('walks the step ladder: mint -> locks -> list -> live', () => {
+    const fresh = launchView(launchWire(), 'funded');
+    expect(fresh.steps.find((s) => s.current)?.step).toBe('mint');
+    expect(fresh.needsLockAddresses).toBe(false);
+
+    const minted = launchView(launchWire({ mint: 'M', mintConfirmed: true }), 'funded');
+    expect(minted.steps.find((s) => s.current)?.step).toBe('locks');
+    expect(minted.needsLockAddresses).toBe(true);
+
+    const verified = launchView(
+      launchWire({ mint: 'M', mintConfirmed: true, locksVerified: true }),
+      'funded',
+    );
+    expect(verified.steps.find((s) => s.current)?.step).toBe('list');
+    expect(verified.steps.filter((s) => s.done).map((s) => s.step)).toEqual([
+      'mint',
+      'locks',
+      'verify',
+    ]);
+    expect(verified.needsLockAddresses).toBe(false);
+
+    const live = launchView(
+      launchWire({ mint: 'M', mintConfirmed: true, locksVerified: true }),
+      'live',
+    );
+    expect(live.steps.every((s) => s.done)).toBe(true);
+  });
+
+  it('surfaces pinned lock addresses on their buckets', () => {
+    const v = launchView(
+      launchWire({
+        mint: 'M',
+        mintConfirmed: true,
+        lockAddresses: { founder: 'FL', levy: 'LL', treasury: 'TL' },
+      }),
+      'funded',
+    );
+    expect(v.buckets.map((b) => b.lockAddress)).toEqual(['FL', 'LL', 'TL']);
+  });
+
+  it('tolerates an unprepared launch (all-null wire)', () => {
+    const v = launchView(
+      launchWire({
+        prepared: false,
+        supplyBase: null,
+        alloc: null,
+        split: null,
+        lockTerms: null,
+        lockAddresses: null,
+        pendingMint: null,
+      }),
+      'funded',
+    );
+    expect(v.prepared).toBe(false);
+    expect(v.supplyBase).toBeNull();
+    expect(v.buckets).toEqual([]);
+  });
+});
+
+describe('bpsPercent', () => {
+  it('renders whole and fractional percents exactly', () => {
+    expect(bpsPercent(6000)).toBe('60');
+    expect(bpsPercent(1250)).toBe('12.5');
+    expect(bpsPercent(1234)).toBe('12.34');
+    expect(bpsPercent(5)).toBe('0.05');
+    expect(bpsPercent(0)).toBe('0');
+  });
+});
+
 describe('ERR_KEYS server-code coverage', () => {
   // Every typed `error` code the launchpad routes can put on the wire
   // (server/realm_token.ts, realm_vote.ts, realm_presale.ts + the route-level
@@ -223,6 +369,30 @@ describe('ERR_KEYS server-code coverage', () => {
     'wrong_refunder',
     'refund_short',
     'missing_payTxSig_or_refundSig',
+    // launch (phase 3): mint factory + lock verification
+    'mint_already_created',
+    'presale_not_funded',
+    'levy_fund_unconfigured',
+    'invalid_treasury_wallet',
+    'invalid_token_name',
+    'invalid_token_uri',
+    'chain_unavailable',
+    'launch_not_prepared',
+    'mint_not_in_tx',
+    'mint_not_found',
+    'wrong_token_program',
+    'wrong_decimals',
+    'freeze_authority_set',
+    'bad_metadata_pointer',
+    'metadata_symbol_mismatch',
+    'unexpected_extension',
+    'launch_sig_replayed',
+    'mint_not_created',
+    'invalid_lock_address',
+    'launch_not_verifiable',
+    'locks_not_verified',
+    'not_listable',
+    'missing_sig',
     // route-level rate limit literal
     'too many requests, slow down',
   ];

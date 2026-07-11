@@ -301,7 +301,15 @@ import {
   type RegisterDeps,
   registerRealmToken,
 } from './realm_token';
-import { listRealmTokens, realmTokenDb } from './realm_token_db';
+import { listRealmTokens, realmTokenDb, realmTokenLaunchStore } from './realm_token_db';
+import {
+  confirmMintCreate,
+  launchStatus,
+  liveLaunchChainReader,
+  type MintDeps,
+  prepareMintCreate,
+  verifyLaunch,
+} from './realm_token_mint';
 import { castVote, openVote, type VoteDeps, voteStatus } from './realm_vote';
 import { realmVoteDb } from './realm_vote_db';
 import { referralRewardSummary } from './referral_db';
@@ -1693,6 +1701,84 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       });
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { refunded: true, unrefundedCount: result.unrefundedCount });
+    }
+    // ── Realm token launch (phase 3): mint factory + lock verification ────────
+    // Same conventions as the phase 0 to 2 routes above: bearer auth, typed
+    // error codes, and rate limits on every arm that builds against or reads
+    // the chain. The server stays verify-only: prepare partial-signs with the
+    // transient mint-account keypair only (discarded in-call, cannot move
+    // funds); the founder signs and pays everything.
+    const launchDeps = (): MintDeps =>
+      ({
+        ...launchpadDeps(),
+        launches: realmTokenLaunchStore(pool),
+        chain: liveLaunchChainReader(),
+      }) as unknown as MintDeps;
+    const realmLaunchMatch = /^\/api\/realms\/(\d+)\/token\/launch$/.exec(url);
+    if (req.method === 'GET' && realmLaunchMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const result = await launchStatus(launchDeps(), Number(realmLaunchMatch[1]));
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { launch: result.launch });
+    }
+    const mintPrepareMatch = /^\/api\/realms\/(\d+)\/token\/mint\/prepare$/.exec(url);
+    if (req.method === 'POST' && mintPrepareMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      // Prepare reads blockhash + rent from the RPC; rate-limit the touch.
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await prepareMintCreate(launchDeps(), {
+        accountId,
+        realmId: Number(mintPrepareMatch[1]),
+        treasuryWallet: typeof body.treasuryWallet === 'string' ? body.treasuryWallet.trim() : '',
+        name: typeof body.name === 'string' ? body.name : undefined,
+        uri: typeof body.uri === 'string' ? body.uri : undefined,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, {
+        txBase64: result.txBase64,
+        mint: result.mint,
+        supplyBase: result.supplyBase,
+        alloc: result.alloc,
+        split: result.split,
+        lockTerms: result.lockTerms,
+      });
+    }
+    const mintConfirmMatch = /^\/api\/realms\/(\d+)\/token\/mint\/confirm$/.exec(url);
+    if (req.method === 'POST' && mintConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      // Confirm fetches the finalized tx + mint state from the RPC; rate-limit.
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const sig = typeof body.sig === 'string' ? body.sig : '';
+      if (!sig) return json(res, 400, { error: 'missing_sig' });
+      const result = await confirmMintCreate(launchDeps(), {
+        accountId,
+        realmId: Number(mintConfirmMatch[1]),
+        sig,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { mint: result.mint });
+    }
+    const launchVerifyMatch = /^\/api\/realms\/(\d+)\/token\/launch\/verify$/.exec(url);
+    if (req.method === 'POST' && launchVerifyMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      // Verification reads the mint + three escrows + balances from the RPC.
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const result = await verifyLaunch(launchDeps(), {
+        accountId,
+        realmId: Number(launchVerifyMatch[1]),
+        founderLock: typeof body.founderLock === 'string' ? body.founderLock : undefined,
+        levyLock: typeof body.levyLock === 'string' ? body.levyLock : undefined,
+        treasuryLock: typeof body.treasuryLock === 'string' ? body.treasuryLock : undefined,
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { verified: result.verified, checks: result.checks });
     }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {

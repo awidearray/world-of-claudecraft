@@ -37,7 +37,7 @@ run('launchpad tables against real Postgres', () => {
     httpUtil = await import('../server/http_util');
     await db.pool.query(
       `DROP TABLE IF EXISTS realm_presale_contributions, realm_presale_quotes, realm_presales,
-         realm_votes, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
+         realm_votes, realm_token_launches, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
     );
     await db.ensureSchema();
     ownerId = (await db.createAccount(`lp_owner_${Date.now()}`, 'hash')).id;
@@ -298,6 +298,103 @@ run('launchpad tables against real Postgres', () => {
       });
     });
     expect(await store.getContributionByPaySig('paysig_commit')).not.toBeNull();
+  });
+
+  it('launch pipeline (phase 3): pinned snapshot, atomic confirm, replay guard', async () => {
+    const store = tokenDb.realmTokenLaunchStore(db.pool);
+    const alloc = {
+      publicBps: 6000,
+      liquidityBps: 1000,
+      founderBps: 1200,
+      levyBps: 800,
+      treasuryBps: 1000,
+    };
+    // NUMERIC(30,0) supply round-trips past BIGINT headroom (10^19).
+    const supplyBase = 10_000_000_000n * 10n ** 9n;
+    const pin = {
+      realmId,
+      pendingMint: 'MintPin111',
+      supplyBase,
+      alloc,
+      founderWallet: 'FOUNDERW',
+      levyWallet: 'LEVYW',
+      treasuryWallet: 'TREASW',
+    };
+    expect(await store.upsertPendingLaunch(pin)).toBe(true);
+    // Lock addresses are rejected before the mint confirm.
+    expect(
+      await store.setLockAddresses(realmId, { founder: 'FL', levy: 'LL', treasury: 'TL' }),
+    ).toBe(false);
+    // Re-prepare replaces the pending mint while unconfirmed.
+    expect(await store.upsertPendingLaunch({ ...pin, pendingMint: 'MintPin222' })).toBe(true);
+    const launch = await store.getLaunch(realmId);
+    expect(launch).toMatchObject({ pendingMint: 'MintPin222', supplyBase, alloc });
+    expect(launch?.mintConfirmedAt).toBeNull();
+
+    // Atomic confirm: realm_tokens.mint + launch_tx_sig + the launch stamp.
+    expect(await store.recordMintCreated(realmId, 'MintPin222', 'launchsig_int_1')).toBe(true);
+    const token = await tokenDb.getRealmToken(db.pool, realmId);
+    expect(token?.mint).toBe('MintPin222');
+    expect(token?.launchTxSig).toBe('launchsig_int_1');
+    expect((await store.getLaunch(realmId))?.mintConfirmedAt).not.toBeNull();
+    // A second confirm (mint already set) matches nothing.
+    expect(await store.recordMintCreated(realmId, 'MintPin222', 'launchsig_int_2')).toBe(false);
+    // A confirmed launch is immutable: re-prepare matches nothing.
+    expect(await store.upsertPendingLaunch({ ...pin, pendingMint: 'MintPin333' })).toBe(false);
+
+    // The launch signature replay guard is the realm_tokens UNIQUE: a second
+    // realm reusing the same signature violates it, and its own launch row
+    // stays unconfirmed (the transaction rolled back).
+    const realm2 = await realmDb.createProvisioningRealm(db.pool, {
+      name: 'Launchpad Realm Two',
+      type: 'Normal',
+      ownerAccountId: ownerId,
+      tier: 1,
+    });
+    await realmDb.activateRealm(db.pool, realm2.realmId);
+    await tokenDb.insertRealmToken(db.pool, {
+      realmId: realm2.realmId,
+      symbol: 'MOONB',
+      icon: '',
+      monetizationPolicy: 'cosmetic',
+    });
+    expect(
+      await store.upsertPendingLaunch({
+        ...pin,
+        realmId: realm2.realmId,
+        pendingMint: 'MintPin444',
+      }),
+    ).toBe(true);
+    let replay: unknown;
+    await store.recordMintCreated(realm2.realmId, 'MintPin444', 'launchsig_int_1').catch((e) => {
+      replay = e;
+    });
+    expect(httpUtil.isUniqueViolation(replay)).toBe(true);
+    expect((await store.getLaunch(realm2.realmId))?.mintConfirmedAt).toBeNull();
+    expect((await tokenDb.getRealmToken(db.pool, realm2.realmId))?.mint).toBeNull();
+
+    // Lock pinning + the verified stamp, each guarded to fire exactly once.
+    expect(
+      await store.setLockAddresses(realmId, { founder: 'FL', levy: 'LL', treasury: 'TL' }),
+    ).toBe(true);
+    expect(await store.markLocksVerified(realmId)).toBe(true);
+    expect(await store.markLocksVerified(realmId)).toBe(false);
+    // Verified locks are pinned: address updates match nothing afterward.
+    expect(
+      await store.setLockAddresses(realmId, { founder: 'X', levy: 'Y', treasury: 'Z' }),
+    ).toBe(false);
+    const done = await store.getLaunch(realmId);
+    expect(done?.founderLockAddress).toBe('FL');
+    expect(done?.locksVerifiedAt).not.toBeNull();
+  });
+
+  it('assertRealmSchema fails at boot when a launch-pipeline column is dropped', async () => {
+    await db.pool.query('ALTER TABLE realm_token_launches DROP COLUMN locks_verified_at');
+    await expect(realmDb.assertRealmSchema(db.pool)).rejects.toThrow(
+      /realm_token_launches.*locks_verified_at/,
+    );
+    await db.pool.query('ALTER TABLE realm_token_launches ADD COLUMN locks_verified_at TIMESTAMPTZ');
+    await expect(realmDb.assertRealmSchema(db.pool)).resolves.toBeUndefined();
   });
 
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {

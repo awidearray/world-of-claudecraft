@@ -7,14 +7,24 @@
 // src/ui/i18n.catalog/launchpad.ts and server error CODES map to
 // launchpad.err.* via ERR_KEYS below.
 
-import type { Api, RealmPresaleQuote, RealmPresaleRail, RealmTokenPage } from '../net/online';
+import type {
+  Api,
+  RealmLaunchCheck,
+  RealmLaunchStatus,
+  RealmPresaleQuote,
+  RealmPresaleRail,
+  RealmTokenPage,
+} from '../net/online';
 import { ApiError } from '../net/online';
 import { esc } from './esc';
 import type { TranslationKey } from './i18n';
 import { formatNumber, t } from './i18n';
 import {
+  bpsPercent,
   formatBaseAmount,
+  type LaunchViewModel,
   launchpadChecklist,
+  launchView,
   type PresaleViewModel,
   parseAmountToBase,
   presaleView,
@@ -32,6 +42,9 @@ export interface RealmLaunchpadHost {
   ensureWalletReady(): Promise<string | null>;
   // Sign + send the presale contribution. null = cancelled in the wallet.
   signContribution(quote: RealmPresaleQuote): Promise<string | null>;
+  // Co-sign + send a server-built partial-signed transaction (the phase 3
+  // create-mint tx). null = cancelled in the wallet.
+  signServerTransaction(txBase64: string): Promise<string | null>;
   // Return to the operator dashboard.
   close(): void;
 }
@@ -55,6 +68,45 @@ const CHECKLIST_KEYS: Record<string, TranslationKey> = {
   presale: 'launchpad.checklist.presale',
   launch: 'launchpad.checklist.launch',
 };
+
+const LAUNCH_STEP_KEYS: Record<string, TranslationKey> = {
+  mint: 'launchpad.launch.step.mint',
+  locks: 'launchpad.launch.step.locks',
+  verify: 'launchpad.launch.step.verify',
+  list: 'launchpad.launch.step.list',
+};
+
+const BUCKET_KEYS: Record<string, TranslationKey> = {
+  founder: 'launchpad.launch.bucket.founder',
+  levy: 'launchpad.launch.bucket.levy',
+  treasury: 'launchpad.launch.bucket.treasury',
+};
+
+// Verification check ids (server/realm_token_mint.ts) -> localized labels. The
+// bucket prefix (founder_/levy_/treasury_) is stripped and rendered separately.
+const CHECK_KEYS: Record<string, TranslationKey> = {
+  mint_found: 'launchpad.launch.check.mint_found',
+  mint_profile: 'launchpad.launch.check.mint_profile',
+  supply_exact: 'launchpad.launch.check.supply_exact',
+  mint_authority_renounced: 'launchpad.launch.check.mint_authority_renounced',
+  lock_found: 'launchpad.launch.check.lock_found',
+  lock_mint: 'launchpad.launch.check.lock_mint',
+  lock_recipient: 'launchpad.launch.check.lock_recipient',
+  lock_immutable: 'launchpad.launch.check.lock_immutable',
+  lock_token_program: 'launchpad.launch.check.lock_token_program',
+  lock_untouched: 'launchpad.launch.check.lock_untouched',
+  lock_amount: 'launchpad.launch.check.lock_amount',
+  lock_schedule: 'launchpad.launch.check.lock_schedule',
+  lock_funded: 'launchpad.launch.check.lock_funded',
+};
+
+// Split a check id into its bucket prefix (if any) + base label key.
+export function checkLabel(check: string): { bucket: string | null; key: TranslationKey } {
+  const m = /^(founder|levy|treasury)_(.+)$/.exec(check);
+  const base = m ? m[2] : check;
+  const key = CHECK_KEYS[base] ?? 'launchpad.launch.check.unknown';
+  return { bucket: m ? m[1] : null, key };
+}
 
 // Server `error` codes (plus the two literal route messages) -> launchpad.err.*
 // keys. Exported so a unit test asserts every server-emitted code has a mapping.
@@ -104,6 +156,30 @@ export const ERR_KEYS = {
   escrow_short: 'launchpad.err.escrow_short',
   missing_quoteId_or_paySig: 'launchpad.err.missing_quoteId_or_paySig',
   missing_payTxSig_or_refundSig: 'launchpad.err.missing_payTxSig_or_refundSig',
+  // launch (phase 3): mint factory + lock verification
+  mint_already_created: 'launchpad.err.mint_already_created',
+  presale_not_funded: 'launchpad.err.presale_not_funded',
+  levy_fund_unconfigured: 'launchpad.err.levy_fund_unconfigured',
+  invalid_treasury_wallet: 'launchpad.err.invalid_treasury_wallet',
+  invalid_token_name: 'launchpad.err.invalid_token_name',
+  invalid_token_uri: 'launchpad.err.invalid_token_uri',
+  chain_unavailable: 'launchpad.err.chain_unavailable',
+  launch_not_prepared: 'launchpad.err.launch_not_prepared',
+  mint_not_in_tx: 'launchpad.err.mint_not_in_tx',
+  mint_not_found: 'launchpad.err.mint_not_found',
+  wrong_token_program: 'launchpad.err.wrong_token_program',
+  wrong_decimals: 'launchpad.err.wrong_decimals',
+  freeze_authority_set: 'launchpad.err.freeze_authority_set',
+  bad_metadata_pointer: 'launchpad.err.bad_metadata_pointer',
+  metadata_symbol_mismatch: 'launchpad.err.metadata_symbol_mismatch',
+  unexpected_extension: 'launchpad.err.unexpected_extension',
+  launch_sig_replayed: 'launchpad.err.launch_sig_replayed',
+  mint_not_created: 'launchpad.err.mint_not_created',
+  invalid_lock_address: 'launchpad.err.invalid_lock_address',
+  launch_not_verifiable: 'launchpad.err.launch_not_verifiable',
+  locks_not_verified: 'launchpad.err.locks_not_verified',
+  not_listable: 'launchpad.err.not_listable',
+  missing_sig: 'launchpad.err.missing_sig',
   'too many requests, slow down': 'launchpad.err.rate_limited',
 } satisfies Record<string, TranslationKey>;
 
@@ -127,6 +203,8 @@ export class RealmLaunchpad {
   private readonly root: HTMLElement;
   private readonly host: RealmLaunchpadHost;
   private page: RealmTokenPage | null = null;
+  private launch: RealmLaunchStatus | null = null;
+  private lastChecks: RealmLaunchCheck[] | null = null;
   private busy = false;
   private selectedCurrency: RealmPresaleRail['currency'] | null = null;
 
@@ -137,6 +215,8 @@ export class RealmLaunchpad {
 
   async open(): Promise<void> {
     this.page = null;
+    this.launch = null;
+    this.lastChecks = null;
     this.busy = false;
     this.root.innerHTML = `<p class="ro-hint">${esc(t('launchpad.loading'))}</p>`;
     await this.reload();
@@ -145,6 +225,11 @@ export class RealmLaunchpad {
   private async reload(): Promise<void> {
     try {
       this.page = await this.host.api.realmToken(this.host.realm.realmId);
+      const status = this.page.token?.status;
+      this.launch =
+        status === 'funded' || status === 'live' || status === 'graduated'
+          ? await this.host.api.realmLaunch(this.host.realm.realmId)
+          : null;
     } catch (err) {
       this.root.innerHTML = `<p class="ro-hint ro-hint-muted">${esc(messageForError(err))}</p>`;
       return;
@@ -174,6 +259,11 @@ export class RealmLaunchpad {
     } else {
       if (page.vote) sections.push(this.voteHtml(voteView(page.vote), status));
       if (page.presale) sections.push(this.presaleHtml(presaleView(page.presale)));
+      if (this.launch) {
+        sections.push(
+          this.launchHtml(launchView(this.launch, status as Parameters<typeof launchView>[1])),
+        );
+      }
     }
     sections.push(
       `<button id="lp-back" class="btn btn-secondary" type="button">${esc(t('launchpad.back'))}</button>`,
@@ -382,6 +472,144 @@ export class RealmLaunchpad {
       <button id="lp-contribute" class="btn btn-primary" type="button">${esc(t(submitKey))}</button>`;
   }
 
+  // The phase 3 launch section: fixed economics, the step ladder, the founder
+  // mint-create + lock-verify flows, and the on-chain proof checklist. Every
+  // commitment is a Solscan link so buyers can verify without trusting us.
+  private launchHtml(v: LaunchViewModel): string {
+    const page = this.page;
+    const symbol = page?.token?.symbol ?? '';
+    const lines: string[] = [];
+    lines.push(`<h4 class="ro-h">${esc(t('launchpad.launch.title'))}</h4>`);
+    lines.push(`<p class="ro-sub">${esc(t('launchpad.launch.subtitle'))}</p>`);
+
+    const steps = v.steps
+      .map((s) => {
+        const cls = s.done
+          ? 'lp-step lp-step-done'
+          : s.current
+            ? 'lp-step lp-step-current'
+            : 'lp-step';
+        return `<li class="${cls}">${esc(t(LAUNCH_STEP_KEYS[s.step]))}</li>`;
+      })
+      .join('');
+    lines.push(
+      `<ol class="lp-checklist" aria-label="${esc(t('launchpad.launch.stepsAria'))}">${steps}</ol>`,
+    );
+
+    if (v.supplyBase !== null) {
+      lines.push(
+        `<p class="ro-hint">${esc(
+          t('launchpad.launch.supply', {
+            amount: formatBaseAmount(v.supplyBase, 9),
+            symbol,
+          }),
+        )}</p>`,
+      );
+      lines.push(
+        `<p class="ro-hint ro-hint-muted">${esc(
+          t('launchpad.launch.allocLine', {
+            publicPct: bpsPercent(v.publicBps),
+            liquidityPct: bpsPercent(v.liquidityBps),
+          }),
+        )}</p>`,
+      );
+      for (const b of v.buckets) {
+        lines.push(`
+          <p class="ro-hint ro-hint-muted">${esc(
+            t('launchpad.launch.bucketLine', {
+              bucket: t(BUCKET_KEYS[b.bucket]),
+              pct: bpsPercent(b.shareBps),
+              amount: formatBaseAmount(b.amountBase, 9),
+              symbol,
+              cliff: formatNumber(b.cliffMonths),
+              linear: formatNumber(b.linearMonths),
+            }),
+          )}</p>`);
+        if (b.lockAddress) {
+          lines.push(
+            `<p class="ro-hint ro-hint-muted lp-escrow">${esc(
+              t('launchpad.launch.lockProof', { bucket: t(BUCKET_KEYS[b.bucket]) }),
+            )} <a href="https://solscan.io/account/${esc(b.lockAddress)}" target="_blank" rel="noopener noreferrer">${esc(b.lockAddress)}</a></p>`,
+          );
+        }
+      }
+    }
+
+    if (v.mint) {
+      lines.push(
+        `<p class="ro-hint lp-escrow">${esc(t('launchpad.launch.mintCreated'))} <a href="https://solscan.io/token/${esc(v.mint)}" target="_blank" rel="noopener noreferrer">${esc(v.mint)}</a></p>`,
+      );
+    }
+    if (v.locksVerified) {
+      lines.push(`<p class="ro-hint">${esc(t('launchpad.launch.verifiedNote'))}</p>`);
+    }
+
+    if (page?.isOwner) {
+      if (!v.mintConfirmed) lines.push(this.mintCreateHtml());
+      if (v.needsLockAddresses) lines.push(this.lockVerifyHtml(v));
+    }
+    if (this.lastChecks) lines.push(this.checksHtml(this.lastChecks));
+    return `<section class="lp-launch" aria-label="${esc(t('launchpad.launch.title'))}">${lines.join('')}</section>`;
+  }
+
+  private mintCreateHtml(): string {
+    return `
+      <div class="lp-mint-create">
+        <h5 class="ro-h">${esc(t('launchpad.launch.createTitle'))}</h5>
+        <p class="ro-sub">${esc(t('launchpad.launch.createHint'))}</p>
+        <div class="ro-field">
+          <label class="ro-label" for="lp-treasury">${esc(t('launchpad.launch.treasuryLabel'))}</label>
+          <input id="lp-treasury" class="ro-input" type="text" autocomplete="off" spellcheck="false" />
+          <p class="ro-hint ro-hint-muted">${esc(t('launchpad.launch.treasuryHint'))}</p>
+        </div>
+        <div class="ro-field">
+          <label class="ro-label" for="lp-token-name">${esc(t('launchpad.launch.nameLabel'))}</label>
+          <input id="lp-token-name" class="ro-input" type="text" maxlength="32" autocomplete="off" />
+        </div>
+        <div class="ro-field">
+          <label class="ro-label" for="lp-token-uri">${esc(t('launchpad.launch.uriLabel'))}</label>
+          <input id="lp-token-uri" class="ro-input" type="text" maxlength="192" autocomplete="off" spellcheck="false" />
+        </div>
+        <button id="lp-mint-create" class="btn btn-primary" type="button">${esc(t('launchpad.launch.createBtn'))}</button>
+      </div>`;
+  }
+
+  private lockVerifyHtml(v: LaunchViewModel): string {
+    const fields = v.buckets
+      .map(
+        (b) => `
+        <div class="ro-field">
+          <label class="ro-label" for="lp-lock-${esc(b.bucket)}">${esc(
+            t('launchpad.launch.lockLabel', { bucket: t(BUCKET_KEYS[b.bucket]) }),
+          )}</label>
+          <input id="lp-lock-${esc(b.bucket)}" class="ro-input" type="text" autocomplete="off"
+            spellcheck="false" value="${esc(b.lockAddress ?? '')}" />
+        </div>`,
+      )
+      .join('');
+    return `
+      <div class="lp-lock-verify">
+        <h5 class="ro-h">${esc(t('launchpad.launch.locksTitle'))}</h5>
+        <p class="ro-sub">${esc(t('launchpad.launch.locksHint'))}</p>
+        ${fields}
+        <button id="lp-verify-locks" class="btn btn-primary" type="button">${esc(t('launchpad.launch.verifyBtn'))}</button>
+      </div>`;
+  }
+
+  private checksHtml(checks: RealmLaunchCheck[]): string {
+    const rows = checks
+      .map((c) => {
+        const { bucket, key } = checkLabel(c.check);
+        const label = bucket ? `${t(BUCKET_KEYS[bucket])}: ${t(key)}` : t(key);
+        const badge = c.ok ? t('launchpad.launch.checkPass') : t('launchpad.launch.checkFail');
+        const detail = c.ok ? '' : ` <code class="lp-check-detail">${esc(c.detail)}</code>`;
+        return `<li class="${c.ok ? 'lp-check lp-check-ok' : 'lp-check lp-check-fail'}">${esc(label)}: ${esc(badge)}${detail}</li>`;
+      })
+      .join('');
+    return `
+      <ul class="lp-checks" aria-label="${esc(t('launchpad.launch.checksAria'))}">${rows}</ul>`;
+  }
+
   private presaleConfigHtml(): string {
     const railFields = (['SOL', 'USDC', 'WOC'] as const)
       .map(
@@ -420,6 +648,8 @@ export class RealmLaunchpad {
     this.on('#lp-config-submit', () => void this.configureFlow());
     this.on('#lp-contribute', () => void this.contributeFlow());
     this.on('#lp-finalize', () => void this.finalizeFlow());
+    this.on('#lp-mint-create', () => void this.mintCreateFlow());
+    this.on('#lp-verify-locks', () => void this.verifyLocksFlow());
     const currency = this.root.querySelector<HTMLSelectElement>('#lp-currency');
     currency?.addEventListener('change', () => {
       this.selectedCurrency = currency.value as RealmPresaleRail['currency'];
@@ -552,6 +782,57 @@ export class RealmLaunchpad {
       this.setStatus(t('launchpad.flow.finalizing'), 'info');
       await this.host.api.finalizeRealmPresale(this.host.realm.realmId);
       await this.reload();
+    });
+  }
+
+  // Create the mint: the server pins the launch + partial-signs the create
+  // transaction, the founder co-signs in their wallet, then the server
+  // verifies the finalized creation on-chain and records it.
+  private async mintCreateFlow(): Promise<void> {
+    const treasury = this.root.querySelector<HTMLInputElement>('#lp-treasury')?.value.trim() ?? '';
+    const name = this.root.querySelector<HTMLInputElement>('#lp-token-name')?.value.trim() ?? '';
+    const uri = this.root.querySelector<HTMLInputElement>('#lp-token-uri')?.value.trim() ?? '';
+    await this.run(async () => {
+      const wallet = await this.host.ensureWalletReady();
+      if (!wallet) return;
+      this.setStatus(t('launchpad.flow.preparingMint'), 'info');
+      const prep = await this.host.api.prepareRealmMint(
+        this.host.realm.realmId,
+        treasury,
+        name || undefined,
+        uri || undefined,
+      );
+      this.setStatus(t('launchpad.flow.signingMint'), 'info');
+      const sig = await this.host.signServerTransaction(prep.txBase64);
+      if (!sig) return; // cancelled in the wallet
+      this.setStatus(t('launchpad.flow.confirmingMint'), 'info');
+      await this.host.api.confirmRealmMint(this.host.realm.realmId, sig);
+      await this.reload();
+      this.setStatus(t('launchpad.flow.mintDone'), 'success');
+    });
+  }
+
+  // Submit the three Jupiter Lock escrow addresses and run the full on-chain
+  // verification; the resulting checklist renders pass/fail per commitment.
+  private async verifyLocksFlow(): Promise<void> {
+    const read = (bucket: string): string =>
+      this.root.querySelector<HTMLInputElement>(`#lp-lock-${bucket}`)?.value.trim() ?? '';
+    const founderLock = read('founder');
+    const levyLock = read('levy');
+    const treasuryLock = read('treasury');
+    await this.run(async () => {
+      this.setStatus(t('launchpad.flow.verifying'), 'info');
+      const res = await this.host.api.verifyRealmLaunch(this.host.realm.realmId, {
+        founderLock,
+        levyLock,
+        treasuryLock,
+      });
+      this.lastChecks = res.checks;
+      await this.reload();
+      this.setStatus(
+        res.verified ? t('launchpad.flow.verified') : t('launchpad.flow.notVerified'),
+        res.verified ? 'success' : 'error',
+      );
     });
   }
 }

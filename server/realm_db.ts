@@ -227,6 +227,27 @@ const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
     'launch_tx_sig',
   ],
   realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
+  // Launch pipeline (phase 3): the pinned mint, exact supply, allocation
+  // snapshot, lock recipients + addresses, and the verification stamps the
+  // listing gate reads. All load-bearing for the fair-launch proof.
+  realm_token_launches: [
+    'realm_id',
+    'pending_mint',
+    'supply_base',
+    'alloc_public_bps',
+    'alloc_liquidity_bps',
+    'alloc_founder_bps',
+    'alloc_levy_bps',
+    'alloc_treasury_bps',
+    'founder_wallet',
+    'levy_wallet',
+    'treasury_wallet',
+    'founder_lock_address',
+    'levy_lock_address',
+    'treasury_lock_address',
+    'mint_confirmed_at',
+    'locks_verified_at',
+  ],
   realm_presales: [
     'realm_id',
     'escrow_wallet',

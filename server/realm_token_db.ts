@@ -15,6 +15,8 @@ import {
   type RealmTokenDb,
   type RealmTokenStatus,
 } from './realm_token';
+import type { AllocationBps } from './realm_token_alloc';
+import type { RealmTokenLaunch, RealmTokenLaunchStore } from './realm_token_mint';
 
 type Queryable = Pick<Pool, 'query'> | PoolClient;
 
@@ -44,6 +46,32 @@ CREATE TABLE IF NOT EXISTS realm_tokens (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS realm_tokens_status ON realm_tokens(status);
+
+-- Launch pipeline state (launchpad phase 3): the pinned mint address, supply,
+-- allocation snapshot, lock recipients, and the verification stamps. One row
+-- per realm token; re-prepared freely (fresh pending_mint) until the mint is
+-- confirmed, immutable after. supply_base is NUMERIC so an env-tuned supply
+-- can exceed BIGINT headroom without truncation.
+CREATE TABLE IF NOT EXISTS realm_token_launches (
+  realm_id BIGINT PRIMARY KEY REFERENCES realms(realm_id) ON DELETE CASCADE,
+  pending_mint TEXT NOT NULL UNIQUE,
+  supply_base NUMERIC(30, 0) NOT NULL,
+  alloc_public_bps INT NOT NULL,
+  alloc_liquidity_bps INT NOT NULL,
+  alloc_founder_bps INT NOT NULL,
+  alloc_levy_bps INT NOT NULL,
+  alloc_treasury_bps INT NOT NULL,
+  founder_wallet TEXT NOT NULL,
+  levy_wallet TEXT NOT NULL,
+  treasury_wallet TEXT NOT NULL,
+  founder_lock_address TEXT,
+  levy_lock_address TEXT,
+  treasury_lock_address TEXT,
+  mint_confirmed_at TIMESTAMPTZ,
+  locks_verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;
 
 const TOKEN_COLS = `realm_id, mint, decimals, symbol, icon, status, monetization_policy,
@@ -135,5 +163,177 @@ export function realmTokenDb(pool: Queryable): RealmTokenDb {
     insertRealmToken: (t) => insertRealmToken(pool, t),
     listRealmTokens: (realmIds) => listRealmTokens(pool, realmIds),
     setRealmTokenStatus: (realmId, from, to) => setRealmTokenStatus(pool, realmId, from, to),
+  };
+}
+
+// ── Launch pipeline persistence (phase 3) ────────────────────────────────────
+
+const LAUNCH_COLS = `realm_id, pending_mint, supply_base,
+  alloc_public_bps, alloc_liquidity_bps, alloc_founder_bps, alloc_levy_bps, alloc_treasury_bps,
+  founder_wallet, levy_wallet, treasury_wallet,
+  founder_lock_address, levy_lock_address, treasury_lock_address,
+  mint_confirmed_at, locks_verified_at, created_at, updated_at`;
+
+function rowToLaunch(r: Record<string, unknown>): RealmTokenLaunch {
+  const alloc: AllocationBps = {
+    publicBps: Number(r.alloc_public_bps),
+    liquidityBps: Number(r.alloc_liquidity_bps),
+    founderBps: Number(r.alloc_founder_bps),
+    levyBps: Number(r.alloc_levy_bps),
+    treasuryBps: Number(r.alloc_treasury_bps),
+  };
+  return {
+    realmId: Number(r.realm_id),
+    pendingMint: String(r.pending_mint),
+    supplyBase: BigInt(String(r.supply_base)),
+    alloc,
+    founderWallet: String(r.founder_wallet),
+    levyWallet: String(r.levy_wallet),
+    treasuryWallet: String(r.treasury_wallet),
+    founderLockAddress: r.founder_lock_address == null ? null : String(r.founder_lock_address),
+    levyLockAddress: r.levy_lock_address == null ? null : String(r.levy_lock_address),
+    treasuryLockAddress: r.treasury_lock_address == null ? null : String(r.treasury_lock_address),
+    mintConfirmedAt: (r.mint_confirmed_at as Date | null) ?? null,
+    locksVerifiedAt: (r.locks_verified_at as Date | null) ?? null,
+    createdAt: r.created_at as Date,
+    updatedAt: r.updated_at as Date,
+  };
+}
+
+export async function getLaunch(db: Queryable, realmId: number): Promise<RealmTokenLaunch | null> {
+  const res = await db.query(
+    `SELECT ${LAUNCH_COLS} FROM realm_token_launches WHERE realm_id = $1`,
+    [realmId],
+  );
+  return res.rows[0] ? rowToLaunch(res.rows[0]) : null;
+}
+
+// Insert or replace the pending launch. The WHERE guard on the upsert makes a
+// confirmed launch immutable: once mint_confirmed_at is set, re-preparing
+// matches no row and returns false.
+export async function upsertPendingLaunch(
+  db: Queryable,
+  l: {
+    realmId: number;
+    pendingMint: string;
+    supplyBase: bigint;
+    alloc: AllocationBps;
+    founderWallet: string;
+    levyWallet: string;
+    treasuryWallet: string;
+  },
+): Promise<boolean> {
+  const res = await db.query(
+    `INSERT INTO realm_token_launches
+       (realm_id, pending_mint, supply_base,
+        alloc_public_bps, alloc_liquidity_bps, alloc_founder_bps, alloc_levy_bps,
+        alloc_treasury_bps, founder_wallet, levy_wallet, treasury_wallet)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     ON CONFLICT (realm_id) DO UPDATE SET
+       pending_mint = EXCLUDED.pending_mint,
+       supply_base = EXCLUDED.supply_base,
+       alloc_public_bps = EXCLUDED.alloc_public_bps,
+       alloc_liquidity_bps = EXCLUDED.alloc_liquidity_bps,
+       alloc_founder_bps = EXCLUDED.alloc_founder_bps,
+       alloc_levy_bps = EXCLUDED.alloc_levy_bps,
+       alloc_treasury_bps = EXCLUDED.alloc_treasury_bps,
+       founder_wallet = EXCLUDED.founder_wallet,
+       levy_wallet = EXCLUDED.levy_wallet,
+       treasury_wallet = EXCLUDED.treasury_wallet,
+       updated_at = now()
+     WHERE realm_token_launches.mint_confirmed_at IS NULL`,
+    [
+      l.realmId,
+      l.pendingMint,
+      l.supplyBase.toString(),
+      l.alloc.publicBps,
+      l.alloc.liquidityBps,
+      l.alloc.founderBps,
+      l.alloc.levyBps,
+      l.alloc.treasuryBps,
+      l.founderWallet,
+      l.levyWallet,
+      l.treasuryWallet,
+    ],
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+// Atomically record the created mint on the registry row (only while mint IS
+// NULL: the CAS half) and stamp the launch confirmed, in one transaction. A
+// replayed launch signature or reused mint address violates the realm_tokens
+// UNIQUE constraints and propagates as 23505 for the logic to map.
+export async function recordMintCreated(
+  pool: Pool,
+  realmId: number,
+  mint: string,
+  launchTxSig: string,
+): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const tokenRes = await client.query(
+      `UPDATE realm_tokens SET mint = $2, launch_tx_sig = $3, updated_at = now()
+        WHERE realm_id = $1 AND mint IS NULL`,
+      [realmId, mint, launchTxSig],
+    );
+    if ((tokenRes.rowCount ?? 0) === 0) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+    const launchRes = await client.query(
+      `UPDATE realm_token_launches SET mint_confirmed_at = now(), updated_at = now()
+        WHERE realm_id = $1 AND pending_mint = $2 AND mint_confirmed_at IS NULL`,
+      [realmId, mint],
+    );
+    if ((launchRes.rowCount ?? 0) === 0) {
+      await client.query('ROLLBACK');
+      return false;
+    }
+    await client.query('COMMIT');
+    return true;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+// Pin the three lock escrow addresses: only after the mint confirm and before
+// the locks are verified (verified locks are immutable proof links).
+export async function setLockAddresses(
+  db: Queryable,
+  realmId: number,
+  locks: { founder: string; levy: string; treasury: string },
+): Promise<boolean> {
+  const res = await db.query(
+    `UPDATE realm_token_launches
+        SET founder_lock_address = $2, levy_lock_address = $3, treasury_lock_address = $4,
+            updated_at = now()
+      WHERE realm_id = $1 AND mint_confirmed_at IS NOT NULL AND locks_verified_at IS NULL`,
+    [realmId, locks.founder, locks.levy, locks.treasury],
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+export async function markLocksVerified(db: Queryable, realmId: number): Promise<boolean> {
+  const res = await db.query(
+    `UPDATE realm_token_launches SET locks_verified_at = now(), updated_at = now()
+      WHERE realm_id = $1 AND mint_confirmed_at IS NOT NULL AND locks_verified_at IS NULL`,
+    [realmId],
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+// The pool-bound RealmTokenLaunchStore the routes use; tests substitute an
+// in-memory fake implementing the interface from realm_token_mint.ts.
+export function realmTokenLaunchStore(pool: Pool): RealmTokenLaunchStore {
+  return {
+    getLaunch: (realmId) => getLaunch(pool, realmId),
+    upsertPendingLaunch: (l) => upsertPendingLaunch(pool, l),
+    recordMintCreated: (realmId, mint, sig) => recordMintCreated(pool, realmId, mint, sig),
+    setLockAddresses: (realmId, locks) => setLockAddresses(pool, realmId, locks),
+    markLocksVerified: (realmId) => markLocksVerified(pool, realmId),
   };
 }

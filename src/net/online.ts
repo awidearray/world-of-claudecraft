@@ -364,6 +364,71 @@ export interface RealmPresaleQuote {
   expiresAt: string;
 }
 
+// ── Realm token launch (phase 3) wire shapes ─────────────────────────────────
+
+// One locked bucket's terms as the server pinned them (base-unit decimal
+// strings): the recipient, the amount, and the Jupiter Lock schedule the
+// founder must create verbatim.
+export interface RealmLaunchBucketTerms {
+  bucket: 'founder' | 'levy' | 'treasury';
+  recipient: string;
+  amountBase: string;
+  cliffMonths: number;
+  linearMonths: number;
+  frequencySeconds: string;
+  cliffUnlockAmount: string;
+  amountPerPeriod: string;
+  numberOfPeriod: string;
+}
+
+export interface RealmLaunchAlloc {
+  publicBps: number;
+  liquidityBps: number;
+  founderBps: number;
+  levyBps: number;
+  treasuryBps: number;
+}
+
+export interface RealmLaunchSplit {
+  publicBase: string;
+  liquidityBase: string;
+  founderBase: string;
+  levyBase: string;
+  treasuryBase: string;
+}
+
+// The launch pipeline state (GET /api/realms/:id/token/launch).
+export interface RealmLaunchStatus {
+  prepared: boolean;
+  mint: string | null;
+  pendingMint: string | null;
+  supplyBase: string | null;
+  alloc: RealmLaunchAlloc | null;
+  split: RealmLaunchSplit | null;
+  lockTerms: RealmLaunchBucketTerms[] | null;
+  lockAddresses: { founder: string | null; levy: string | null; treasury: string | null } | null;
+  mintConfirmed: boolean;
+  locksVerified: boolean;
+}
+
+// The prepared create-mint transaction (POST .../token/mint/prepare): the
+// server-built, mint-keypair-partial-signed tx the founder co-signs and pays.
+export interface RealmMintPrepare {
+  txBase64: string;
+  mint: string;
+  supplyBase: string;
+  alloc: RealmLaunchAlloc;
+  split: RealmLaunchSplit;
+  lockTerms: RealmLaunchBucketTerms[];
+}
+
+// One on-chain verification check from POST .../token/launch/verify.
+export interface RealmLaunchCheck {
+  check: string;
+  ok: boolean;
+  detail: string;
+}
+
 // The signed-in account's affiliate identity (GET /api/affiliate/me): a stable
 // code for building the /?aff= link, plus how many realms it has referred.
 export interface AffiliateInfo {
@@ -608,6 +673,44 @@ export class Api {
   // Owner finalizes the presale (funded when the soft cap is met, else refunding).
   finalizeRealmPresale(realmId: number): Promise<{ status: string }> {
     return this.post(`/api/realms/${realmId}/token/presale/finalize`, {});
+  }
+
+  // ── Realm token launch (phase 3) ────────────────────────────────────────────
+
+  // The launch pipeline state (no chain reads; served from the registry).
+  async realmLaunch(realmId: number): Promise<RealmLaunchStatus> {
+    const d = await this.get(`/api/realms/${realmId}/token/launch`);
+    return d.launch;
+  }
+
+  // Owner requests the create-mint transaction (server pins the launch and
+  // partial-signs with the transient mint keypair; the founder co-signs).
+  prepareRealmMint(
+    realmId: number,
+    treasuryWallet: string,
+    name?: string,
+    uri?: string,
+  ): Promise<RealmMintPrepare> {
+    return this.post(`/api/realms/${realmId}/token/mint/prepare`, {
+      treasuryWallet,
+      name,
+      uri,
+    });
+  }
+
+  // Confirm the finalized creation signature; the server verifies the live
+  // mint state on-chain and records mint + launch_tx_sig.
+  confirmRealmMint(realmId: number, sig: string): Promise<{ mint: string }> {
+    return this.post(`/api/realms/${realmId}/token/mint/confirm`, { sig });
+  }
+
+  // Submit the three Jupiter Lock escrow addresses and run the full on-chain
+  // fair-launch verification (supply, renounce, lock immutability + funding).
+  verifyRealmLaunch(
+    realmId: number,
+    locks?: { founderLock: string; levyLock: string; treasuryLock: string },
+  ): Promise<{ verified: boolean; checks: RealmLaunchCheck[] }> {
+    return this.post(`/api/realms/${realmId}/token/launch/verify`, locks ?? {});
   }
 
   // The account's affiliate code + referred-realm count (code created on first call).

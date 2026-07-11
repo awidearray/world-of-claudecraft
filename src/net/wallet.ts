@@ -577,6 +577,30 @@ export async function signAndSendPresaleContribution(
   return bs58.encode(result.signature);
 }
 
+// ── Realm token mint creation (launchpad phase 3) ───────────────────────────
+// The server builds and PARTIAL-SIGNS the create-mint transaction with the
+// transient mint-account keypair (server/realm_token_mint.ts); the founder
+// co-signs as fee payer and submits. The serialized bytes are handed to the
+// wallet UNMODIFIED so the mint keypair's signature survives; returns the
+// signature for POST /api/realms/:id/token/mint/confirm.
+export async function signAndSendServerTransaction(txBase64: string): Promise<string> {
+  const wallet = selectedWallet;
+  const account = selectedAccount;
+  if (!wallet || !account) throw new Error('connect a wallet first');
+  const feature = signAndSendFeature(wallet);
+  if (!feature) throw new Error('this wallet cannot sign and send transactions');
+
+  const wire = Uint8Array.from(atob(txBase64), (c) => c.charCodeAt(0));
+  const [result] = await feature.signAndSendTransaction({
+    account,
+    chain: REALM_CHAIN,
+    transaction: wire,
+  });
+  if (!result || !(result.signature instanceof Uint8Array))
+    throw new Error('wallet returned an invalid signature');
+  return bs58.encode(result.signature);
+}
+
 // ── $WOC balance ────────────────────────────────────────────────────────────
 // Read through the server proxy (GET /api/woc/balance). The Solana RPC endpoint
 // and any API key embedded in it live ONLY on the server (see

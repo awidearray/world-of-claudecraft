@@ -1,10 +1,11 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 2 of
+Realm Token Launchpad, phases 0 to 3 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
-the bottom).
+the bottom). Phase 3 (mint factory + allocation/locks) is below the phase 0 to
+2 record.
 
 ## Locked decisions honored
 
@@ -147,6 +148,76 @@ Acceptance: `tests/realm_launchpad_view.test.ts` (17 tests) green;
 S3 guard (`tests/localization_fixes.test.ts`) green; M16
 (`tests/i18n_completeness.test.ts`) green; i18n freshness gates
 (`i18n_resolved_equivalence`, `i18n_status_registry`) green.
+
+## Phase 3: Token-2022 mint factory + allocation/locks
+
+Files: `server/realm_token_alloc.ts` (pure allocation + vesting math:
+env-resolved bps with hard caps founder 1500 / levy 1000 / treasury 1500 /
+liquidity 2000, public bucket = exact remainder with a 4000 floor by
+construction; exact supply split with the remainder into the public bucket;
+Jupiter Lock schedules founder 12+36, levy 12+48 strictest, treasury 6+24,
+every locked base unit accounted), `server/token2022_verify.ts` (the SCOPED
+Token-2022 verifier alongside the untouched legacy gates:
+`parseRealmTokenPayment` accepts ONLY Token-2022 balances of the given mint,
+the exact inverse of parseSplitPayment, pinned side by side in tests; a
+jsonParsed mint decoder for authorities/supply/extensions; the Jupiter Lock
+`VestingEscrow` decoder with the layout pinned from jup-lock
+`programs/locker/src/state/vesting_escrow.rs` behind the Anchor
+discriminator), `server/realm_token_mint.ts` (the factory: prepare builds ONE
+create-mint tx in the boring metadata-only profile, 9dp, freeze null, metadata
+pointer to self with a NULL pointer authority, partial-signed by a TRANSIENT
+mint-account keypair that is discarded in-call; the FOUNDER is fee payer AND
+mint authority so the server never holds an authority key; confirm fetches the
+finalized tx + live mint state and records mint + `launch_tx_sig` UNIQUE;
+verify checks EVERYTHING on-chain: exact supply, renounced mint authority, and
+per lock the recipient/amount/immutability (cancelMode 0 + updateRecipientMode
+0)/token-program flag/untouched state/schedule floors (including the
+backdated-cliff attack: cliffTime is checked against NOW, not the escrow's own
+vestingStartTime)/escrow funding; `launchReadyToList` + `listRealmToken` gate
+`funded -> live` on verified locks AND a curve). DB: `realm_token_launches`
+(NUMERIC(30,0) supply, alloc snapshot, recipients, lock addresses,
+`mint_confirmed_at` / `locks_verified_at`) in realm_token_db.ts with an atomic
+two-table `recordMintCreated` transaction; `assertRealmSchema` extended.
+Routes: `GET .../token/launch`, `POST .../token/mint/prepare|confirm`,
+`POST .../token/launch/verify` (rate-limited on every RPC-touching arm),
+inventoried in the surface ledger. Client: `signAndSendServerTransaction`
+(wallet co-signs the server-built partial-signed tx UNMODIFIED),
+launch REST methods + wire types on `Api`, the launch panel section (economics
+table, step ladder, mint-create + lock-verify founder flows, per-check
+proof checklist with Solscan links) on the pure `launchView` core, the
+`launchpad.launch.*` i18n keys + five non-Latin M16 fills.
+
+Dependency added: `@solana/spl-token` 0.4.15 + `@solana/spl-token-metadata`
+0.1.6 (sanctioned by the handoff for phase 3; used only by the mint factory).
+
+Acceptance:
+- `tests/realm_token_alloc.test.ts` (15): allocation caps reject (never
+  clamp), exact 10000 sum, split sums exactly at adversarial supplies,
+  schedule totals exact, levy strictest.
+- `tests/token2022_verify.test.ts` (9): scoped-parser inverse gate pinned
+  against parseSplitPayment on the same fixture; mint decoder surfaces
+  rug-vector extensions; VestingEscrow layout round-trip + discriminator
+  rejection + past-2^53 u64 exactness.
+- `tests/realm_token_mint.test.ts` (14): the partial-signed tx shape (founder
+  slot open, mint slot signed, 4 instructions), every prepare/confirm guard,
+  every broken-lock property fails closed without stamping (12 mutation
+  cases), signature replay across realms, listing blocked without locks AND
+  without a curve, re-verify reads pinned addresses.
+- Real Postgres 16: `tests/realm_launchpad_db.integration.test.ts` extended
+  (+2: launch pipeline atomicity/immutability/replay + drop-column boot fail),
+  11 green, `realm_db.integration.test.ts` 13 green.
+- `tests/realm_launchpad_view.test.ts` extended (launchView ladder + ERR_KEYS
+  coverage of all 23 new server codes); architecture + S3 + M16 + i18n
+  freshness suites green; tsc clean; biome clean on changed files.
+- Surface inventory: the 4 new routes classified; the only remaining
+  surface_inventory diff is the pre-existing `/internal/woc/season/*` debt.
+
+Phase 3 gate status: the PRD acceptance devnet dry-run (mint created on devnet
++ RugCheck-clean) is BLOCKED in this environment: `SOLANA_DEVNET_DEPLOYER` is
+ops-owned key material (root CLAUDE.md) and is not present. Everything
+chain-side is exercised through the injected `LaunchChainReader` fixtures; the
+dry-run should run before enabling the routes anywhere real (the factory is
+additionally fail-closed on `LEVY_FUND_WALLET`, unset by default).
 
 ## Invariant confirmations
 

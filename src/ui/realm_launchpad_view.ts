@@ -164,6 +164,124 @@ export function launchpadChecklist(status: LaunchpadStatus | 'none'): ChecklistI
   return order.map((step, i) => ({ step, done: i < at, current: i === at }));
 }
 
+// ── Launch pipeline (phase 3) view ───────────────────────────────────────────
+
+export interface LaunchBucketTermsWire {
+  bucket: 'founder' | 'levy' | 'treasury';
+  recipient: string;
+  amountBase: string;
+  cliffMonths: number;
+  linearMonths: number;
+  frequencySeconds: string;
+  cliffUnlockAmount: string;
+  amountPerPeriod: string;
+  numberOfPeriod: string;
+}
+
+export interface LaunchWire {
+  prepared: boolean;
+  mint: string | null;
+  pendingMint: string | null;
+  supplyBase: string | null;
+  alloc: {
+    publicBps: number;
+    liquidityBps: number;
+    founderBps: number;
+    levyBps: number;
+    treasuryBps: number;
+  } | null;
+  split: {
+    publicBase: string;
+    liquidityBase: string;
+    founderBase: string;
+    levyBase: string;
+    treasuryBase: string;
+  } | null;
+  lockTerms: LaunchBucketTermsWire[] | null;
+  lockAddresses: { founder: string | null; levy: string | null; treasury: string | null } | null;
+  mintConfirmed: boolean;
+  locksVerified: boolean;
+}
+
+// The launch pipeline's own step ladder: create the mint, distribute + lock,
+// verify on-chain, list. Discriminators only; the painter maps them to keys.
+export type LaunchStep = 'mint' | 'locks' | 'verify' | 'list';
+
+export interface LaunchBucketViewModel {
+  bucket: 'founder' | 'levy' | 'treasury';
+  recipient: string;
+  amountBase: bigint;
+  shareBps: number;
+  cliffMonths: number;
+  linearMonths: number;
+  lockAddress: string | null;
+}
+
+export interface LaunchViewModel {
+  prepared: boolean;
+  mint: string | null;
+  supplyBase: bigint | null;
+  publicBps: number;
+  liquidityBps: number;
+  buckets: LaunchBucketViewModel[];
+  steps: Array<{ step: LaunchStep; done: boolean; current: boolean }>;
+  mintConfirmed: boolean;
+  locksVerified: boolean;
+  // The founder still has lock addresses to submit (mint done, locks not yet
+  // verified): the verify form should render.
+  needsLockAddresses: boolean;
+}
+
+export function launchView(l: LaunchWire, status: LaunchpadStatus): LaunchViewModel {
+  const bpsByBucket: Record<'founder' | 'levy' | 'treasury', number> = {
+    founder: l.alloc?.founderBps ?? 0,
+    levy: l.alloc?.levyBps ?? 0,
+    treasury: l.alloc?.treasuryBps ?? 0,
+  };
+  const addrByBucket: Record<'founder' | 'levy' | 'treasury', string | null> = {
+    founder: l.lockAddresses?.founder ?? null,
+    levy: l.lockAddresses?.levy ?? null,
+    treasury: l.lockAddresses?.treasury ?? null,
+  };
+  const buckets: LaunchBucketViewModel[] = (l.lockTerms ?? []).map((term) => ({
+    bucket: term.bucket,
+    recipient: term.recipient,
+    amountBase: BigInt(term.amountBase),
+    shareBps: bpsByBucket[term.bucket],
+    cliffMonths: term.cliffMonths,
+    linearMonths: term.linearMonths,
+    lockAddress: addrByBucket[term.bucket],
+  }));
+  const listed = status === 'live' || status === 'graduated';
+  // Creating the escrows and having the server verify them resolve together
+  // (one submit runs both), so a confirmed mint sits on 'locks' until the
+  // verification succeeds, which completes 'verify' too.
+  const at = listed ? 4 : l.locksVerified ? 3 : l.mintConfirmed ? 1 : 0;
+  const order: LaunchStep[] = ['mint', 'locks', 'verify', 'list'];
+  const steps = order.map((step, i) => ({ step, done: i < at, current: i === at }));
+  return {
+    prepared: l.prepared,
+    mint: l.mint,
+    supplyBase: l.supplyBase === null ? null : BigInt(l.supplyBase),
+    publicBps: l.alloc?.publicBps ?? 0,
+    liquidityBps: l.alloc?.liquidityBps ?? 0,
+    buckets,
+    steps,
+    mintConfirmed: l.mintConfirmed,
+    locksVerified: l.locksVerified,
+    needsLockAddresses: l.mintConfirmed && !l.locksVerified,
+  };
+}
+
+// Basis points as a whole-ish percent string ("12" or "12.5"), exact.
+export function bpsPercent(bps: number): string {
+  const whole = Math.floor(bps / 100);
+  const frac = bps % 100;
+  if (frac === 0) return String(whole);
+  const fracStr = String(frac).padStart(2, '0').replace(/0$/, '');
+  return `${whole}.${fracStr}`;
+}
+
 // Parse a human amount string ("1.5") into base units at `decimals`, exactly.
 // Returns null on anything malformed, negative, zero, or with more fractional
 // digits than the currency carries. Pure bigint math (no float rounding).

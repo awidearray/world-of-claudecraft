@@ -6472,7 +6472,20 @@ async function signPresaleContribution(quote: RealmPresaleQuote): Promise<string
   }
 }
 
-// Realm token launchpad (phases 0 to 2): rendered into the realm-operator panel
+// Co-sign + send a server-built partial-signed transaction (the phase 3
+// create-mint tx). Returns the signature, or null if the player cancelled in
+// their wallet. Mirrors signPresaleContribution.
+async function signServerBuiltTransaction(txBase64: string): Promise<string | null> {
+  const wallet = await loadWallet();
+  try {
+    return await wallet.signAndSendServerTransaction(txBase64);
+  } catch (err) {
+    if (wallet.isWalletSelectionCancelled(err)) return null;
+    throw err instanceof Error ? err : new Error(t('launchpad.err.generic'));
+  }
+}
+
+// Realm token launchpad (phases 0 to 3): rendered into the realm-operator panel
 // body for one owned realm; Back re-opens the operator dashboard.
 function openRealmLaunchpad(realm: OwnedRealm): void {
   const body = $('#realm-operator-body') as HTMLElement;
@@ -6482,6 +6495,7 @@ function openRealmLaunchpad(realm: OwnedRealm): void {
     linkedWallet: () => linkedWalletPubkey,
     ensureWalletReady: ensureRealmWalletReady,
     signContribution: signPresaleContribution,
+    signServerTransaction: signServerBuiltTransaction,
     close: () => {
       realmOperator = null; // the panel body was repurposed; rebuild fresh
       openRealmOperator();

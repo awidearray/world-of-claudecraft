@@ -327,6 +327,24 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
       'launch_tx_sig',
     ],
     realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
+    realm_token_launches: [
+      'realm_id',
+      'pending_mint',
+      'supply_base',
+      'alloc_public_bps',
+      'alloc_liquidity_bps',
+      'alloc_founder_bps',
+      'alloc_levy_bps',
+      'alloc_treasury_bps',
+      'founder_wallet',
+      'levy_wallet',
+      'treasury_wallet',
+      'founder_lock_address',
+      'levy_lock_address',
+      'treasury_lock_address',
+      'mint_confirmed_at',
+      'locks_verified_at',
+    ],
     realm_presales: [
       'realm_id',
       'escrow_wallet',
@@ -385,5 +403,16 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
     await expect(
       assertRealmSchema(stubDb({ table: 'realm_votes', column: 'weight_woc' }) as never),
     ).rejects.toThrow(/realm_votes.*weight_woc/);
+  });
+
+  it('fails at boot when a launch-pipeline column is dropped (phase 3)', async () => {
+    await expect(
+      assertRealmSchema(
+        stubDb({ table: 'realm_token_launches', column: 'locks_verified_at' }) as never,
+      ),
+    ).rejects.toThrow(/realm_token_launches.*locks_verified_at/);
+    await expect(
+      assertRealmSchema(stubDb({ table: 'realm_token_launches', column: 'supply_base' }) as never),
+    ).rejects.toThrow(/realm_token_launches.*supply_base/);
   });
 });
