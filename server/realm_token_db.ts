@@ -226,9 +226,70 @@ export async function recordLockAddress(
   address: string,
 ): Promise<RealmToken | null> {
   const col = LOCK_COLUMNS[bucket];
+  // A lock can be recorded after the phase-3 distribution OR on the curve
+  // path (the founder locker lands at migration, before the leftover
+  // withdrawal that plays the distribution role there).
   const res = await db.query(
     `UPDATE realm_tokens SET ${col} = $2, updated_at = now()
-      WHERE realm_id = $1 AND ${col} IS NULL AND distribute_tx_sig IS NOT NULL
+      WHERE realm_id = $1 AND ${col} IS NULL
+        AND (distribute_tx_sig IS NOT NULL OR curve_address IS NOT NULL)
+      RETURNING ${TOKEN_COLS}`,
+    [realmId, address],
+  );
+  return res.rows[0] ? rowToToken(res.rows[0]) : null;
+}
+
+// Phase 4: one guarded write records the whole verified curve launch. The
+// launch_tx_sig UNIQUE doubles as the cross-realm replay guard, exactly like
+// the phase-3 mint path.
+export async function recordCurveLaunch(
+  db: Queryable,
+  realmId: number,
+  d: {
+    mint: string;
+    launchTxSig: string;
+    curveAddress: string;
+    poolAddress: string;
+    feeClaimerPda: string;
+    supplyBase: bigint;
+    founderAllocBase: bigint;
+    levyAllocBase: bigint;
+    treasuryAllocBase: bigint;
+  },
+): Promise<RealmToken | null> {
+  const res = await db.query(
+    `UPDATE realm_tokens
+        SET mint = $2, launch_tx_sig = $3, curve_address = $4, pool_address = $5,
+            fee_claimer_pda = $6, supply_base = $7, founder_alloc_base = $8,
+            levy_alloc_base = $9, treasury_alloc_base = $10, updated_at = now()
+      WHERE realm_id = $1 AND mint IS NULL AND curve_address IS NULL AND status = 'funded'
+      RETURNING ${TOKEN_COLS}`,
+    [
+      realmId,
+      d.mint,
+      d.launchTxSig,
+      d.curveAddress,
+      d.poolAddress,
+      d.feeClaimerPda,
+      d.supplyBase.toString(),
+      d.founderAllocBase.toString(),
+      d.levyAllocBase.toString(),
+      d.treasuryAllocBase.toString(),
+    ],
+  );
+  return res.rows[0] ? rowToToken(res.rows[0]) : null;
+}
+
+// Phase 4: the permanent-LP proof (the graduated DAMM v2 pool), once, and only
+// for a token that actually launched on a curve.
+export async function recordLpLock(
+  db: Queryable,
+  realmId: number,
+  address: string,
+): Promise<RealmToken | null> {
+  const res = await db.query(
+    `UPDATE realm_tokens SET lp_lock_address = $2, updated_at = now()
+      WHERE realm_id = $1 AND lp_lock_address IS NULL AND pool_address IS NOT NULL
       RETURNING ${TOKEN_COLS}`,
     [realmId, address],
   );
@@ -248,5 +309,7 @@ export function realmTokenDb(pool: Queryable): RealmTokenDb {
     recordDistribution: (realmId, d) => recordDistribution(pool, realmId, d),
     recordLockAddress: (realmId, bucket, address) =>
       recordLockAddress(pool, realmId, bucket, address),
+    recordCurveLaunch: (realmId, d) => recordCurveLaunch(pool, realmId, d),
+    recordLpLock: (realmId, address) => recordLpLock(pool, realmId, address),
   };
 }

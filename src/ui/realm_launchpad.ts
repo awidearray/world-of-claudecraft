@@ -122,6 +122,13 @@ export const ERR_KEYS = {
   lock_underfunded: 'launchpad.err.lock_underfunded',
   locks_incomplete: 'launchpad.err.locks_incomplete',
   missing_quoteId_or_signature: 'launchpad.err.missing_quoteId_or_signature',
+  // Phase 4 bonding-curve launch.
+  curve_disabled: 'launchpad.err.curve_disabled',
+  fee_claimer_unconfigured: 'launchpad.err.fee_claimer_unconfigured',
+  curve_already_launched: 'launchpad.err.curve_already_launched',
+  curve_not_launched: 'launchpad.err.curve_not_launched',
+  curve_mismatch: 'launchpad.err.curve_mismatch',
+  not_migrated: 'launchpad.err.not_migrated',
   'too many requests, slow down': 'launchpad.err.rate_limited',
 } satisfies Record<string, TranslationKey>;
 

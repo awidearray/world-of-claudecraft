@@ -331,6 +331,12 @@ export const ja_JP: EnTranslations = {
       "lock_underfunded": "ロックに割り当ての全額が入っていません。",
       "locks_incomplete": "ファウンダー、レビー、流動性のロックがすべてチェーン上で検証されるまで、トークンは上場できません。",
       "missing_quoteId_or_signature": "ローンチの確認情報が不完全でした。最初からやり直してください。",
+      "curve_disabled": "このレルムホストではボンディングカーブのローンチはまだ有効になっていません。",
+      "fee_claimer_unconfigured": "プラットフォームの手数料ボールトがまだ設定されていません。",
+      "curve_already_launched": "このトークンには既にボンディングカーブがあります。",
+      "curve_not_launched": "先にボンディングカーブをローンチしてください。",
+      "curve_mismatch": "チェーン上のカーブがこのローンチと一致しません。最初からやり直してください。",
+      "not_migrated": "カーブはまだ卒業していません。",
       "rate_limited": "リクエストが多すぎます。少し待ってからもう一度お試しください。",
       "wallet_mismatch": "アカウントにリンクしたウォレットを接続してください。",
       "generic": "問題が発生しました。もう一度お試しください。"

@@ -97,7 +97,7 @@ export const REALM_TOKEN_DECIMALS = 9;
 
 // ── Quote persistence surface (realm_token_mint_db.ts implements) ────────────
 
-export type LaunchQuoteKind = 'mint' | 'distribute' | 'lock';
+export type LaunchQuoteKind = 'mint' | 'distribute' | 'lock' | 'curve' | 'leftover';
 
 export interface LaunchQuoteRow {
   quoteId: string;
@@ -589,6 +589,11 @@ export async function prepareLockQuote(
   const ctx = await launchContext(deps, args);
   if (!ctx.ok) return ctx;
   if (ctx.token.mint === null) return fail(409, 'token_not_minted');
+  // On the curve path the founder bucket vests in the venue's locker escrow
+  // (recorded by reconcileCurve), never through a phase-3 lock.
+  if (args.bucket === 'founder' && ctx.token.curveAddress !== null) {
+    return fail(400, 'invalid_lock_bucket');
+  }
   if (ctx.token.distributeTxSig === null) return fail(409, 'not_distributed');
   if (bucketLockAddress(ctx.token, args.bucket) !== null) return fail(409, 'already_locked');
   const amountBase = bucketAlloc(ctx.token, args.bucket);

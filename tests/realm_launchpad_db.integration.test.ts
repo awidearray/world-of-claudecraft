@@ -36,8 +36,8 @@ run('launchpad tables against real Postgres', () => {
     presaleDb = await import('../server/realm_presale_db');
     httpUtil = await import('../server/http_util');
     await db.pool.query(
-      `DROP TABLE IF EXISTS realm_launch_quotes, realm_presale_contributions,
-         realm_presale_quotes, realm_presales,
+      `DROP TABLE IF EXISTS realm_fee_distributions, realm_fee_accruals, realm_launch_quotes,
+         realm_presale_contributions, realm_presale_quotes, realm_presales,
          realm_votes, realm_tokens, realm_stakes, realm_roles, realms CASCADE`,
     );
     await db.ensureSchema();
@@ -399,6 +399,202 @@ run('launchpad tables against real Postgres', () => {
     expect(await store.getQuote('lq-int-1')).toBeNull();
     await store.deleteQuote('lq-int-2');
     expect(await store.getQuote('lq-int-2')).toBeNull();
+  });
+
+  it('phase 4 curve writes: one-shot launch record, LP lock once, widened quote kinds', async () => {
+    // A third realm launches on the curve path.
+    const realm3 = await realmDb.createProvisioningRealm(db.pool, {
+      name: 'Launchpad Realm Curve',
+      type: 'Normal',
+      ownerAccountId: ownerId,
+      tier: 1,
+    });
+    await realmDb.activateRealm(db.pool, realm3.realmId);
+    await tokenDb.insertRealmToken(db.pool, {
+      realmId: realm3.realmId,
+      symbol: 'CURVY',
+      icon: '',
+      monetizationPolicy: 'cosmetic',
+    });
+    // Guarded on status 'funded'.
+    const launch = {
+      mint: 'CurveMint111',
+      launchTxSig: 'curvesig_1',
+      curveAddress: 'CurveCfg111',
+      poolAddress: 'CurvePool111',
+      feeClaimerPda: 'FeeVault111',
+      supplyBase: 10n ** 18n,
+      founderAllocBase: 12n * 10n ** 16n,
+      levyAllocBase: 8n * 10n ** 16n,
+      treasuryAllocBase: 10n ** 17n,
+    };
+    expect(await tokenDb.recordCurveLaunch(db.pool, realm3.realmId, launch)).toBeNull();
+    await tokenDb.setRealmTokenStatus(db.pool, realm3.realmId, ['prelaunch'], 'funded');
+    const launched = await tokenDb.recordCurveLaunch(db.pool, realm3.realmId, launch);
+    expect(launched?.mint).toBe('CurveMint111');
+    expect(launched?.curveAddress).toBe('CurveCfg111');
+    expect(launched?.poolAddress).toBe('CurvePool111');
+    expect(launched?.supplyBase).toBe(10n ** 18n);
+    // One-shot: the guard never matches again.
+    expect(
+      await tokenDb.recordCurveLaunch(db.pool, realm3.realmId, {
+        ...launch,
+        launchTxSig: 'curvesig_2',
+      }),
+    ).toBeNull();
+
+    // The curve path unlocks recordLockAddress before any distribution row.
+    const locked = await tokenDb.recordLockAddress(db.pool, realm3.realmId, 'founder', 'Locker1');
+    expect(locked?.founderLockAddress).toBe('Locker1');
+
+    // The LP lock records once and only for a pool-bearing token.
+    const lp = await tokenDb.recordLpLock(db.pool, realm3.realmId, 'DammPool111');
+    expect(lp?.lpLockAddress).toBe('DammPool111');
+    expect(await tokenDb.recordLpLock(db.pool, realm3.realmId, 'DammPool222')).toBeNull();
+    expect(await tokenDb.recordLpLock(db.pool, realmId, 'DammPool333')).toBeNull(); // no pool
+
+    // The widened kind vocabulary round-trips ('curve' + 'leftover').
+    const mintDb = await import('../server/realm_token_mint_db');
+    const store = mintDb.launchQuoteStore(db.pool);
+    for (const kind of ['curve', 'leftover'] as const) {
+      await store.createQuote({
+        quoteId: `kq-${kind}`,
+        realmId: realm3.realmId,
+        accountId: voterId,
+        kind,
+        payload: { poolAddress: 'CurvePool111' },
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+      expect((await store.getQuote(`kq-${kind}`))?.kind).toBe(kind);
+      await store.deleteQuote(`kq-${kind}`);
+    }
+  });
+
+  it('phase 5 fee tables: accrual replay guard, per-realm balance, leg UNIQUE, advisory lock', async () => {
+    const feeDb = await import('../server/realm_fee_db');
+    // Two curve realms accrue independently.
+    const realmA = realmId;
+    const realmB = (
+      await realmDb.createProvisioningRealm(db.pool, {
+        name: 'Fee Realm B',
+        type: 'Normal',
+        ownerAccountId: ownerId,
+        tier: 1,
+      })
+    ).realmId;
+    await realmDb.activateRealm(db.pool, realmB);
+
+    // Accrual UNIQUE(claim_tx_sig): the same claim can never accrue twice.
+    expect(
+      await feeDb.insertFeeAccrual(db.pool, {
+        realmId: realmA,
+        currency: 'USDC',
+        amountBase: 5_000_000n,
+        claimTxSig: 'feeclaim_a1',
+      }),
+    ).toBe(true);
+    expect(
+      await feeDb.insertFeeAccrual(db.pool, {
+        realmId: realmA,
+        currency: 'USDC',
+        amountBase: 5_000_000n,
+        claimTxSig: 'feeclaim_a1',
+      }),
+    ).toBe(false);
+    await feeDb.insertFeeAccrual(db.pool, {
+      realmId: realmB,
+      currency: 'USDC',
+      amountBase: 3_000_000n,
+      claimTxSig: 'feeclaim_b1',
+    });
+    // Per-realm attribution off the shared vault is exact.
+    expect(await feeDb.unspentAccruedBase(db.pool, realmA, 'USDC')).toBe(5_000_000n);
+    expect(await feeDb.unspentAccruedBase(db.pool, realmB, 'USDC')).toBe(3_000_000n);
+    expect(await feeDb.unspentAccruedBase(db.pool, realmA, 'SOL')).toBe(0n);
+
+    // A distribution reduces the realm's unspent balance in full.
+    const distId = await feeDb.createFeeDistribution(db.pool, {
+      realmId: realmA,
+      currency: 'USDC',
+      totalBase: 5_000_000n,
+      operatorBase: 2_125_000n,
+      treasuryBase: 1_000_000n,
+      affiliateBase: 375_000n,
+      burnBase: 1_500_000n,
+      operatorWallet: 'OpWallet',
+      treasuryWallet: 'TreasuryWallet',
+      affiliateWallet: 'AffWallet',
+      burnDest: 'BurnDest',
+    });
+    expect(await feeDb.unspentAccruedBase(db.pool, realmA, 'USDC')).toBe(0n);
+
+    // Leg signatures record before broadcast; UNIQUE per column across rows.
+    await feeDb.recordFeeLegSig(db.pool, distId, 'operator', 'opsig_1');
+    await feeDb.markFeeLegPaid(db.pool, distId, 'operator');
+    const dist2 = await feeDb.createFeeDistribution(db.pool, {
+      realmId: realmB,
+      currency: 'USDC',
+      totalBase: 3_000_000n,
+      operatorBase: 1_275_000n,
+      treasuryBase: 600_000n,
+      affiliateBase: 225_000n,
+      burnBase: 900_000n,
+      operatorWallet: 'OpWalletB',
+      treasuryWallet: 'TreasuryWallet',
+      affiliateWallet: null,
+      burnDest: 'BurnDest',
+    });
+    let sigReuse: unknown;
+    await feeDb.recordFeeLegSig(db.pool, dist2, 'operator', 'opsig_1').catch((e) => {
+      sigReuse = e;
+    });
+    expect(httpUtil.isUniqueViolation(sigReuse)).toBe(true);
+
+    // The open distribution is the paying one; marking it paid closes it.
+    const open = await feeDb.openFeeDistribution(db.pool, realmA, 'USDC');
+    expect(open?.distributionId).toBe(distId);
+    expect(open?.legPaid.operator).toBe(true);
+    await feeDb.markFeeDistributionPaid(db.pool, distId);
+    expect(await feeDb.openFeeDistribution(db.pool, realmA, 'USDC')).toBeNull();
+
+    // The advisory TRY-lock: a second holder cannot enter while the first owns
+    // the realm.
+    let innerRan = false;
+    const outer = await feeDb.withRealmFeeLock(db.pool, realmA, async () => {
+      const inner = await feeDb.withRealmFeeLock(db.pool, realmA, async () => {
+        innerRan = true;
+        return 'inner';
+      });
+      expect(inner).toBeNull(); // contended: skipped, not blocked
+      return 'outer';
+    });
+    expect(outer).toBe('outer');
+    expect(innerRan).toBe(false);
+
+    // listFeeRealms surfaces only curve-launched realms (a pool exists).
+    await tokenDb.insertRealmToken(db.pool, {
+      realmId: realmB,
+      symbol: 'FEEB',
+      icon: '',
+      monetizationPolicy: 'cosmetic',
+    });
+    await tokenDb.setRealmTokenStatus(db.pool, realmB, ['prelaunch'], 'funded');
+    const withPool = await tokenDb.recordCurveLaunch(db.pool, realmB, {
+      mint: 'FeeCurveMint',
+      launchTxSig: 'feecurvesig',
+      curveAddress: 'FeeCurveCfg',
+      poolAddress: 'FeeCurvePool',
+      feeClaimerPda: 'FeeVault',
+      supplyBase: 10n ** 18n,
+      founderAllocBase: 12n * 10n ** 16n,
+      levyAllocBase: 8n * 10n ** 16n,
+      treasuryAllocBase: 10n ** 17n,
+    });
+    expect(withPool).not.toBeNull();
+    const feeRealms = await feeDb.listFeeRealms(db.pool);
+    expect(feeRealms.some((r) => r.realmId === realmB && r.poolAddress === 'FeeCurvePool')).toBe(
+      true,
+    );
   });
 
   it('assertRealmSchema fails at boot when a phase-3 launch column is dropped', async () => {

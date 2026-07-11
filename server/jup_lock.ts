@@ -200,3 +200,34 @@ export function verifyLockedEscrow(
   }
   return { ok: true };
 }
+
+// Verify a VENUE-created locker escrow (the founder vesting the bonding-curve
+// migration creates through this same program). The venue's escrow profile,
+// read off a live devnet graduation, differs from our own immutable locks in
+// two sound ways: update_recipient_mode is OnlyRecipient (2), letting the
+// beneficiary redirect their own vesting (not a rug vector), and cancel_mode
+// is OnlyCreator (1) where the CREATOR is an off-curve program PDA that can
+// never sign (no cancel instruction exists), so cancellation is unreachable.
+// Everything else stays strict: right mint and recipient, never cancelled,
+// Token-2022 funded, and the locked total equals the pinned bucket exactly.
+export function verifyVenueLockerEscrow(
+  escrow: VestingEscrowAccount,
+  expect: { mint: string; recipient: string; totalBase: bigint },
+): LockVerdict {
+  if (escrow.tokenMint !== expect.mint) return { ok: false, reason: 'lock_mismatch' };
+  if (escrow.recipient !== expect.recipient) return { ok: false, reason: 'lock_mismatch' };
+  if (escrow.cancelledAt !== 0n) return { ok: false, reason: 'lock_not_immutable' };
+  if (escrow.tokenProgramFlag !== 1) return { ok: false, reason: 'lock_mismatch' };
+  if (escrow.updateRecipientMode !== MODE_IMMUTABLE && escrow.updateRecipientMode !== 2) {
+    return { ok: false, reason: 'lock_not_immutable' };
+  }
+  if (escrow.cancelMode !== MODE_IMMUTABLE) {
+    const creatorCanNeverSign = !PublicKey.isOnCurve(new PublicKey(escrow.creator).toBytes());
+    if (escrow.cancelMode !== 1 || !creatorCanNeverSign) {
+      return { ok: false, reason: 'lock_not_immutable' };
+    }
+  }
+  const total = escrow.cliffUnlockAmount + escrow.amountPerPeriod * escrow.numberOfPeriod;
+  if (total !== expect.totalBase) return { ok: false, reason: 'lock_mismatch' };
+  return { ok: true };
+}

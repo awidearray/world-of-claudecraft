@@ -20,13 +20,18 @@ CREATE TABLE IF NOT EXISTS realm_launch_quotes (
   quote_id TEXT PRIMARY KEY,
   realm_id BIGINT NOT NULL REFERENCES realms(realm_id) ON DELETE CASCADE,
   account_id INT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL CHECK (kind IN ('mint', 'distribute', 'lock')),
+  kind TEXT NOT NULL CHECK (kind IN ('mint', 'distribute', 'lock', 'curve', 'leftover')),
   payload JSONB NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS realm_launch_quotes_realm ON realm_launch_quotes(realm_id);
 CREATE INDEX IF NOT EXISTS realm_launch_quotes_expires ON realm_launch_quotes(expires_at);
+-- Phase 4 widened the kind vocabulary (curve launch + leftover withdrawal);
+-- rebuild the CHECK for databases created on the phase-3 shape.
+ALTER TABLE realm_launch_quotes DROP CONSTRAINT IF EXISTS realm_launch_quotes_kind_check;
+ALTER TABLE realm_launch_quotes ADD CONSTRAINT realm_launch_quotes_kind_check
+  CHECK (kind IN ('mint', 'distribute', 'lock', 'curve', 'leftover'));
 `;
 
 function toRow(r: Record<string, unknown>): LaunchQuoteRow {

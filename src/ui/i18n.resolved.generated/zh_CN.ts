@@ -331,6 +331,12 @@ export const zh_CN: EnTranslations = {
       "lock_underfunded": "锁仓未持有全部份额。",
       "locks_incomplete": "在创始人、平台和流动性锁仓全部通过链上验证之前，代币无法上线。",
       "missing_quoteId_or_signature": "发射确认信息不完整。请重新开始。",
+      "curve_disabled": "该服务器主机尚未启用联合曲线发射。",
+      "fee_claimer_unconfigured": "平台费用金库尚未配置。",
+      "curve_already_launched": "该代币已有联合曲线。",
+      "curve_not_launched": "请先启动联合曲线。",
+      "curve_mismatch": "链上曲线与本次发射不匹配。请重新开始。",
+      "not_migrated": "曲线尚未毕业。",
       "rate_limited": "请求过多。请放慢速度后再试。",
       "wallet_mismatch": "请连接您账户所关联的钱包。",
       "generic": "出了点问题。请重试。"

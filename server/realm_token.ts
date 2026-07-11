@@ -126,6 +126,25 @@ export interface RealmTokenDb {
     bucket: 'founder' | 'levy' | 'treasury',
     address: string,
   ): Promise<RealmToken | null>;
+  // Phase 4: a verified bonding-curve launch records the pool-created mint,
+  // the launch signature, the venue addresses, and the pinned bucket amounts
+  // in one guarded write (mint IS NULL AND curve IS NULL AND status funded).
+  recordCurveLaunch(
+    realmId: number,
+    d: {
+      mint: string;
+      launchTxSig: string;
+      curveAddress: string;
+      poolAddress: string;
+      feeClaimerPda: string;
+      supplyBase: bigint;
+      founderAllocBase: bigint;
+      levyAllocBase: bigint;
+      treasuryAllocBase: bigint;
+    },
+  ): Promise<RealmToken | null>;
+  // Phase 4: the permanent-LP proof (the graduated DAMM v2 pool), once.
+  recordLpLock(realmId: number, address: string): Promise<RealmToken | null>;
 }
 
 // ── Identity validation ───────────────────────────────────────────────────────

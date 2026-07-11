@@ -146,6 +146,37 @@ class FakeRealmTokenDb implements RealmTokenDb {
     this.rows.set(realmId, next);
     return next;
   }
+  async recordCurveLaunch(
+    realmId: number,
+    d: {
+      mint: string;
+      launchTxSig: string;
+      curveAddress: string;
+      poolAddress: string;
+      feeClaimerPda: string;
+      supplyBase: bigint;
+      founderAllocBase: bigint;
+      levyAllocBase: bigint;
+      treasuryAllocBase: bigint;
+    },
+  ) {
+    const row = this.rows.get(realmId);
+    if (!row || row.mint !== null || row.curveAddress !== null || row.status !== 'funded')
+      return null;
+    for (const r of this.rows.values()) {
+      if (r.launchTxSig === d.launchTxSig) throw new UniqueViolation('launch_tx_sig');
+    }
+    const next = { ...row, ...d };
+    this.rows.set(realmId, next);
+    return next;
+  }
+  async recordLpLock(realmId: number, address: string) {
+    const row = this.rows.get(realmId);
+    if (!row || row.lpLockAddress !== null || row.poolAddress === null) return null;
+    const next = { ...row, lpLockAddress: address };
+    this.rows.set(realmId, next);
+    return next;
+  }
 }
 
 const isFakeUnique = (err: unknown): boolean => err instanceof UniqueViolation;
@@ -398,6 +429,17 @@ describe('assertRealmSchema drift guard (launchpad tables)', () => {
       'treasury_lock_address',
     ],
     realm_launch_quotes: ['quote_id', 'realm_id', 'account_id', 'kind', 'payload', 'expires_at'],
+    realm_fee_accruals: ['accrual_id', 'realm_id', 'currency', 'amount_base', 'claim_tx_sig'],
+    realm_fee_distributions: [
+      'distribution_id',
+      'realm_id',
+      'currency',
+      'total_base',
+      'operator_tx_sig',
+      'treasury_tx_sig',
+      'affiliate_tx_sig',
+      'burn_tx_sig',
+    ],
     realm_votes: ['vote_id', 'realm_id', 'account_id', 'wallet', 'choice', 'weight_woc'],
     realm_presales: [
       'realm_id',

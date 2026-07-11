@@ -241,6 +241,13 @@ describe('ERR_KEYS server-code coverage', () => {
     'lock_underfunded',
     'locks_incomplete',
     'missing_quoteId_or_signature',
+    // phase 4 bonding-curve launch (server/realm_token_curve.ts)
+    'curve_disabled',
+    'fee_claimer_unconfigured',
+    'curve_already_launched',
+    'curve_not_launched',
+    'curve_mismatch',
+    'not_migrated',
     // route-level rate limit literal
     'too many requests, slow down',
   ];

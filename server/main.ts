@@ -155,7 +155,7 @@ import {
   moderationErrorBody,
   readBody,
 } from './http_util';
-import { configureInternalRuntime, handleInternalApi } from './internal';
+import { configureInternalRuntime, type FeeOps, handleInternalApi } from './internal';
 import { isConnectionRefused } from './ip_block';
 import { pruneExpiredBlockedIps } from './ip_block_db';
 import { configureLeaderboardRuntime, type ReleaseEntry } from './leaderboard';
@@ -261,6 +261,7 @@ export function resetActiveConfigForTests(): void {
 import {
   affiliateRealmCount,
   getOrCreateAffiliateCode,
+  getRealmAffiliate,
   listRealmsByAffiliate,
 } from './affiliate_db';
 import { activeSeasonStatus, closeSeason, openSeason } from './flow_ledger_db';
@@ -276,6 +277,16 @@ import {
   listRealmsForOwner,
   rolesForAccountOnRealm,
 } from './realm_db';
+import { realmFeeStore } from './realm_fee_db';
+import {
+  buildFeeExecutor,
+  feeKeeperConfigured,
+  listClaimableFees,
+  registerFeeClaim,
+  runFeeCycle,
+} from './realm_fee_keeper';
+import { type LaunchVenue, launchpadVenueName, StubLaunchVenue } from './realm_launchpad';
+import { MeteoraDbcVenue } from './realm_launchpad_dbc';
 import {
   configurePresale,
   confirmPresaleContribution,
@@ -301,6 +312,15 @@ import {
   type RegisterDeps,
   registerRealmToken,
 } from './realm_token';
+import {
+  type CurveDeps,
+  confirmCurveLaunch,
+  confirmLeftover,
+  curveState,
+  prepareCurveQuote,
+  prepareLeftoverQuote,
+  reconcileCurve,
+} from './realm_token_curve';
 import { listRealmTokens, realmTokenDb } from './realm_token_db';
 import {
   confirmDistribution,
@@ -314,6 +334,11 @@ import {
   realLaunchChain,
 } from './realm_token_mint';
 import { launchQuoteStore } from './realm_token_mint_db';
+
+// The stub launch venue holds its fixed-rate pools in memory, so one instance
+// serves the whole process (REALM_LAUNCHPAD_VENUE=stub, pre-mainnet only).
+const stubVenueSingleton = new StubLaunchVenue();
+
 import { castVote, openVote, type VoteDeps, voteStatus } from './realm_vote';
 import { realmVoteDb } from './realm_vote_db';
 import { referralRewardSummary } from './referral_db';
@@ -1807,6 +1832,99 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       if (!result.ok) return json(res, result.status, { error: result.error });
       return json(res, 200, { bucket: result.bucket, escrow: result.escrow });
     }
+    // ── Realm token launchpad (phase 4): bonding-curve launch ─────────────────
+    // The venue comes from env (meteora_dbc in production, stub pre-mainnet,
+    // unset = disabled). Every route touches the RPC through the venue, so all
+    // are rate-limited.
+    const curveDeps = (): CurveDeps => {
+      const venueName = launchpadVenueName();
+      return {
+        ...launchDeps(),
+        venue:
+          venueName === 'meteora_dbc'
+            ? new MeteoraDbcVenue()
+            : venueName === 'stub'
+              ? stubVenueSingleton
+              : null,
+      };
+    };
+    const tokenCurveQuoteMatch = /^\/api\/realms\/(\d+)\/token\/curve\/quote$/.exec(url);
+    if (req.method === 'POST' && tokenCurveQuoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await prepareCurveQuote(curveDeps(), {
+        accountId,
+        realmId: Number(tokenCurveQuoteMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, result.quote);
+    }
+    const curveConfirmMatch = /^\/api\/realms\/(\d+)\/token\/curve\/confirm$/.exec(url);
+    if (req.method === 'POST' && curveConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const quoteId = typeof body.quoteId === 'string' ? body.quoteId : '';
+      const signature = typeof body.signature === 'string' ? body.signature : '';
+      if (!quoteId || !signature) return json(res, 400, { error: 'missing_quoteId_or_signature' });
+      const result = await confirmCurveLaunch(curveDeps(), { accountId, quoteId, signature });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { poolAddress: result.poolAddress, baseMint: result.baseMint });
+    }
+    const curveStateMatch = /^\/api\/realms\/(\d+)\/token\/curve$/.exec(url);
+    if (req.method === 'GET' && curveStateMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await curveState(curveDeps(), Number(curveStateMatch[1]));
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { curve: result.curve });
+    }
+    const curveReconcileMatch = /^\/api\/realms\/(\d+)\/token\/curve\/reconcile$/.exec(url);
+    if (req.method === 'POST' && curveReconcileMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await reconcileCurve(curveDeps(), {
+        accountId,
+        realmId: Number(curveReconcileMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, {
+        status: result.status,
+        founderLock: result.founderLock,
+        lpLock: result.lpLock,
+      });
+    }
+    const leftoverQuoteMatch = /^\/api\/realms\/(\d+)\/token\/curve\/leftover\/quote$/.exec(url);
+    if (req.method === 'POST' && leftoverQuoteMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const result = await prepareLeftoverQuote(curveDeps(), {
+        accountId,
+        realmId: Number(leftoverQuoteMatch[1]),
+      });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, result.quote);
+    }
+    const leftoverConfirmMatch = /^\/api\/realms\/(\d+)\/token\/curve\/leftover\/confirm$/.exec(
+      url,
+    );
+    if (req.method === 'POST' && leftoverConfirmMatch) {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      if (rateLimited(req)) return json(res, 429, { error: 'too many requests, slow down' });
+      const body = await readBody(req);
+      const quoteId = typeof body.quoteId === 'string' ? body.quoteId : '';
+      const signature = typeof body.signature === 'string' ? body.signature : '';
+      if (!quoteId || !signature) return json(res, 400, { error: 'missing_quoteId_or_signature' });
+      const result = await confirmLeftover(curveDeps(), { accountId, quoteId, signature });
+      if (!result.ok) return json(res, result.status, { error: result.error });
+      return json(res, 200, { distributed: true });
+    }
     const realmDecommissionMatch = /^\/api\/realms\/(\d+)\/decommission$/.exec(url);
     if (req.method === 'POST' && realmDecommissionMatch) {
       const accountId = await bearerActiveAccount(req, res);
@@ -2627,9 +2745,30 @@ let oauthApiEntry: ApiDispatcher = selectApiEntry(
 // first and short-circuits when handled; everything else falls to the legacy
 // handleInternalApi ladder UNCHANGED (unknown endpoints, wrong methods, HEAD, and
 // the flag-off rollback path).
+const feeOps: FeeOps = {
+  registerClaim: (p) =>
+    registerFeeClaim(
+      { store: realmFeeStore(), exec: buildFeeExecutor() },
+      { realmId: p.realmId, currency: p.currency, signature: p.signature },
+    ),
+  listClaimable: () =>
+    listClaimableFees({
+      store: realmFeeStore(),
+      exec: buildFeeExecutor(),
+      venue: launchpadVenueForFees(),
+    }),
+};
+// The launch venue the fee keeper reads pool state through (meteora in
+// production, the in-memory stub pre-mainnet, null when disabled).
+function launchpadVenueForFees(): LaunchVenue | null {
+  const name = launchpadVenueName();
+  if (name === 'meteora_dbc') return new MeteoraDbcVenue();
+  if (name === 'stub') return stubVenueSingleton;
+  return null;
+}
 const internalLegacy: ApiDelegate = async (req, res) => {
   if (await handleDailyRewardInternalApi(req, res)) return;
-  await handleInternalApi(req, res, liveGame(), { openSeason, closeSeason });
+  await handleInternalApi(req, res, liveGame(), { openSeason, closeSeason }, feeOps);
 };
 const internalApiDispatcher = createApiDispatcher({
   registry: apiRegistry,
@@ -2959,6 +3098,49 @@ export async function startServer(): Promise<http.Server> {
     console.log(
       `realm buyback keeper enabled (${realmBuybackKeepers.map((k) => k.label).join(', ')})`,
     );
+  }
+
+  // Realm token fee keeper (launchpad phase 5): drain each curve-launched
+  // realm's accrued DBC trading fees into the per-realm revenue split
+  // (operator / global treasury / affiliate / $WOC buy-and-burn), each drain
+  // under a per-realm advisory TRY-lock (no double-spend). runFeeCycle
+  // recovers any half-paid distribution by recorded leg signature first.
+  // No-op unless configured (REALM_FEE_VAULT + secret + treasury + burn dest).
+  if (feeKeeperConfigured()) {
+    const feeExec = buildFeeExecutor();
+    const feeStore = realmFeeStore();
+    let feeKeeperBusy = false;
+    const feeTick = async () => {
+      if (feeKeeperBusy) return;
+      feeKeeperBusy = true;
+      try {
+        await runFeeCycle({
+          store: feeStore,
+          exec: feeExec,
+          venue: launchpadVenueForFees(),
+          operatorWalletForRealm: async (realmId) => {
+            const realm = await getRealmById(pool, realmId);
+            if (!realm || realm.ownerAccountId === null) return null;
+            const w = await walletForAccount(realm.ownerAccountId);
+            return w ? w.pubkey : null;
+          },
+          affiliateForRealm: async (realmId) => {
+            const aff = await getRealmAffiliate(pool, realmId);
+            if (!aff) return null;
+            const w = await walletForAccount(aff.affiliateAccountId);
+            return w ? { wallet: w.pubkey, bps: aff.bps } : null;
+          },
+          now: () => Date.now(),
+        });
+      } catch (err) {
+        console.error('realm fee keeper cycle failed:', err);
+      } finally {
+        feeKeeperBusy = false;
+      }
+    };
+    void feeTick();
+    setInterval(() => void feeTick(), PAYOUT_KEEPER_TICK_MS).unref();
+    console.log('realm fee keeper enabled');
   }
   console.log('database ready');
 

@@ -265,6 +265,20 @@ const REQUIRED_REALM_COLUMNS: Record<string, readonly string[]> = {
     'pay_tx_sig',
     'refund_tx_sig',
   ],
+  // Phase 5 fee revenue tables: the claim replay guard + per-realm attribution
+  // (accruals), and the four-leg ledger-first payout with its per-leg UNIQUE
+  // signature columns (distributions). All load-bearing.
+  realm_fee_accruals: ['accrual_id', 'realm_id', 'currency', 'amount_base', 'claim_tx_sig'],
+  realm_fee_distributions: [
+    'distribution_id',
+    'realm_id',
+    'currency',
+    'total_base',
+    'operator_tx_sig',
+    'treasury_tx_sig',
+    'affiliate_tx_sig',
+    'burn_tx_sig',
+  ],
 };
 
 export async function assertRealmSchema(db: Queryable): Promise<void> {

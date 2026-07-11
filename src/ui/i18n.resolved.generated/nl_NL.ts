@@ -331,6 +331,12 @@ export const nl_NL: EnTranslations = {
       "lock_underfunded": "The lock does not hold the full allocation.",
       "locks_incomplete": "The token cannot list until the founder, levy, and liquidity locks are verified on chain.",
       "missing_quoteId_or_signature": "The launch confirmation was incomplete. Start again.",
+      "curve_disabled": "Bonding curve launches are not enabled on this realm host yet.",
+      "fee_claimer_unconfigured": "The platform fee vault is not configured yet.",
+      "curve_already_launched": "This token already has a bonding curve.",
+      "curve_not_launched": "Launch the bonding curve first.",
+      "curve_mismatch": "The on-chain curve does not match this launch. Start again.",
+      "not_migrated": "The curve has not graduated yet.",
       "rate_limited": "Too many requests. Slow down and try again.",
       "wallet_mismatch": "Connect the wallet you linked to your account.",
       "generic": "Something went wrong. Try again."

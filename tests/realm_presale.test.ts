@@ -174,6 +174,12 @@ class FakeTokens implements RealmTokenDb {
   async recordLockAddress(): Promise<RealmToken | null> {
     throw new Error('recordLockAddress is not exercised by this suite');
   }
+  async recordCurveLaunch(): Promise<RealmToken | null> {
+    throw new Error('recordCurveLaunch is not exercised by this suite');
+  }
+  async recordLpLock(): Promise<RealmToken | null> {
+    throw new Error('recordLpLock is not exercised by this suite');
+  }
 }
 
 class FakeStore implements RealmPresaleStore {

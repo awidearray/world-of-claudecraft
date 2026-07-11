@@ -331,6 +331,12 @@ export const zh_TW: EnTranslations = {
       "lock_underfunded": "鎖倉未持有全部份額。",
       "locks_incomplete": "在創始人、平台與流動性鎖倉全部通過鏈上驗證之前，代幣無法上架。",
       "missing_quoteId_or_signature": "發射確認資訊不完整。請重新開始。",
+      "curve_disabled": "該伺服器主機尚未啟用聯合曲線發射。",
+      "fee_claimer_unconfigured": "平台費用金庫尚未設定。",
+      "curve_already_launched": "該代幣已有聯合曲線。",
+      "curve_not_launched": "請先啟動聯合曲線。",
+      "curve_mismatch": "鏈上曲線與本次發射不符。請重新開始。",
+      "not_migrated": "曲線尚未畢業。",
       "rate_limited": "請求過多。請放慢速度後再試。",
       "wallet_mismatch": "請連接您帳戶所關聯的錢包。",
       "generic": "出了點問題。請重試。"

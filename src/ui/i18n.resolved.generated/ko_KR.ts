@@ -331,6 +331,12 @@ export const ko_KR: EnTranslations = {
       "lock_underfunded": "락에 할당량 전액이 들어 있지 않습니다.",
       "locks_incomplete": "파운더, 레비, 유동성 락이 모두 체인에서 검증될 때까지 토큰을 상장할 수 없습니다.",
       "missing_quoteId_or_signature": "런치 확인 정보가 불완전했습니다. 다시 시작하세요.",
+      "curve_disabled": "이 렐름 호스트에서는 본딩 커브 런치가 아직 활성화되지 않았습니다.",
+      "fee_claimer_unconfigured": "플랫폼 수수료 금고가 아직 설정되지 않았습니다.",
+      "curve_already_launched": "이 토큰에는 이미 본딩 커브가 있습니다.",
+      "curve_not_launched": "먼저 본딩 커브를 런치하세요.",
+      "curve_mismatch": "체인상의 커브가 이 런치와 일치하지 않습니다. 다시 시작하세요.",
+      "not_migrated": "커브가 아직 졸업하지 않았습니다.",
       "rate_limited": "요청이 너무 많습니다. 잠시 후 다시 시도하세요.",
       "wallet_mismatch": "계정에 연결한 지갑을 연결하세요.",
       "generic": "문제가 발생했습니다. 다시 시도하세요."

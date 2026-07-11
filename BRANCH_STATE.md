@@ -1,6 +1,6 @@
 # Branch state: feature/woc-realm-token-launchpad-impl
 
-Realm Token Launchpad, phases 0 to 3 of
+Realm Token Launchpad, phases 0 to 5 of
 `docs/prd/woc/realm-token-launchpad.md`, implemented on the #475 realm base
 freshened with release/v0.23.0 (merge 2bb4d5084). Deliverable is this pushed
 branch; NO upstream PR yet (the #799/#475 chain is blocked, see the recipe at
@@ -28,7 +28,8 @@ the bottom).
 | e5c481a25 | 1 | `feat(realm-vote)`: weighted off-chain launch vote |
 | 1c0c24b5d | 2 | `feat(realm-presale)`: asset-only non-custodial presale + surface-inventory registration |
 | 2ae0ef47c | 1+2 UI | `feat(ui)`: launchpad panel + view-core + i18n domain + wiring |
-| (HEAD) | 3 | `feat(realm-mint)`: Token-2022 mint factory, allocation locks, listing gate |
+| 224d03e87 | 3 | `feat(realm-mint)`: Token-2022 mint factory, allocation locks, listing gate |
+| (HEAD) | 4+5 | `feat(realm-curve)`: Meteora DBC launch + DAMM v2 graduation + fee keeper |
 
 ## Phase 0: registry + identity
 
@@ -216,6 +217,116 @@ Acceptance:
 - i18n: 17 new `launchpad.err.*` codes mapped in ERR_KEYS, English catalog
   entries + the five non-Latin M16 fills each (zh_CN/zh_TW/ja_JP/ko_KR/ru_RU),
   ERR_KEYS coverage test extended; artifacts + hash baseline regenerated.
+
+## Phase 4: Meteora DBC bonding curve + DAMM v2 graduation
+
+Files: `server/realm_launchpad.ts` (the thin `LaunchVenue` seam + the pure
+`CurveLaunchPlan` mapping the phase-3 allocation onto on-chain CONFIG
+commitments + `verifyCurveConfigFacts` comparing LIVE facts to the pinned plan
++ the fixed-rate `StubLaunchVenue` for tests/pre-mainnet; the fee claimer MUST
+be off-curve, `curveFeeClaimer` rejects an on-curve EOA), `server/realm_launchpad_dbc.ts`
+(the `MeteoraDbcVenue` over @meteora-ag/dynamic-bonding-curve-sdk 1.5.10:
+`buildCurve` config, `createConfigAndPool`, live reads of config/pool/migration
+state, size-aware `swapQuote` sell quote, and the permissionless migration
+cranks), `server/realm_token_curve.ts` (the launch/reconcile/leftover
+orchestration on the phase 0 to 3 lifecycle). Dep: the DBC SDK + `bn.js` types.
+
+The curve path (all founder-signed, server verify-only):
+1. LAUNCH (`POST .../token/curve/quote` + `/confirm`): ONE founder tx creates
+   the venue config + pool; the POOL creates the base mint (Token-2022,
+   immutable authority by construction). Confirm verifies the LIVE on-chain
+   config against the pinned plan (immutable authority, DAMM v2 migration, 100
+   percent permanently locked LP, founder vesting == founder bucket, quote
+   mint, PDA fee claimer, founder leftover receiver), then records mint /
+   launch_tx_sig / curve / pool / fee_claimer + the pinned bucket amounts in
+   one guarded write. Allocation maps onto the curve: public 60 sells on the
+   curve, liquidity 10 into the permanently-locked DAMM v2 LP, founder 12 into
+   the config's locked vesting (the SAME Jupiter Lock program phase 3 uses,
+   cliff FROM MIGRATION), levy 8 + treasury 10 as the config leftover.
+2. RECONCILE (`POST .../token/curve/reconcile`, idempotent): once migrated,
+   decodes the founder-vesting locker escrow with the phase-3 decoder and
+   `verifyVenueLockerEscrow` (the venue's escrow uses update_recipient_mode
+   OnlyRecipient and cancel_mode OnlyCreator where the creator is an off-curve
+   program PDA that can never sign, so cancellation is unreachable), records
+   founder_lock + lp_lock (the DAMM v2 pool), and walks funded -> live
+   (markTokenLive, the only door) -> graduated.
+3. LEFTOVER (`POST .../token/curve/leftover/quote` + `/confirm`): withdraws the
+   levy + treasury buckets to the founder ATA; confirm verifies the founder was
+   credited AT LEAST the reserved levy + treasury (a partial-fill curve
+   completion leaves a small unsold-curve remainder in the leftover, the
+   operator's, outside the lock scheme), records it as the distribution, then
+   the UNCHANGED phase-3 lock-quote flow locks the levy and treasury buckets
+   (the founder bucket is locker-managed, so its phase-3 lock is refused on the
+   curve path).
+
+Acceptance:
+- `tests/realm_token_curve.test.ts` (18 tests): the plan + off-curve fee-claimer
+  gate, the live-config verifier against every tampered dimension, the
+  buildCurve -> normalize -> re-verify round-trip (the built config read back
+  as an account passes the pinned-plan verifier, vesting total == founder
+  bucket exactly), the stub venue, and the full quote/confirm/reconcile/leftover
+  orchestration ending with the phase-3 lock flow taking over levy + treasury
+  and the listing gate opening.
+- DEVNET INTEGRATION GREEN (`tests/realm_token_curve.devnet.test.ts`, gated
+  WOC_DEVNET_TEST=1, run 2026-07-11 against api.devnet.solana.com, ~114s): the
+  REAL Meteora DBC venue end to end with a 1-SOL migration threshold: launch
+  config+pool -> buy 0.3 SOL (size-aware sell quote becomes real) -> partial-fill
+  swap2 completes the curve -> createLocker -> migrateToDammV2 -> reconcile
+  (founder vesting locker + DAMM v2 LP recorded, both verified on-chain) ->
+  withdraw leftover -> jup-lock levy + treasury -> reconcile -> live ->
+  graduated. All server verifiers ran against real accounts.
+- Devnet learnings encoded: the lock program expects the escrow ATA to exist
+  (created idempotently); a completing buy must be a partial-fill swap2 (a plain
+  exact-in past the remaining curve base reverts InsufficientLiquidity); the
+  venue locker's cancel_mode is 1 with an off-curve PDA creator (accepted by the
+  scoped venue-locker verdict, distinct from our own mode-0 immutable locks).
+
+GATE (unchanged): the phase-4 ACCEPTANCE is a MAINNET dry-run requiring the
+owner's explicit sign-off. Everything is built + devnet-proven; NO mainnet
+transaction was made. `REALM_LAUNCHPAD_VENUE` defaults unset (curve launches
+disabled); `stub` is the fixed-rate pre-mainnet host, `meteora_dbc` is
+production. `REALM_LAUNCHPAD_FEE_CLAIMER` must be an ops-owned off-curve PDA.
+
+## Phase 5: source-scoped fee revenue keeper
+
+Files: `server/realm_fee_split.ts` (pure four-leg split: operator minus the
+affiliate cut / affiliate / global treasury / burn, summing to exactly the
+input with dust in the operator leg; env-clamped to a 10000-bps identity),
+`server/realm_fee_keeper.ts` (the CLAIM/ACCRUE/DRAIN orchestration over injected
+interfaces), `server/realm_fee_db.ts` (`realm_fee_accruals` +
+`realm_fee_distributions`, both ledger-first with UNIQUE tx-sig guards + the
+per-realm advisory TRY-lock). Boot-started interval in main.ts (like the
+buyback keeper), no-op unless configured.
+
+Flow: ops claims each pool's DBC partner fees (claimable only by the phase-4
+fee-claimer PDA) with the keeper vault as receiver; `POST /internal/woc/fee/register`
+(WOC_OPS_SECRET-gated, the season-ops pattern) verifies the finalized claim
+credited the vault and accrues it per realm (UNIQUE(claim_tx_sig)); `runFeeCycle`
+drains each realm's accrued-minus-distributed balance under the per-realm
+advisory TRY-lock (a contended realm is SKIPPED, never double-paid), cutting the
+four legs ledger-first (the distribution row + every leg signature durable
+BEFORE each broadcast, so recovery resolves by recorded signature and a crash
+never double-pays). The burn leg is the pluggable terminal: the realm-buyback
+vault (whose existing keeper swaps to $WOC and burns) or an LP-seed dest.
+
+Acceptance:
+- `tests/realm_fee_split.test.ts` (7 tests): exact four-leg division, affiliate
+  out of the operator side, env clamp + wholesale fallback, sum-to-total for
+  adversarial amounts.
+- `tests/realm_fee_keeper.test.ts` (8 tests): verify-and-accrue with the replay
+  guard, the four-leg drain, the floor / unpayable / missing-config guards, the
+  advisory-lock skip (no double-pay), and crash recovery by recorded leg
+  signature (a half-paid distribution's already-broadcast leg is confirmed by
+  its recorded sig, NOT re-sent; only the never-attempted leg sends anew).
+- Real-DB integration (in `realm_launchpad_db.integration.test.ts`, now 15
+  tests): accrual replay guard, exact per-realm attribution off the shared
+  vault, the leg-sig UNIQUE across rows, the advisory TRY-lock (a nested holder
+  is skipped not blocked), listFeeRealms surfacing only curve realms.
+
+The `/internal/woc/fee/*` pair is legacy-only WOC_OPS ops, joining the existing
+`/internal/woc/season/*` pair in the same waived-inventory category (they cannot
+be surface-inventoried without RouteDef registration; a pre-existing gate
+conflict, not new debt).
 
 ## UI (panel for phases 0 to 2)
 

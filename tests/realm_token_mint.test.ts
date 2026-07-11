@@ -253,6 +253,37 @@ class FakeTokens implements RealmTokenDb {
     this.rows.set(realmId, next);
     return next;
   }
+  async recordCurveLaunch(
+    realmId: number,
+    d: {
+      mint: string;
+      launchTxSig: string;
+      curveAddress: string;
+      poolAddress: string;
+      feeClaimerPda: string;
+      supplyBase: bigint;
+      founderAllocBase: bigint;
+      levyAllocBase: bigint;
+      treasuryAllocBase: bigint;
+    },
+  ) {
+    const row = this.rows.get(realmId);
+    if (!row || row.mint !== null || row.curveAddress !== null || row.status !== 'funded')
+      return null;
+    for (const r of this.rows.values()) {
+      if (r.launchTxSig === d.launchTxSig) throw new UniqueViolation('launch_tx_sig');
+    }
+    const next = { ...row, ...d };
+    this.rows.set(realmId, next);
+    return next;
+  }
+  async recordLpLock(realmId: number, address: string) {
+    const row = this.rows.get(realmId);
+    if (!row || row.lpLockAddress !== null || row.poolAddress === null) return null;
+    const next = { ...row, lpLockAddress: address };
+    this.rows.set(realmId, next);
+    return next;
+  }
 }
 
 class FakeQuotes implements LaunchQuoteStore {
