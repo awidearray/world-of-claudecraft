@@ -181,6 +181,7 @@ import {
 } from './ui/i18n';
 import { defaultIconPrewarmEntries, prewarmIconCache } from './ui/icon_prewarm';
 import { iconDataUrl } from './ui/icons';
+import { LevyFundPanel } from './ui/levy_fund_panel';
 import { applyNativeDeviceLanguage } from './ui/native_language';
 import { scheduleNativeUpdateCheck } from './ui/native_update_prompt';
 import { createMetricsSampler } from './ui/perf_metrics_sampler';
@@ -3188,6 +3189,7 @@ function show(el: string): void {
     '#realm-panel',
     '#realm-operator-panel',
     '#realm-affiliate-panel',
+    '#levy-fund-panel',
     '#charselect-panel',
     '#charcreate-panel',
     '#offline-select',
@@ -6527,6 +6529,17 @@ function openRealmAffiliate(): void {
   void realmAffiliate.open();
 }
 
+// The public, display-only Levy Street Fund portfolio (launchpad phase 6). A
+// fresh panel each open (the body is repurposed) so the snapshot is re-fetched.
+function openLevyFund(): void {
+  show('#levy-fund-panel');
+  const panel = new LevyFundPanel($('#levy-fund-body') as HTMLElement, {
+    api,
+    close: () => showRealmList(),
+  });
+  void panel.open();
+}
+
 function wireWallet(): void {
   setWalletUiEnabled(WALLET_ENABLED);
   setWocSeasonUiEnabled(WALLET_ENABLED);
@@ -7264,6 +7277,11 @@ function wireStartScreens(): void {
   ($('#btn-realm-affiliate') as HTMLElement).hidden = !WALLET_ENABLED;
   $('#btn-realm-affiliate').addEventListener('click', () => openRealmAffiliate());
   $('#btn-realm-affiliate-back').addEventListener('click', () => showRealmList());
+  // Levy Street Fund: the public display-only portfolio. Wallet-gated like the
+  // other launchpad surfaces (the fund only exists on a token-launching deploy).
+  ($('#btn-realm-levy-fund') as HTMLElement).hidden = !WALLET_ENABLED;
+  $('#btn-realm-levy-fund').addEventListener('click', () => openLevyFund());
+  $('#btn-levy-fund-back').addEventListener('click', () => showRealmList());
   // Change Realm is now an inline dropdown on the character-select screen.
   $('#btn-change-realm').addEventListener('click', (e) => {
     e.stopPropagation();

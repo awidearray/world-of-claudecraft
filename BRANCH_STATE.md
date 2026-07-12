@@ -378,10 +378,15 @@ Acceptance:
 - `tests/architecture.test.ts` green (the view-core is registered in
   UI_PURE_CORES; no DOM / nondeterminism in it).
 
-Entry-point follow-up: the panel + Api method (`Api.levyFund`) are complete and
-tested; a HUD host hook to open the panel from the realm directory is a UI
-follow-up (needs a running dev server to verify), mirroring the phases-0-to-2
-"player entry point" follow-up.
+Entry point (wired): a "Levy Street Fund" button on the post-login realm list
+(`index.html`, wallet-gated like the other launchpad surfaces) opens the
+`LevyFundPanel` via `openLevyFund` in `src/main.ts`; `#levy-fund-panel` +
+`#levy-fund-body` are the panel DOM, styled in `src/styles/shell.css`.
+`tests/levy_fund_panel.test.ts` drives the real panel against a hand-rolled fake
+DOM (no jsdom, the repo pattern): it renders the AUM header, the display-only
+securities-line note, one row per holding with the illiquid tag, the empty
+state, and wires the back button. `npx vite build` clean; the CSS-corpus /
+client-shell guards green.
 
 ## Phase 7: in-world currency re-skin + power-realm copper credit
 
