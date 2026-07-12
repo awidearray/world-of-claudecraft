@@ -107,11 +107,23 @@ passed, with only the two expected reds above.
 
 ### Screenshots / recordings
 
-The launchpad panel, Levy Fund page, and HUD money re-skin are all behind
-default-off flags and need a provisioned realm + linked wallet to render
-meaningfully; screenshots were not captured in the headless contribution
-environment. Happy to add them from a staging realm before merge if
-wanted.
+Captured with the repo's stub-host harness pattern (real components + real
+CSS + pinned realistic data; `node scripts/launchpad_shots.mjs`), committed
+under `docs/screenshots/`:
+
+- `launchpad-live-power.png` / `launchpad-live-power-mobile.png`: the
+  launchpad page for a live power realm (pay-to-win banner, verified lock
+  proofs with Solscan links, curve migration progress, the token-to-copper
+  convert section, the facilitator disclosure).
+- `levy-street-fund.png` / `levy-street-fund-mobile.png`: the public fund
+  portfolio (AUM, badges, confidence, an illiquid row excluded from total).
+- `hud-money-reskin.png`: before/after of the phase 7 money readout through
+  the real `Hud.prototype.moneyHtml` (classic coins vs the realm token).
+
+These are "after" shots: every panel is NEW on this branch (no "before"
+exists). Capturing them surfaced that the panels' `.lp-*`/`.lf-*` classes
+had shipped with no CSS (invisible progress bars); the styles now exist in
+`src/styles/shell.css` on the shared `.ro-*` palette.
 
 ### Checklist
 

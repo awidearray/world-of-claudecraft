@@ -7745,4 +7745,198 @@
       grid-template-columns: 1fr;
     }
   }
+
+  /* ---------- realm token launchpad (.lp-*) + Levy Street Fund (.lf-*) ----------
+     The launchpad panel (src/ui/realm_launchpad.ts) and the public fund page
+     (src/ui/levy_fund.ts) render on the shared .ro-* skeleton above; these are
+     their own elements: step chips, progress bars, on-chain proof rows, the
+     pay-to-win banner, and the holdings table. Same palette as the .ro block
+     (gold titles, #322c1d borders, #998d6a hints); no hover scaling. */
+  .lp section,
+  .lp-vote,
+  .lp-presale,
+  .lp-launch,
+  .lp-curve,
+  .lp-power,
+  .lp-register {
+    border: 1px solid #322c1d;
+    border-radius: 6px;
+    padding: 12px 14px;
+    background: #ffffff05;
+  }
+  .lp-head {
+    border: none;
+    padding: 0;
+    background: none;
+  }
+  .lp-checklist {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0 0;
+    padding: 0;
+  }
+  .lp-step {
+    font-size: 10px;
+    font-family: var(--title-font);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #887c5c;
+    border: 1px solid #3a331e;
+    border-radius: 3px;
+    padding: 3px 9px;
+    background: #16130b;
+  }
+  .lp-step-done {
+    color: #6fe08a;
+    border-color: #2f5a22;
+    background: #12200f;
+  }
+  .lp-step-current {
+    color: var(--gold, #f2d98a);
+    border-color: #6b5a26;
+    background: #241d0d;
+  }
+  .lp-bar {
+    height: 8px;
+    border-radius: 5px;
+    background: #221d12;
+    border: 1px solid #322c1d;
+    overflow: hidden;
+    margin: 10px 0 4px;
+  }
+  .lp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #c9a13b, #f2d98a);
+  }
+  .lp-bar-quorum .lp-bar-fill {
+    background: linear-gradient(90deg, #4d7c43, #7bd88f);
+  }
+  .lp-power-banner {
+    color: #ffb86b;
+    border: 1px solid #7a4a1d;
+    border-radius: 5px;
+    padding: 8px 11px;
+    background: #2a1a0a;
+    font-size: 12px;
+    line-height: 1.45;
+    margin: 0;
+  }
+  .lp-terms {
+    border-top: 1px solid #322c1d;
+    padding-top: 10px;
+  }
+  .lp-escrow {
+    word-break: break-all;
+  }
+  .lp-escrow a {
+    color: #c9b27a;
+    text-decoration: none;
+    border-bottom: 1px dotted #6b5a26;
+  }
+  .lp-checks {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 10px 0 0;
+    padding: 0;
+  }
+  .lp-check {
+    font-size: 11px;
+    line-height: 1.4;
+    padding: 5px 9px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+  }
+  .lp-check-ok {
+    color: #7bd88f;
+    border-color: #2f5a22;
+    background: #12200f;
+  }
+  .lp-check-fail {
+    color: #e07a6f;
+    border-color: #5a2822;
+    background: #200f0f;
+  }
+  .lp-check-detail {
+    display: block;
+    color: #b08a80;
+    font-size: 10px;
+    word-break: break-all;
+    margin-top: 2px;
+  }
+  .lp-contribute-row {
+    display: flex;
+    gap: 8px;
+  }
+  .lp-contribute-row .ro-select {
+    width: auto;
+    min-width: 92px;
+    flex: 0 0 auto;
+  }
+  .lp-contribute-row .ro-input:not(.ro-select) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .lp-config-rail,
+  .lp-mint-create,
+  .lp-lock-verify,
+  .lp-config {
+    border-top: 1px dashed #322c1d;
+    margin-top: 12px;
+    padding-top: 10px;
+  }
+  /* The fund page is a six-column data table: the 400px auth-form cap would
+     force weight/status behind a horizontal scroll on desktop. */
+  #levy-fund-panel {
+    max-width: 760px;
+  }
+  .lf-aum {
+    font-family: var(--title-font);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--gold, #f2d98a);
+    margin: 10px 0 4px;
+  }
+  .lf-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #322c1d;
+    border-radius: 6px;
+    background: #ffffff05;
+  }
+  .lf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .lf-table th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #887c5c;
+    padding: 8px 10px;
+    border-bottom: 1px solid #322c1d;
+    background: #16130b;
+    white-space: nowrap;
+  }
+  .lf-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #241f13;
+    color: #d8cfa6;
+    vertical-align: top;
+  }
+  .lf-table tr:last-child td {
+    border-bottom: none;
+  }
+  .lf-table a {
+    color: #e7dcb4;
+    text-decoration: none;
+    border-bottom: 1px dotted #6b5a26;
+  }
+  .lf-row-illiquid td {
+    color: #6f664d;
+  }
 }
