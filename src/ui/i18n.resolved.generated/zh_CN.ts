@@ -198,6 +198,20 @@ export const zh_CN: EnTranslations = {
       "power": "付费变强",
       "powerBanner": "付费变强服务器：该代币上线后可以在这里购买游戏优势。"
     },
+    "launches": {
+      "open": "社区发射",
+      "title": "社区发射",
+      "subtitle": "正在进行代币发射投票或预售的服务器。任何人都可以投票或出资。",
+      "loading": "正在加载社区发射……",
+      "empty": "目前没有服务器在投票或预售中，请稍后再来查看。",
+      "statusVoting": "社区投票",
+      "statusPresale": "预售",
+      "powerTag": "付费变强",
+      "progressVoting": "法定人数进度 {pct}%",
+      "progressPresale": "软顶进度 {pct}%",
+      "ctaVote": "投票",
+      "ctaContribute": "出资"
+    },
     "levy": {
       "open": "莱维街基金",
       "title": "莱维街基金",

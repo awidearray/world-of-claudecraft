@@ -198,6 +198,20 @@ export const ko_KR: EnTranslations = {
       "power": "페이 투 윈",
       "powerBanner": "페이 투 윈 월드: 출시 후 이 토큰으로 게임 내 이점을 구매할 수 있습니다."
     },
+    "launches": {
+      "open": "커뮤니티 발사",
+      "title": "커뮤니티 발사",
+      "subtitle": "토큰 발사 투표가 진행 중이거나 사전 판매 중인 서버입니다. 누구나 투표하거나 기여할 수 있습니다.",
+      "loading": "커뮤니티 발사를 불러오는 중...",
+      "empty": "현재 투표 중이거나 사전 판매 중인 서버가 없습니다. 나중에 다시 확인해 주세요.",
+      "statusVoting": "커뮤니티 투표",
+      "statusPresale": "사전 판매",
+      "powerTag": "페이 투 윈",
+      "progressVoting": "정족수의 {pct}%",
+      "progressPresale": "소프트캡의 {pct}%",
+      "ctaVote": "투표하기",
+      "ctaContribute": "기여하기"
+    },
     "levy": {
       "open": "레비 스트리트 펀드",
       "title": "레비 스트리트 펀드",

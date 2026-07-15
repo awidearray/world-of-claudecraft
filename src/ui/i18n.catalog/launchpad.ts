@@ -38,6 +38,23 @@ export const launchpadStrings = {
     power: 'Pay-to-win',
     powerBanner: 'Pay-to-win realm: this token may buy gameplay power here once launched.',
   },
+  // The public launch-discovery list (community entry point into the panel
+  // above, PRD section 9): every realm currently voting or in presale.
+  launches: {
+    open: 'Community Launches',
+    title: 'Community Launches',
+    subtitle:
+      'Realms currently voting on a token launch or running a presale. Anyone can vote or contribute.',
+    loading: 'Loading community launches...',
+    empty: 'No realm is voting or in presale right now. Check back soon.',
+    statusVoting: 'Community Vote',
+    statusPresale: 'Presale',
+    powerTag: 'Pay-to-win',
+    progressVoting: '{pct}% of quorum',
+    progressPresale: '{pct}% of the soft cap',
+    ctaVote: 'Vote',
+    ctaContribute: 'Contribute',
+  },
   // The public, display-only Levy Street Fund portfolio (phase 6).
   levy: {
     open: 'Levy Street Fund',

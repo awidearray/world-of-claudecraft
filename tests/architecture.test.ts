@@ -188,6 +188,7 @@ const UI_PURE_CORES = [
   'src/ui/corpse_harvest_view.ts',
   'src/ui/town_focus_view.ts',
   'src/ui/realm_launchpad_view.ts',
+  'src/ui/realm_launches_view.ts',
   'src/ui/levy_fund_view.ts',
   'src/game/ui_effects_profile.ts',
   'src/game/ui_tier_knobs.ts',

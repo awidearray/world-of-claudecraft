@@ -198,6 +198,20 @@ export const nl_NL: EnTranslations = {
       "power": "Pay-to-win",
       "powerBanner": "Pay-to-win realm: this token may buy gameplay power here once launched."
     },
+    "launches": {
+      "open": "Community Launches",
+      "title": "Community Launches",
+      "subtitle": "Realms currently voting on a token launch or running a presale. Anyone can vote or contribute.",
+      "loading": "Loading community launches...",
+      "empty": "No realm is voting or in presale right now. Check back soon.",
+      "statusVoting": "Community Vote",
+      "statusPresale": "Presale",
+      "powerTag": "Pay-to-win",
+      "progressVoting": "{pct}% of quorum",
+      "progressPresale": "{pct}% of the soft cap",
+      "ctaVote": "Vote",
+      "ctaContribute": "Contribute"
+    },
     "levy": {
       "open": "Levy Street Fund",
       "title": "Levy Street Fund",

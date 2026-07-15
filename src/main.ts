@@ -196,6 +196,7 @@ import {
 } from './ui/player_card_share';
 import { hydratePortraits, portraitChipHtml } from './ui/portrait_chip';
 import { RealmAffiliate } from './ui/realm_affiliate';
+import { RealmLaunches } from './ui/realm_launches';
 import { RealmLaunchpad } from './ui/realm_launchpad';
 import { RealmOperator } from './ui/realm_operator';
 import { hideReconnectOverlay, showReconnectOverlay } from './ui/reconnect_overlay';
@@ -3189,6 +3190,7 @@ function show(el: string): void {
     '#realm-panel',
     '#realm-operator-panel',
     '#realm-affiliate-panel',
+    '#realm-launches-panel',
     '#levy-fund-panel',
     '#charselect-panel',
     '#charcreate-panel',
@@ -6474,9 +6476,17 @@ async function signPresaleContribution(quote: RealmPresaleQuote): Promise<string
   }
 }
 
-// Realm token launchpad (phases 0 to 2): rendered into the realm-operator panel
-// body for one owned realm; Back re-opens the operator dashboard.
-function openRealmLaunchpad(realm: OwnedRealm): void {
+// Realm token launchpad (phases 0 to 2): rendered into the shared
+// realm-operator panel body for one realm. Reused from two entry points: the
+// OWNER's row action on the operator dashboard (Back returns there, the
+// default), and the public community-launches list any signed-in player can
+// reach (Back returns to that list instead). The panel itself gates
+// founder-only sections on the server's `isOwner` flag, so a non-owner opened
+// here sees vote/contribute controls but never register/config/finalize.
+function openRealmLaunchpad(realm: { realmId: number; name: string }, onClose?: () => void): void {
+  show('#realm-operator-panel');
+  const userEl = document.getElementById('realm-operator-user');
+  if (userEl) userEl.textContent = api.username ?? '';
   const body = $('#realm-operator-body') as HTMLElement;
   const launchpad = new RealmLaunchpad(body, {
     api,
@@ -6486,7 +6496,7 @@ function openRealmLaunchpad(realm: OwnedRealm): void {
     signContribution: signPresaleContribution,
     close: () => {
       realmOperator = null; // the panel body was repurposed; rebuild fresh
-      openRealmOperator();
+      (onClose ?? openRealmOperator)();
     },
   });
   void launchpad.open();
@@ -6527,6 +6537,22 @@ function openRealmAffiliate(): void {
     });
   }
   void realmAffiliate.open();
+}
+
+// Public launch-discovery list (the community entry point, PRD section 9):
+// every realm currently voting or in presale, for any signed-in player. A
+// row opens the shared launchpad panel above; its Back returns here.
+let realmLaunches: RealmLaunches | null = null;
+function openRealmLaunches(): void {
+  show('#realm-launches-panel');
+  if (!realmLaunches) {
+    realmLaunches = new RealmLaunches($('#realm-launches-body') as HTMLElement, {
+      api,
+      openRealm: (realm) => openRealmLaunchpad(realm, () => openRealmLaunches()),
+      close: () => showRealmList(),
+    });
+  }
+  void realmLaunches.open();
 }
 
 // The public, display-only Levy Street Fund portfolio (launchpad phase 6). A
@@ -7277,6 +7303,13 @@ function wireStartScreens(): void {
   ($('#btn-realm-affiliate') as HTMLElement).hidden = !WALLET_ENABLED;
   $('#btn-realm-affiliate').addEventListener('click', () => openRealmAffiliate());
   $('#btn-realm-affiliate-back').addEventListener('click', () => showRealmList());
+  // Community Launches: the public discovery list into the launch vote and
+  // presale panels (PRD section 9). Any signed-in player can vote or
+  // contribute here, not only a realm's owner. Wallet-gated like the other
+  // launchpad surfaces (voting/contributing needs a linked wallet server-side).
+  ($('#btn-realm-launches') as HTMLElement).hidden = !WALLET_ENABLED;
+  $('#btn-realm-launches').addEventListener('click', () => openRealmLaunches());
+  $('#btn-realm-launches-back').addEventListener('click', () => showRealmList());
   // Levy Street Fund: the public display-only portfolio. Wallet-gated like the
   // other launchpad surfaces (the fund only exists on a token-launching deploy).
   ($('#btn-realm-levy-fund') as HTMLElement).hidden = !WALLET_ENABLED;

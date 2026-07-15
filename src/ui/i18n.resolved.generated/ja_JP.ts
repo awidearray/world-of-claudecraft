@@ -198,6 +198,20 @@ export const ja_JP: EnTranslations = {
       "power": "ペイ・トゥ・ウィン",
       "powerBanner": "ペイ・トゥ・ウィンのワールド：ローンチ後、このトークンでゲーム上の力を購入できる場合があります。"
     },
+    "launches": {
+      "open": "コミュニティ発射",
+      "title": "コミュニティ発射",
+      "subtitle": "トークン発射の投票中、またはプレセール中のサーバー。誰でも投票・貢献できます。",
+      "loading": "コミュニティ発射を読み込み中...",
+      "empty": "現在投票中またはプレセール中のサーバーはありません。またあとで確認してください。",
+      "statusVoting": "コミュニティ投票",
+      "statusPresale": "プレセール",
+      "powerTag": "ペイ・トゥ・ウィン",
+      "progressVoting": "クォーラムの {pct}%",
+      "progressPresale": "ソフトキャップの {pct}%",
+      "ctaVote": "投票する",
+      "ctaContribute": "貢献する"
+    },
     "levy": {
       "open": "レビー・ストリート・ファンド",
       "title": "レビー・ストリート・ファンド",

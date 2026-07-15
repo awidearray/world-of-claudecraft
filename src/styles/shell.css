@@ -7401,4 +7401,14 @@
   .levy-fund__mint { font-family: var(--mono-font, monospace); font-size: 11px; color: #7f765b; }
   .levy-fund__src { font-size: 10px; color: #6fe08a; margin-left: 4px; }
   .levy-fund__illiquid { font-size: 10px; color: #b6a983; margin-left: 4px; }
+
+  /* ---------- realm launches (launchpad phase 9: public vote/presale discovery) ---------- */
+  #realm-launches-panel { width: 100%; max-width: 560px; }
+  #realm-launches-body { margin: 6px 0 10px; max-height: 64vh; overflow-y: auto; padding-right: 2px; }
+  .rl__sub { font-size: 12px; color: #b6a983; margin: 0 0 12px; line-height: 1.45; }
+  .rl-row .ro-realm-actions { margin-top: 10px; }
+  .rl-progress { height: 6px; border-radius: 3px; background: #1a160f; border: 1px solid #2a2418;
+    overflow: hidden; margin-top: 8px; }
+  .rl-progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    border-radius: 3px; }
 }

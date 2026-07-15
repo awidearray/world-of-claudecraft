@@ -350,6 +350,24 @@ export interface RealmTokenPage {
   isOwner?: boolean;
 }
 
+// One realm surfaced on the public launch-discovery list (GET
+// /api/realms/launchpad): every realm currently in `voting` or `presale`
+// status, for ANY authenticated account, so a non-owner can find a realm
+// mid-vote or mid-presale (the launch vote/presale routes already serve any
+// account; this is the entry point that used to only exist on the owner's
+// operator dashboard). vote/presale carry the SAME shape the owner panel
+// reads, including the caller's own vote/contribution when signed in.
+export interface LaunchpadDiscoveryEntry {
+  realmId: number;
+  realmName: string;
+  symbol: string;
+  icon: string;
+  status: RealmTokenInfo['status'];
+  monetizationPolicy: 'cosmetic' | 'power';
+  vote: RealmVoteStatus | null;
+  presale: RealmPresaleInfo | null;
+}
+
 // The public Levy Street Fund portfolio (GET /api/levy-fund), display-only.
 export interface LevyPortfolioWire {
   aumUsd: number;
@@ -581,6 +599,14 @@ export class Api {
   // The realm's full token status page: identity + vote tally + presale info.
   realmToken(realmId: number): Promise<RealmTokenPage> {
     return this.get(`/api/realms/${realmId}/token`);
+  }
+
+  // The public launch-discovery list: every realm currently in `voting` or
+  // `presale` status, for any authenticated account (the community entry point
+  // into the SAME panel realmToken() feeds, reached without being the owner).
+  async launchpadDiscovery(): Promise<LaunchpadDiscoveryEntry[]> {
+    const d = await this.get('/api/realms/launchpad');
+    return d.realms ?? [];
   }
 
   // The public, display-only Levy Street Fund portfolio (launchpad phase 6).

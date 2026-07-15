@@ -198,6 +198,20 @@ export const zh_TW: EnTranslations = {
       "power": "付費變強",
       "powerBanner": "付費變強世界：該代幣上線後可在此購買遊戲優勢。"
     },
+    "launches": {
+      "open": "社群發射",
+      "title": "社群發射",
+      "subtitle": "正在進行代幣發射投票或預售的伺服器。任何人都可以投票或出資。",
+      "loading": "正在載入社群發射……",
+      "empty": "目前沒有伺服器在投票或預售中，請稍後再來查看。",
+      "statusVoting": "社群投票",
+      "statusPresale": "預售",
+      "powerTag": "付費變強",
+      "progressVoting": "法定人數進度 {pct}%",
+      "progressPresale": "軟頂進度 {pct}%",
+      "ctaVote": "投票",
+      "ctaContribute": "出資"
+    },
     "levy": {
       "open": "萊維街基金",
       "title": "萊維街基金",
