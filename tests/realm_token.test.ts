@@ -54,6 +54,10 @@ function token(realmId: number, over: Partial<RealmToken> = {}): RealmToken {
 class UniqueViolation extends Error {}
 class FakeRealmTokenDb implements RealmTokenDb {
   rows = new Map<number, RealmToken>();
+  // Realm display names for the discovery join (listByStatus); a realm with no
+  // entry here falls back to a synthetic name so other tests in this file that
+  // never populate it still compile and run.
+  realmNames = new Map<number, string>();
   async getRealmToken(realmId: number): Promise<RealmToken | null> {
     return this.rows.get(realmId) ?? null;
   }
@@ -176,6 +180,21 @@ class FakeRealmTokenDb implements RealmTokenDb {
     const next = { ...row, lpLockAddress: address };
     this.rows.set(realmId, next);
     return next;
+  }
+  // Mirrors the real SQL: rows whose status is in `statuses`, newest-updated
+  // first, joined with the realm's display name. The filter set is whatever
+  // the caller passes, never hard-coded here.
+  async listByStatus(
+    statuses: readonly RealmTokenStatus[],
+  ): Promise<Array<RealmToken & { realmName: string }>> {
+    const wanted = new Set(statuses);
+    return [...this.rows.values()]
+      .filter((row) => wanted.has(row.status))
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      .map((row) => ({
+        ...row,
+        realmName: this.realmNames.get(row.realmId) ?? `Realm ${row.realmId}`,
+      }));
   }
 }
 

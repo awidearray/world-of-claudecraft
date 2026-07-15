@@ -145,6 +145,18 @@ export interface RealmTokenDb {
   ): Promise<RealmToken | null>;
   // Phase 4: the permanent-LP proof (the graduated DAMM v2 pool), once.
   recordLpLock(realmId: number, address: string): Promise<RealmToken | null>;
+  // The public launch-discovery read (PRD section 9's "realm-list integration"):
+  // every registered token whose status is one of `statuses`, joined with its
+  // realm's display name, for an ACTIVE realm only. Used by the community
+  // discovery surface so a non-owner can find a realm mid-vote or mid-presale;
+  // the caller passes the exact statuses to include (never hard-coded here).
+  listByStatus(statuses: readonly RealmTokenStatus[]): Promise<RealmTokenDiscoveryRow[]>;
+}
+
+// A registry row enriched with its realm's display name, for the public
+// launch-discovery surface (RealmTokenDb.listByStatus).
+export interface RealmTokenDiscoveryRow extends RealmToken {
+  realmName: string;
 }
 
 // ── Identity validation ───────────────────────────────────────────────────────

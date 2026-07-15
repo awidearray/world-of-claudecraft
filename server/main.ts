@@ -292,6 +292,7 @@ import {
 } from './realm_fee_keeper';
 import { type LaunchVenue, launchpadVenueName, StubLaunchVenue } from './realm_launchpad';
 import { MeteoraDbcVenue } from './realm_launchpad_dbc';
+import { listLaunchpadDiscovery } from './realm_launchpad_discovery';
 import { creditTokenToCopper } from './realm_power_credit';
 import { realmPowerCreditStore } from './realm_power_credit_db';
 import {
@@ -1647,6 +1648,18 @@ async function handleApi(req: http.IncomingMessage, res: http.ServerResponse): P
       },
       isUniqueViolation,
     });
+    // Public launch discovery (the community entry point, PRD section 9): every
+    // realm currently in `voting` or `presale` status, for ANY authenticated
+    // account, not just the owner. The vote/presale routes above already serve
+    // any account with no owner check; this is the surface a non-owner uses to
+    // FIND a realm mid-vote or mid-presale in the first place. No chain read.
+    if (req.method === 'GET' && url === '/api/realms/launchpad') {
+      const accountId = await bearerActiveAccount(req, res);
+      if (accountId === null) return;
+      const deps = launchpadDeps();
+      const realms = await listLaunchpadDiscovery(deps as VoteDeps & PresaleDeps, accountId);
+      return json(res, 200, { realms });
+    }
     const realmTokenMatch = /^\/api\/realms\/(\d+)\/token$/.exec(url);
     if (req.method === 'GET' && realmTokenMatch) {
       const accountId = await bearerActiveAccount(req, res);

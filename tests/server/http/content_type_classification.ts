@@ -78,6 +78,7 @@ export const API_CONTENT_TYPE: Readonly<Record<string, ContentTypeClass>> = {
   '/api/realms/buy/info': PROBLEM_JSON,
   '/api/realms/buy/quote': PROBLEM_JSON,
   '/api/realms/buy/confirm': PROBLEM_JSON,
+  '/api/realms/launchpad': PROBLEM_JSON,
   '/api/realms/:id/decommission': PROBLEM_JSON,
   '/api/realms/:id/release': PROBLEM_JSON,
   '/api/realms/:id/token': PROBLEM_JSON,

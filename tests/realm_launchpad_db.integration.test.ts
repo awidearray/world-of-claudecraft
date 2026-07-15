@@ -729,6 +729,71 @@ run('launchpad tables against real Postgres', () => {
     await expect(realmDb.assertRealmSchema(db.pool)).resolves.toBeUndefined();
   });
 
+  it('public launch discovery: listByStatus surfaces only voting/presale, active realms only', async () => {
+    // Five fresh realms, one per lifecycle bucket we care about distinguishing:
+    // draft (prelaunch), the two discovery statuses, a past-launch status
+    // (live), and a voting-status token whose REALM itself is decommissioning
+    // (must be excluded even though the token status matches).
+    const names: Record<string, string> = {
+      prelaunch: 'Discovery Prelaunch',
+      voting: 'Discovery Voting',
+      presale: 'Discovery Presale',
+      live: 'Discovery Live',
+      inactiveRealm: 'Discovery Inactive Realm',
+    };
+    const realmIds: Record<string, number> = {};
+    for (const key of Object.keys(names)) {
+      const r = await realmDb.createProvisioningRealm(db.pool, {
+        name: names[key],
+        type: 'Normal',
+        ownerAccountId: ownerId,
+        tier: 1,
+      });
+      realmIds[key] = r.realmId;
+      await realmDb.activateRealm(db.pool, r.realmId);
+      await tokenDb.insertRealmToken(db.pool, {
+        realmId: r.realmId,
+        symbol: `DSC${r.realmId}`,
+        icon: '',
+        monetizationPolicy: 'cosmetic',
+      });
+    }
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.voting, ['prelaunch'], 'voting');
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.presale, ['prelaunch'], 'voting');
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.presale, ['voting'], 'presale');
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.live, ['prelaunch'], 'voting');
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.live, ['voting'], 'presale');
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.live, ['presale'], 'funded');
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.live, ['funded'], 'live');
+    // Voting status, but the realm itself is no longer active: must not surface.
+    await tokenDb.setRealmTokenStatus(db.pool, realmIds.inactiveRealm, ['prelaunch'], 'voting');
+    await realmDb.requestDecommission(
+      db.pool,
+      realmIds.inactiveRealm,
+      new Date(Date.now() + 60_000),
+    );
+
+    const rows = await tokenDb.listByStatus(db.pool, ['voting', 'presale']);
+    const byRealm = new Map(rows.map((r) => [r.realmId, r]));
+    // Exactly the voting + presale realms on ACTIVE realms; prelaunch/live and
+    // the decommissioning realm are absent even though one of them is 'voting'.
+    expect(byRealm.has(realmIds.voting)).toBe(true);
+    expect(byRealm.has(realmIds.presale)).toBe(true);
+    expect(byRealm.has(realmIds.prelaunch)).toBe(false);
+    expect(byRealm.has(realmIds.live)).toBe(false);
+    expect(byRealm.has(realmIds.inactiveRealm)).toBe(false);
+    expect(byRealm.get(realmIds.voting)?.realmName).toBe('Discovery Voting');
+    expect(byRealm.get(realmIds.presale)?.realmName).toBe('Discovery Presale');
+    expect(byRealm.get(realmIds.presale)?.status).toBe('presale');
+
+    // The filter set is caller-supplied, not hard-coded: a narrower set drops
+    // the voting row and keeps only presale.
+    const presaleOnly = await tokenDb.listByStatus(db.pool, ['presale']);
+    expect(presaleOnly.map((r) => r.realmId)).toEqual([realmIds.presale]);
+    // An empty status list returns nothing without querying.
+    expect(await tokenDb.listByStatus(db.pool, [])).toEqual([]);
+  });
+
   it('QUARANTINE: launchpad writes never touch woc_flow_ledger', async () => {
     const n = await db.pool.query('SELECT count(*)::int AS n FROM woc_flow_ledger');
     // Everything above inserted tokens, votes, quotes, and contributions; the

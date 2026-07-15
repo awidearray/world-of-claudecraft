@@ -196,6 +196,9 @@ class MemTokens implements RealmTokenDb {
     this.rows.set(realmId, next);
     return next;
   }
+  async listByStatus(): Promise<Array<RealmToken & { realmName: string }>> {
+    throw new Error('listByStatus is not exercised by this suite');
+  }
 }
 
 class MemQuotes implements LaunchQuoteStore {

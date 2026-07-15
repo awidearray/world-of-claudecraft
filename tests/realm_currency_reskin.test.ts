@@ -155,6 +155,9 @@ class FakeTokens implements RealmTokenDb {
   async recordLpLock() {
     return null;
   }
+  async listByStatus(): Promise<Array<RealmToken & { realmName: string }>> {
+    return [];
+  }
 }
 
 class FakeStore implements PowerCreditStore {

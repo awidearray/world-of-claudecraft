@@ -13,6 +13,7 @@ import {
   type MonetizationPolicy,
   type RealmToken,
   type RealmTokenDb,
+  type RealmTokenDiscoveryRow,
   type RealmTokenStatus,
 } from './realm_token';
 
@@ -296,6 +297,33 @@ export async function recordLpLock(
   return res.rows[0] ? rowToToken(res.rows[0]) : null;
 }
 
+// The public launch-discovery read: every registered token whose status is one
+// of `statuses`, joined with its realm's display name, for an ACTIVE realm
+// only (a decommissioning/lapsed/closed realm never surfaces here, even mid
+// vote or presale). `statuses` is caller-supplied (never hard-coded), so the
+// same query serves the discovery route and any future admin/moderation view
+// with a different status set. Newest-updated first.
+export async function listByStatus(
+  db: Queryable,
+  statuses: readonly RealmTokenStatus[],
+): Promise<RealmTokenDiscoveryRow[]> {
+  if (statuses.length === 0) return [];
+  const res = await db.query(
+    `SELECT ${TOKEN_COLS.split(',')
+      .map((c) => `rt.${c.trim()}`)
+      .join(', ')}, r.name AS realm_name
+       FROM realm_tokens rt
+       JOIN realms r ON r.realm_id = rt.realm_id
+      WHERE rt.status = ANY($1::text[]) AND r.status = 'active'
+      ORDER BY rt.updated_at DESC`,
+    [[...statuses]],
+  );
+  return res.rows.map((r: Record<string, unknown>) => ({
+    ...rowToToken(r),
+    realmName: String(r.realm_name),
+  }));
+}
+
 // The pool-bound RealmTokenDb the routes use; tests substitute an in-memory fake
 // implementing the same interface from realm_token.ts.
 export function realmTokenDb(pool: Queryable): RealmTokenDb {
@@ -311,5 +339,6 @@ export function realmTokenDb(pool: Queryable): RealmTokenDb {
       recordLockAddress(pool, realmId, bucket, address),
     recordCurveLaunch: (realmId, d) => recordCurveLaunch(pool, realmId, d),
     recordLpLock: (realmId, address) => recordLpLock(pool, realmId, address),
+    listByStatus: (statuses) => listByStatus(pool, statuses),
   };
 }

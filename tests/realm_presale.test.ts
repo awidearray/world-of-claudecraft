@@ -180,6 +180,9 @@ class FakeTokens implements RealmTokenDb {
   async recordLpLock(): Promise<RealmToken | null> {
     throw new Error('recordLpLock is not exercised by this suite');
   }
+  async listByStatus(): Promise<Array<RealmToken & { realmName: string }>> {
+    throw new Error('listByStatus is not exercised by this suite');
+  }
 }
 
 class FakeStore implements RealmPresaleStore {

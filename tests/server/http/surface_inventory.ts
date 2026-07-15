@@ -436,6 +436,16 @@ export const SURFACE_INVENTORY: readonly SurfaceRoute[] = [
   {
     dispatcher: DISPATCH.mainApi,
     method: 'GET',
+    path: '/api/realms/launchpad',
+    handler: 'handleApi arm: /api/realms/launchpad',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.full,
+    limiter: null,
+    requireOwnedExpected: null,
+  },
+  {
+    dispatcher: DISPATCH.mainApi,
+    method: 'GET',
     path: '/api/realms/:id/token',
     handler: 'realmTokenMatch',
     contentType: PROBLEM_JSON,
