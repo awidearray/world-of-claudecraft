@@ -510,6 +510,142 @@ S3 guard (`tests/localization_fixes.test.ts`) green; M16
 (`tests/i18n_completeness.test.ts`) green; i18n freshness gates
 (`i18n_resolved_equivalence`, `i18n_status_registry`) green.
 
+## Phase 9: public launch-discovery (the community entry point)
+
+Closes the gap this file previously flagged under "Open questions surfaced":
+vote/presale panels were reachable only from the realm OWNER's operator
+dashboard even though the REST routes already served any authenticated
+account with no owner check. Pure engineering gap, no policy question; this
+phase adds the missing discovery surface, reusing the phases 0-2 panel,
+view-core, and REST client wholesale.
+
+Files:
+- `server/realm_token.ts`: `RealmTokenDb.listByStatus` added to the interface
+  + `RealmTokenDiscoveryRow` (a `RealmToken` enriched with `realmName`).
+- `server/realm_token_db.ts`: `listByStatus` implementation, `SELECT ...
+  FROM realm_tokens rt JOIN realms r ON r.realm_id = rt.realm_id WHERE
+  rt.status = ANY($1::text[]) AND r.status = 'active' ORDER BY rt.updated_at
+  DESC`, the exact caller-supplied status set, never hard-coded past this one
+  query; wired into the pool-bound `realmTokenDb()`.
+- `server/realm_launchpad_discovery.ts` (new): pure orchestration
+  `listLaunchpadDiscovery(deps, accountId)`. `LAUNCHPAD_DISCOVERY_STATUSES =
+  ['voting', 'presale']` is the one named filter constant. Calls
+  `tokens.listByStatus(...)` then, per row, the SAME `voteStatus`/
+  `presaleInfo` functions the owner-facing `GET .../token` route already
+  calls, so the discovery list and the owner panel can never disagree on a
+  tally or a raise percent. No SQL, no re-derived math.
+- `server/main.ts`: `GET /api/realms/launchpad` (bearer, `bearerActiveAccount`,
+  no owner check by design), registered in the launchpad route block right
+  after `launchpadDeps()`; the money-route geo/OFAC gate regex does not match
+  it (no `:id/token/...` shape). Registered in
+  `tests/server/http/surface_inventory.ts` and
+  `tests/server/http/content_type_classification.ts`.
+- `src/net/online.ts`: `LaunchpadDiscoveryEntry` wire type + `Api.launchpadDiscovery()`.
+- `src/ui/realm_launches_view.ts` (new pure view-core, registered in
+  `UI_PURE_CORES`): `launchpadDiscoveryView`, reusing `voteView`/`presaleView`
+  from `realm_launchpad_view.ts` for the exact same progress math.
+- `src/ui/realm_launches.ts` (new self-contained module): `RealmLaunches`, the
+  thin DOM panel listing every row with a Vote/Contribute CTA; a row click
+  calls `host.openRealm(...)`.
+- `src/main.ts`: `openRealmLaunches()` (new panel) + `openRealmLaunchpad`
+  generalized to accept `(realm: {realmId,name}, onClose?)` so it is reachable
+  from BOTH the owner's row action (`onClose` defaults to
+  `openRealmOperator`) and the new discovery list (`onClose` reopens
+  `openRealmLaunches`); the shared `#realm-operator-panel`/`-body` container is
+  reused, matching the existing repurposed-body pattern. `#realm-launches-panel`
+  added to the `show()` panels array.
+- `index.html`: `#btn-realm-launches` ("Community Launches") on the realm-list
+  screen, wallet-gated like the other launchpad surfaces; `#realm-launches-panel`
+  / `#realm-launches-body` / `#btn-realm-launches-back`.
+- `src/styles/shell.css`: a new `realm launches` banner section (`.rl__sub`,
+  `.rl-progress`/`.rl-progress-fill`), reusing `.ro`/`.ro-realm`/`.ro-badge`/
+  `.btn` wholesale for everything else.
+- `src/ui/i18n.catalog/launchpad.ts`: the `launchpad.launches.*` English block
+  (12 keys); M16 non-Latin fills added in the same change
+  (`src/ui/i18n.locales/{zh_CN,zh_TW,ja_JP,ko_KR,ru_RU}.ts`).
+
+Ownership gate (verified, not changed): `src/ui/realm_launchpad.ts` already
+read the server's `isOwner` flag (`GET .../token` returns `isOwner:
+roles.includes('owner')`, a REAL role lookup, not a client-side flag) and
+gated every founder-only control on it before this change: `#lp-register`
+(register a token) only when `page.isOwner`, `#lp-vote-open` (open the
+community vote) only when `page.isOwner`, `#lp-config-submit` (configure
+presale contributions) only when `page.isOwner`, `#lp-finalize` (finalize the
+presale) only when `page.isOwner`. Vote/contribute controls (`#lp-vote-yes`,
+`#lp-vote-no`, `#lp-contribute`) are NOT gated on ownership (by design: any
+account may vote/contribute). Audited and pinned by
+`tests/realm_launchpad_panel.test.ts` (new): a non-owner opens the panel
+without error and sees the contribute control, but never register/config/
+finalize, on the exact same server payload an owner would see those controls
+for.
+
+Tests (all real code paths, no logic-under-test mocks):
+- `tests/realm_launchpad_discovery.test.ts` (5 tests, new): the orchestration
+  against in-memory `RealmTokenDb`/`RealmVoteDb`/`RealmPresaleStore` fakes
+  (the `FakeTokens.listByStatus` mirrors the production `WHERE status =
+  ANY($1)` semantics over a real in-memory row set spanning every lifecycle
+  status, not a pre-filtered fixture): only voting/presale surface, every
+  other status is excluded, a voting realm carries the real weighted tally, a
+  presale realm carries the real raise progress, a signed-in caller sees
+  their own recorded vote.
+- `tests/realm_launchpad_db.integration.test.ts` (+1 test, now 17 real-Postgres
+  tests): `listByStatus` against five fresh realms (prelaunch / voting /
+  presale / live / a voting-status token on a DECOMMISSIONING realm) proves
+  the exact filter (only active-realm voting+presale surface; the
+  decommissioning realm's voting-status token is excluded even though the
+  token status alone would match) plus the caller-supplied status set (a
+  narrower `['presale']` call drops the voting row) and the empty-list
+  short-circuit. Run 2026-07-16 against Postgres 16 in Docker
+  (`postgres:16-alpine`, port 5544): 17/17 green.
+- `tests/realm_launches_view.test.ts` (6 tests, new): the discovery view-core
+  (voting -> vote CTA + quorum pct, presale -> contribute CTA + soft-cap pct,
+  power-realm tag, missing-payload degrades to 0% rather than throwing, row
+  order preserved, empty list).
+- `tests/realm_launches_panel.test.ts` (5 tests, new): the `RealmLaunches` DOM
+  panel against a hand-rolled fake DOM (no jsdom): renders one row per
+  realm, empty state, a row's CTA click calls `host.openRealm(...)` (the
+  non-owner entry point), back button wiring, load-failure fallback copy.
+- `tests/realm_launchpad_panel.test.ts` (6 tests, new): drives the REAL
+  `RealmLaunchpad` class (not a mock of it) with `isOwner: false` vs `true`
+  fixtures: a non-owner opens the panel cleanly and sees `#lp-contribute`;
+  `#lp-finalize` is absent for a non-owner and present for the owner on the
+  identical presale state; `#lp-register` is absent for a non-owner and
+  present for the owner when no token is registered; `#lp-config-submit` is
+  absent for a non-owner before contributions open.
+- `tests/architecture.test.ts`: `src/ui/realm_launches_view.ts` registered in
+  `UI_PURE_CORES`; green (host-agnostic, no DOM globals, no nondeterminism).
+- Full requested suite re-run alongside the new tests (509 passed, 3 skipped,
+  0 failed; the 3 skips are the devnet-gated suites, unaffected):
+  `tests/realm_token.test.ts tests/realm_vote.test.ts tests/realm_presale.test.ts
+  tests/realm_token_alloc.test.ts tests/realm_token_mint.test.ts
+  tests/realm_token_curve.test.ts tests/realm_fee_split.test.ts
+  tests/realm_fee_keeper.test.ts tests/token_valuation.test.ts
+  tests/levy_fund.test.ts tests/levy_fund_view.test.ts tests/levy_fund_panel.test.ts
+  tests/realm_currency_reskin.test.ts tests/money_geo_gate.test.ts
+  tests/realm_launchpad_view.test.ts tests/architecture.test.ts
+  tests/world_api_parity.test.ts tests/i18n_completeness.test.ts
+  tests/localization_fixes.test.ts` plus the four new files above.
+- `tests/server/http/surface_inventory.test.ts`: the new
+  `GET /api/realms/launchpad` route registered; the suite's ONE pre-existing
+  failure (`/internal/woc/season/*` + `/internal/woc/fee/*`, the waived
+  ops-inventory category noted below in "Gate status on this branch")
+  reproduces identically on a clean stash of this phase's changes, so it
+  predates this work.
+- `npx tsc --noEmit`: clean. `npx vite build`: clean (pre-existing
+  chunk-size/dynamic-import warnings only, unrelated). `npm run i18n:gen` run
+  twice back to back: idempotent (second run produces no further diff).
+  `npx @biomejs/biome check --write` on every file this phase touched: no
+  errors; the pre-existing warning inventory in files this phase only
+  incidentally edited (`server/main.ts`, `src/main.ts`, `src/net/online.ts`)
+  is untouched debt, not introduced here.
+
+Player entry point (the line this section resolves): `Community Launches` on
+the post-login realm list opens `RealmLaunches`
+(`openRealmLaunches` in `src/main.ts`), wallet-gated like the other launchpad
+surfaces. A row's Vote/Contribute button opens the SAME `RealmLaunchpad`
+panel the owner's dashboard uses, with Back returning to the discovery list
+instead of the operator dashboard.
+
 ## Invariant confirmations
 
 - Phase 3 non-custodial: the server holds NO settlement credentials. The
@@ -573,10 +709,6 @@ S3 guard (`tests/localization_fixes.test.ts`) green; M16
   the whole target). PRD leaves multi-rail cap semantics unspecified; confirm
   or switch to a single founder-chosen quote asset before phase 4 feeds the
   curve.
-- Player entry point: vote/presale panels are currently reachable from the
-  OWNER dashboard (realm_operator row action). Non-owner voters/contributors
-  need a public entry (realm-list integration per PRD section 9) in a
-  follow-up; the routes already serve any authed account.
 - Refund binding: a refund tx must carry the ORIGINAL contribution signature
   as its memo (1:1 binding). Founder tooling to batch-issue refunds does not
   exist yet; refunds are submitted per contribution via
