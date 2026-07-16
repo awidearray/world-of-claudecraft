@@ -1131,7 +1131,7 @@ export class ClientWorld implements IWorld {
   // `player` getter lives below the ctor (it reads `entities`/`playerId`). `known`
   // is IWorldCombat-owned but rides here as a self-wire mirror field with the rest
   // of the roster data. ---
-  cfg: { seed: number; playerClass: PlayerClass };
+  cfg: { seed: number; playerClass: PlayerClass; riverboatCasino?: boolean };
   entities = new Map<number, Entity>();
   playerId = -1;
   private ownPlayerId = -1;
@@ -1645,6 +1645,9 @@ export class ClientWorld implements IWorld {
       this.ownPlayerId = msg.pid;
       this.cfg.seed = msg.seed;
       if (typeof msg.realm === 'string') this.realm = msg.realm;
+      // The realm's casino flag gates whether the renderer builds the moored
+      // boat; authoritative from the server (never inferred client-side).
+      if (typeof msg.riverboatCasino === 'boolean') this.cfg.riverboatCasino = msg.riverboatCasino;
       if (Array.isArray(msg.softWords)) {
         this.profanityWords = msg.softWords.filter(
           (w: unknown): w is string => typeof w === 'string',

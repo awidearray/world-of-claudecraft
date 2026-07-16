@@ -30,6 +30,15 @@ function makeSim(cls: 'warrior' | 'mage' | 'rogue' = 'warrior', seed = 42) {
   return new Sim({ seed, playerClass: cls, autoEquip: true });
 }
 
+describe('SimConfig.riverboatCasino', () => {
+  it('defaults to false so the casino boat is inert unless a realm opts in', () => {
+    expect(new Sim({ seed: 1, playerClass: 'warrior' }).cfg.riverboatCasino).toBe(false);
+    expect(
+      new Sim({ seed: 1, playerClass: 'warrior', riverboatCasino: true }).cfg.riverboatCasino,
+    ).toBe(true);
+  });
+});
+
 function nearestMob(sim: Sim, templateId?: string) {
   const p = sim.player;
   let best: any = null,

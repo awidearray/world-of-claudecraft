@@ -106,6 +106,7 @@ import {
 } from './content/zone3';
 import { DUNGEON_WALL_HW } from './dungeon_layout';
 import { JAIL_BLOCKERS, JAIL_TERRAIN_EDITS } from './jail';
+import { RIVERBOAT_FOOTPRINT_HALF_X, RIVERBOAT_FOOTPRINT_HALF_Z } from './riverboat_layout';
 
 export type { DelveShopEntry, DelveShopGate, DelveShopOffer } from './content/delves';
 // Delve affix/companion catalogs are consumed by the Sim delve engine; re-export
@@ -554,6 +555,44 @@ export function yumiMazeOriginAt(z: number): { x: number; z: number; slot: numbe
   }
   const o = yumiMazeOrigin(best);
   return { x: o.x, z: o.z, slot: best };
+}
+
+// ---------------------------------------------------------------------------
+// The RiverBoat casino: ONE fixed shared public instance (not slotted, not
+// party-keyed), on its own far x-band. It sits past the Protect Yumi maze band
+// (which caps at YUMI_BAND_X_MAX = 12000) and well before the Vale Cup practice
+// pitches (x = 30000, vale_cup_layout.ts). 14000 leaves a >1900u gap from yumi
+// and >15000u from the practice pitches. Because 14000 > DUNGEON_X_THRESHOLD,
+// groundHeight() already returns the flat DUNGEON_FLOOR_Y there, so the deck
+// floor needs no world.ts change.
+// ---------------------------------------------------------------------------
+export const RIVERBOAT_X = 14000;
+export const RIVERBOAT_Z = 0;
+// A tight x-band around the single instance, disjoint from every other band, so
+// the collider resolver can route boat positions with an x-only predicate like
+// the arena/delve/yumi arms.
+export const RIVERBOAT_BAND_X_MIN = 13000;
+export const RIVERBOAT_BAND_X_MAX = 15000;
+
+export function riverboatOrigin(): { x: number; z: number } {
+  return { x: RIVERBOAT_X, z: RIVERBOAT_Z };
+}
+
+/** True when a world x falls in the RiverBoat band (for collider routing). */
+export function isRiverboatBandPos(x: number): boolean {
+  return x >= RIVERBOAT_BAND_X_MIN && x < RIVERBOAT_BAND_X_MAX;
+}
+
+/**
+ * True when a world position is on the boat's walkable deck footprint (the
+ * gameplay predicate: "is this player aboard"). Tighter than the routing band:
+ * an AABB around the origin covering the hull plus a small margin.
+ */
+export function isOnRiverboatDeck(x: number, z: number): boolean {
+  return (
+    Math.abs(x - RIVERBOAT_X) <= RIVERBOAT_FOOTPRINT_HALF_X &&
+    Math.abs(z - RIVERBOAT_Z) <= RIVERBOAT_FOOTPRINT_HALF_Z
+  );
 }
 
 export const DELVES: Record<string, DelveDef> = {

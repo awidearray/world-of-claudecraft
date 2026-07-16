@@ -160,6 +160,7 @@ import {
 import { consumeMsgToken, createMsgRateBucket, type MsgRateBucketState } from './msg_rate_limit';
 import { nextRaidResetMs } from './raid_reset';
 import { REALM, REALM_PUBLIC_ORIGIN, REALM_RESET_TIME_ZONE } from './realm';
+import { OWN_REALM_FEATURES } from './realm_features';
 import { createSerialWriter } from './serial_writer';
 import type { Presence, PresenceStatus, SocialActor, SocialTransport } from './social';
 import { SocialService } from './social';
@@ -1284,6 +1285,10 @@ export class GameServer {
         this.simLapMark = t;
       },
       valeCupShowcase: true, // idle Sowfield auto-runs a bot exhibition to watch/bet on
+      // The moored casino boat exists only on a realm whose own features bundle
+      // advertises the casino (a p2w realm with RIVERBOAT_CASINO_ENABLED=1). This
+      // is the sole authorization source; the sim never reads env directly.
+      riverboatCasino: OWN_REALM_FEATURES.casino,
     });
     this.social = new SocialService(this.socialDb, this.socialTransport());
     this.moderation = new ModerationService(this.moderationHost(), {
@@ -2650,6 +2655,9 @@ export class GameServer {
       name,
       cls,
       realm: REALM,
+      // Whether this realm runs the casino (so the client renders the moored
+      // boat here and nowhere else); authoritative, mirrored into cfg.
+      riverboatCasino: this.sim.cfg.riverboatCasino ?? false,
       // Soft (cosmetic) words the client masks locally when its profanity
       // filter is on. Hard words are never sent — they're enforced server-side.
       softWords: this.chatFilter.softWords(),
@@ -2734,6 +2742,7 @@ export class GameServer {
       name: session.name,
       cls,
       realm: REALM,
+      riverboatCasino: this.sim.cfg.riverboatCasino ?? false,
       softWords: this.chatFilter.softWords(),
       chatMutedUntil: session.chatMutedUntil ?? null,
     });

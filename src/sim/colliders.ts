@@ -10,7 +10,9 @@ import {
   instanceOrigin,
   isArenaPos,
   isDelvePos,
+  isRiverboatBandPos,
   isYumiMazePos,
+  riverboatOrigin,
   yumiMazeOriginAt,
 } from './data';
 import { type DelveModuleId, delveModuleColliders } from './delve_layout';
@@ -23,6 +25,7 @@ import {
   SANCTUM_LAYOUT,
   TEMPLE_LAYOUT,
 } from './dungeon_layout';
+import { RIVERBOAT_LAYOUT } from './riverboat_layout';
 import type { WorldContent } from './types';
 import { valeCupColliders } from './vale_cup_layout';
 import { generateDecorations, groundHeight } from './world';
@@ -273,6 +276,7 @@ const CRYPT_COLLIDERS: Collider[] = layoutColliders(CRYPT_LAYOUT);
 const SANCTUM_COLLIDERS: Collider[] = layoutColliders(SANCTUM_LAYOUT);
 const TEMPLE_COLLIDERS: Collider[] = layoutColliders(TEMPLE_LAYOUT);
 const ARENA_COLLIDERS: Collider[] = layoutColliders(ARENA_LAYOUT);
+const RIVERBOAT_COLLIDERS: Collider[] = layoutColliders(RIVERBOAT_LAYOUT);
 const NYTHRAXIS_COLLIDERS: Collider[] = layoutColliders(NYTHRAXIS_LAYOUT);
 
 // Interior collider sets keyed by DungeonDef.interior.
@@ -454,6 +458,11 @@ export function resolvePosition(
   if (isArenaPos(x)) {
     const o = arenaOriginAt(z);
     const local = resolveAgainst(ARENA_COLLIDERS, x - o.x, z - o.z, r, ignoreFences);
+    return { x: local.x + o.x, z: local.z + o.z };
+  }
+  if (isRiverboatBandPos(x)) {
+    const o = riverboatOrigin();
+    const local = resolveAgainst(RIVERBOAT_COLLIDERS, x - o.x, z - o.z, r, ignoreFences);
     return { x: local.x + o.x, z: local.z + o.z };
   }
   if (x > DUNGEON_X_THRESHOLD) {
@@ -732,6 +741,20 @@ export function cameraOcclusion(
       true,
     );
   }
+  if (isRiverboatBandPos(ax)) {
+    const o = riverboatOrigin();
+    return sweepColliders(
+      RIVERBOAT_COLLIDERS,
+      ax - o.x,
+      ay,
+      az - o.z,
+      bx - o.x,
+      by,
+      bz - o.z,
+      pad,
+      true,
+    );
+  }
   if (ax > DUNGEON_X_THRESHOLD) {
     const { ox, oz, interior } = instanceLocal(ax, az);
     const colliders = INTERIOR_COLLIDERS[interior] ?? CRYPT_COLLIDERS;
@@ -791,6 +814,10 @@ function sightBlockedAt(seed: number, x: number, z: number, r: number, sightY: n
   if (isArenaPos(x)) {
     const o = arenaOriginAt(z);
     return overlapsAny(ARENA_COLLIDERS, x - o.x, z - o.z, false);
+  }
+  if (isRiverboatBandPos(x)) {
+    const o = riverboatOrigin();
+    return overlapsAny(RIVERBOAT_COLLIDERS, x - o.x, z - o.z, false);
   }
   if (x > DUNGEON_X_THRESHOLD) {
     const { ox, oz, interior } = instanceLocal(x, z);

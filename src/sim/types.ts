@@ -2837,6 +2837,13 @@ export interface SimConfig {
   // bet on). Server + offline game enable it; tests/goldens leave it off so the
   // idle timer never perturbs a deterministic scenario.
   valeCupShowcase?: boolean;
+  // When true, the moored RiverBoat casino exists: its shared deck instance is
+  // enterable, the croupier NPCs spawn, and the renderer dresses the saloon.
+  // Default false (the valeCupShowcase precedent), so on every other realm the
+  // boat is inert scenery and no casino code path is reachable. The server sets
+  // it from the realm's own features bundle (OWN_REALM_FEATURES.casino), never
+  // from raw env.
+  riverboatCasino?: boolean;
 }
 
 export function emptyMoveInput(): MoveInput {
