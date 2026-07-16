@@ -702,6 +702,41 @@ instead of the operator dashboard.
   two guards). The 4 failures my changes introduced (i18n freshness x4) are
   fixed by the committed regenerated artifacts + hash baseline.
 
+## Push-hook note (public entry-point commits, 77e8cbdfe..be0e6851b)
+
+Two findings from landing the public discovery panel, both diagnosed by hand
+rather than assumed:
+
+1. The worktree's git upstream tracking had drifted to
+   `fork/feature/woc-realm-stake-escrow` (the branch's original starting
+   point, 2890 commits back), an artifact of how the worktree was first
+   created. That made the pre-push hook's `@{upstream}`-relative copy scan
+   diff against the wrong, ancient ref. Fixed: re-pointed the branch's
+   upstream to `fork/feature/woc-realm-token-launchpad-impl` (its own prior
+   push), which correctly scopes to the 3 new commits.
+2. With that fixed, `npm run ci:changed` (`biome ci --changed`) still failed
+   on ONE finding: a whole-file format mismatch in `src/styles/shell.css`.
+   Root cause: `biome.json`'s `vcs.defaultBranch` is `origin/main`, a
+   SEPARATE, hardcoded comparison base from git's `@{upstream}` (item 1 above
+   does not fix this one); `biome check <file>` also always evaluates a
+   file's ENTIRE formatting, not just the touched hunk. This branch's 3 new
+   commits appended 10 lines to `shell.css`, correctly matching the file's
+   existing one-line-per-selector convention; Biome instead flagged ~475
+   lines of PRE-EXISTING CSS (the `#475` realm-operator block, unrelated to
+   this feature and older than this branch) that had never been run through
+   the formatter. Applying `biome check --write` to the file produced a
+   475-insertion/105-deletion diff of unrelated pre-existing code, which was
+   reverted rather than committed (it would bury this feature's actual diff
+   in unrelated reformatting noise). Pushed with an explicit, owner-approved
+   `--no-verify` for this one push after independently re-confirming
+   everything else the hook checks (450 tests, tsc, i18n guards, no secrets,
+   no em/en dashes) was clean. This is now a third known, pre-existing
+   category blocker on this branch, alongside `malware_scan` and
+   `surface_inventory` above: a maintainer-side decision (fix `shell.css`'s
+   formatting in its own standalone chore PR, or adjust
+   `biome.json`'s `vcs.defaultBranch`), not a regression in this branch's
+   feature work.
+
 ## Open questions surfaced
 
 - Cap denomination semantics: caps are per-rail and the soft cap is a combined
