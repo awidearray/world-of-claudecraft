@@ -56,9 +56,11 @@ import {
   type ArenaInfo,
   type BankInfo,
   type CharacterSearchResult,
+  CLASSIC_CURRENCY,
   type ClientCommand,
   type CraftResultView,
   type CupInfo,
+  type CurrencyIdentity,
   type DailyRewardHistory,
   type DailyRewardLeaderboardPage,
   type DailyRewardSpinResult,
@@ -281,6 +283,132 @@ export interface RealmBuyQuoteResponse {
   affiliateApplied: boolean;
 }
 
+// ── Realm token launchpad (phases 0 to 2) wire shapes ────────────────────────
+
+// The registered token identity (GET /api/realms/:id/token).
+export interface RealmTokenInfo {
+  realmId: number;
+  symbol: string;
+  icon: string;
+  status:
+    | 'prelaunch'
+    | 'voting'
+    | 'presale'
+    | 'funded'
+    | 'refunding'
+    | 'refunded'
+    | 'live'
+    | 'graduated'
+    | 'closed';
+  monetizationPolicy: 'cosmetic' | 'power';
+  mint: string | null;
+  decimals: number;
+}
+
+// The weighted launch-vote tally (whole-$WOC decimal strings).
+export interface RealmVoteStatus {
+  status: RealmTokenInfo['status'];
+  yesWeight: string;
+  noWeight: string;
+  voteCount: number;
+  quorumWoc: string;
+  yesThresholdBps: number;
+  outcome: 'pending' | 'passed' | 'failed';
+  myChoice: 'yes' | 'no' | null;
+  myWeightWoc: string | null;
+}
+
+// One presale rail's caps + progress, base-unit decimal strings.
+export interface RealmPresaleRail {
+  currency: 'SOL' | 'USDC' | 'WOC';
+  mint: string;
+  decimals: number;
+  native: boolean;
+  softCapBase: string;
+  raiseCapBase: string;
+  walletCapBase: string;
+  raisedBase: string;
+  myContributedBase: string;
+  myRemainingBase: string;
+}
+
+export interface RealmPresaleInfo {
+  configured: boolean;
+  status: RealmTokenInfo['status'];
+  escrowWallet: string | null;
+  progressBps: number;
+  softCapMet: boolean;
+  rails: RealmPresaleRail[];
+  refund: { unrefundedCount: number } | null;
+}
+
+// The full token status page (GET /api/realms/:id/token).
+export interface RealmTokenPage {
+  token: RealmTokenInfo | null;
+  vote: RealmVoteStatus | null;
+  presale: RealmPresaleInfo | null;
+  isOwner?: boolean;
+}
+
+// One realm surfaced on the public launch-discovery list (GET
+// /api/realms/launchpad): every realm currently in `voting` or `presale`
+// status, for ANY authenticated account, so a non-owner can find a realm
+// mid-vote or mid-presale (the launch vote/presale routes already serve any
+// account; this is the entry point that used to only exist on the owner's
+// operator dashboard). vote/presale carry the SAME shape the owner panel
+// reads, including the caller's own vote/contribution when signed in.
+export interface LaunchpadDiscoveryEntry {
+  realmId: number;
+  realmName: string;
+  symbol: string;
+  icon: string;
+  status: RealmTokenInfo['status'];
+  monetizationPolicy: 'cosmetic' | 'power';
+  vote: RealmVoteStatus | null;
+  presale: RealmPresaleInfo | null;
+}
+
+// The public Levy Street Fund portfolio (GET /api/levy-fund), display-only.
+export interface LevyPortfolioWire {
+  aumUsd: number;
+  aumSol: number | null;
+  holdingCount: number;
+  includedCount: number;
+  clamped: boolean;
+  solUsd: number | null;
+  updatedAt: string | null;
+  holdings: Array<{
+    realmId: number;
+    mint: string;
+    symbol: string;
+    amount: string;
+    priceUsd: number | null;
+    valueUsd: number | null;
+    valueSol: number | null;
+    weightBps: number;
+    source: string;
+    illiquid: boolean;
+    note: string | null;
+    lockAddress: string | null;
+  }>;
+}
+
+// A signed presale contribution quote (POST .../token/presale/quote): pay
+// exactly amountBase of `currency` to `escrowWallet` in one transaction tagged
+// with `memo`, then post the finalized signature to .../presale/confirm.
+export interface RealmPresaleQuote {
+  quoteId: string;
+  realmId: number;
+  currency: 'SOL' | 'USDC' | 'WOC';
+  native: boolean;
+  currencyMint: string;
+  currencyDecimals: number;
+  amountBase: string;
+  escrowWallet: string;
+  memo: string;
+  expiresAt: string;
+}
+
 // The signed-in account's affiliate identity (GET /api/affiliate/me): a stable
 // code for building the /?aff= link, plus how many realms it has referred.
 export interface AffiliateInfo {
@@ -457,8 +585,89 @@ export class Api {
   // Reserve a provisioning realm and return the escrow target. `amount` is the
   // base-unit stake (a decimal string, since it can exceed Number.MAX_SAFE_INTEGER).
   // `affiliateCode` (from a captured ?aff= link) credits the referring salesperson.
-  quoteRealm(name: string, type: RealmType, amount: string, affiliateCode?: string): Promise<ProvisionQuote> {
+  quoteRealm(
+    name: string,
+    type: RealmType,
+    amount: string,
+    affiliateCode?: string,
+  ): Promise<ProvisionQuote> {
     return this.post('/api/realms/quote', { name, type, amount, affiliateCode });
+  }
+
+  // ── Realm token launchpad (phases 0 to 2) ──────────────────────────────────
+
+  // The realm's full token status page: identity + vote tally + presale info.
+  realmToken(realmId: number): Promise<RealmTokenPage> {
+    return this.get(`/api/realms/${realmId}/token`);
+  }
+
+  // The public launch-discovery list: every realm currently in `voting` or
+  // `presale` status, for any authenticated account (the community entry point
+  // into the SAME panel realmToken() feeds, reached without being the owner).
+  async launchpadDiscovery(): Promise<LaunchpadDiscoveryEntry[]> {
+    const d = await this.get('/api/realms/launchpad');
+    return d.realms ?? [];
+  }
+
+  // The public, display-only Levy Street Fund portfolio (launchpad phase 6).
+  // No auth: the transparency is the point. The payload carries no control
+  // field (it is a treasury we show, never a fund we sell).
+  levyFund(): Promise<LevyPortfolioWire> {
+    return this.get('/api/levy-fund');
+  }
+
+  // Owner registers the realm token identity (no chain writes in this phase).
+  registerRealmToken(
+    realmId: number,
+    symbol: string,
+    monetizationPolicy: 'cosmetic' | 'power',
+  ): Promise<{ status: string; symbol: string }> {
+    return this.post(`/api/realms/${realmId}/token/register`, { symbol, monetizationPolicy });
+  }
+
+  // Owner opens the community launch vote (prelaunch -> voting).
+  openRealmTokenVote(realmId: number): Promise<{ status: string }> {
+    return this.post(`/api/realms/${realmId}/token/vote/open`, {});
+  }
+
+  // Cast one weighted vote (verified linked wallet required server-side).
+  async castRealmVote(realmId: number, choice: 'yes' | 'no'): Promise<RealmVoteStatus> {
+    const d = await this.post(`/api/realms/${realmId}/token/vote`, { choice });
+    return d.vote;
+  }
+
+  // Owner opens contributions: the founder escrow wallet + per-rail caps
+  // (base-unit decimal strings; omit a currency to disable it).
+  configureRealmPresale(
+    realmId: number,
+    escrowWallet: string,
+    rails: Partial<
+      Record<
+        'SOL' | 'USDC' | 'WOC',
+        { softCapBase: string; raiseCapBase: string; walletCapBase: string }
+      >
+    >,
+  ): Promise<{ configured: boolean }> {
+    return this.post(`/api/realms/${realmId}/token/presale/config`, { escrowWallet, rails });
+  }
+
+  // Reserve a presale contribution quote (single transfer into the escrow).
+  quoteRealmPresale(
+    realmId: number,
+    currency: string,
+    amountBase: string,
+  ): Promise<RealmPresaleQuote> {
+    return this.post(`/api/realms/${realmId}/token/presale/quote`, { currency, amountBase });
+  }
+
+  // Confirm a contribution quote with the finalized transfer signature.
+  confirmRealmPresale(realmId: number, quoteId: string, paySig: string): Promise<{ ok: boolean }> {
+    return this.post(`/api/realms/${realmId}/token/presale/confirm`, { quoteId, paySig });
+  }
+
+  // Owner finalizes the presale (funded when the soft cap is met, else refunding).
+  finalizeRealmPresale(realmId: number): Promise<{ status: string }> {
+    return this.post(`/api/realms/${realmId}/token/presale/finalize`, {});
   }
 
   // The account's affiliate code + referred-realm count (code created on first call).
@@ -485,7 +694,9 @@ export class Api {
   // Owner begins decommissioning. For a staked realm this returns when the on-chain
   // stake can be released; for a BOUGHT realm (no recoverable stake) the server
   // closes it immediately and returns `closed: true`.
-  decommissionRealm(realmId: number): Promise<{ realmId: number; releaseEligibleAt: string; closed?: boolean }> {
+  decommissionRealm(
+    realmId: number,
+  ): Promise<{ realmId: number; releaseEligibleAt: string; closed?: boolean }> {
     return this.post(`/api/realms/${realmId}/decommission`, {});
   }
 
@@ -1161,6 +1372,10 @@ export class ClientWorld implements IWorld {
   // --- IWorldCosmetics: account cosmetics (completed-quest + mech-chroma ids),
   // mirrored from snapshot self. ---
   accountCosmetics: AccountCosmetics = { completedQuestIds: [], mechChromaIds: [] };
+  // --- IWorldInventory (phase 7): the realm's currency display identity, from
+  // the server's hello. Defaults to the classic coin display until hello lands.
+  // Display-only: nothing here is a mint / decimals / RPC / price. ---
+  currencyIdentity: CurrencyIdentity = CLASSIC_CURRENCY;
   // --- IWorldProgressionXp: XP + post-cap progression scalars + unlocked
   // milestones, mirrored from snapshot self. ---
   xp = 0;
@@ -1565,6 +1780,15 @@ export class ClientWorld implements IWorld {
       this.ownPlayerId = msg.pid;
       this.cfg.seed = msg.seed;
       if (typeof msg.realm === 'string') this.realm = msg.realm;
+      // The realm's currency display identity (phase 7). Display-only re-skin of
+      // the money HUD; the mirrored `copper` stays an opaque number.
+      if (msg.currency && typeof msg.currency === 'object') {
+        const c = msg.currency as { symbol?: unknown; icon?: unknown; realmToken?: unknown };
+        this.currencyIdentity =
+          typeof c.symbol === 'string' && typeof c.icon === 'string'
+            ? { symbol: c.symbol, icon: c.icon, realmToken: c.realmToken === true }
+            : CLASSIC_CURRENCY;
+      }
       if (Array.isArray(msg.softWords)) {
         this.profanityWords = msg.softWords.filter(
           (w: unknown): w is string => typeof w === 'string',

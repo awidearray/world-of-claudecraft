@@ -13,6 +13,7 @@ import { guideStrings } from './guide';
 import { hudStrings } from './hud';
 import { hudChromeStrings } from './hud_chrome';
 import { itemNames, itemStrings } from './items';
+import { launchpadStrings } from './launchpad';
 import { mergeEntities, mergeExtra, mergeStrings } from './merge';
 import { questStrings } from './quests';
 import { realmOperatorStrings } from './realm';
@@ -41,6 +42,7 @@ export { guideStrings } from './guide';
 export { hudStrings } from './hud';
 export { hudChromeStrings } from './hud_chrome';
 export { itemNames, itemStrings } from './items';
+export { launchpadStrings } from './launchpad';
 export { mergeEntities, mergeExtra, mergeStrings } from './merge';
 export { questStrings } from './quests';
 // Re-export the catalog public surface (every name the old i18n.en.ts exported).
@@ -89,6 +91,7 @@ export const en = {
   meta: { builtOn: 'Built {date}' },
   realmTypes: { normal: 'Normal', pvp: 'PvP', rp: 'RP', rpPvp: 'RP-PvP' },
   realmOp: realmOperatorStrings,
+  launchpad: launchpadStrings,
   game: gameStrings,
   hudChrome: hudChromeStrings,
   apiError: apiErrorStrings,

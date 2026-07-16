@@ -34,6 +34,19 @@ export interface SeasonOps {
   closeSeason(seasonId: number): Promise<void>;
 }
 
+// Realm-token fee ops (launchpad phase 5), INJECTED like SeasonOps so this
+// module stays DB-free. The ops multisig claims each pool's DBC partner fees
+// with the keeper vault as receiver, then reports the finalized claim here for
+// verify-and-accrue; listClaimable serves the live claimable amounts.
+export interface FeeOps {
+  registerClaim(p: {
+    realmId: number;
+    currency: string;
+    signature: string;
+  }): Promise<{ ok: true; amountBase: string } | { ok: false; status: number; error: string }>;
+  listClaimable(): Promise<unknown[]>;
+}
+
 function ok(res: http.ServerResponse, data: unknown): void {
   json(res, 200, { success: true, data, error: null });
 }
@@ -54,11 +67,22 @@ function secretsMatch(actual: string, expected: string): boolean {
 // present AND the request's header matches it (constant-time). An UNSET secret is
 // a hard 404 — an op nobody enabled is indistinguishable from one that does not
 // exist, so it can't be probed.
-function authorize(req: http.IncomingMessage, res: http.ServerResponse, envVar: string, header: string): boolean {
+function authorize(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  envVar: string,
+  header: string,
+): boolean {
   const expected = process.env[envVar] ?? '';
-  if (!expected) { fail(res, 404, 'unknown endpoint'); return false; }
+  if (!expected) {
+    fail(res, 404, 'unknown endpoint');
+    return false;
+  }
   const actual = String(req.headers[header] ?? '');
-  if (!secretsMatch(actual, expected)) { fail(res, 401, 'not authenticated'); return false; }
+  if (!secretsMatch(actual, expected)) {
+    fail(res, 401, 'not authenticated');
+    return false;
+  }
   return true;
 }
 
@@ -77,8 +101,32 @@ export async function handleInternalApi(
   res: http.ServerResponse,
   game: GameServer,
   seasonOps?: SeasonOps,
+  feeOps?: FeeOps,
 ): Promise<void> {
   const url = new URL(req.url ?? '/', 'http://localhost');
+
+  // Realm-token fee ops (launchpad phase 5), gated by WOC_OPS_SECRET like the
+  // season ops. register verifies a finalized DBC-fee claim into the keeper
+  // vault and accrues it per realm; claimable lists the live claimable amounts
+  // the ops multisig should claim next.
+  if (url.pathname === '/internal/woc/fee/register') {
+    if (!feeOps) return fail(res, 404, 'unknown endpoint');
+    if (!authorize(req, res, 'WOC_OPS_SECRET', 'x-woc-ops-secret')) return;
+    const body = await readBody(req);
+    const realmId = Number(body?.realmId);
+    if (!Number.isInteger(realmId)) return fail(res, 400, 'realmId must be an integer');
+    const currency = typeof body?.currency === 'string' ? body.currency : '';
+    const signature = typeof body?.signature === 'string' ? body.signature : '';
+    const result = await feeOps.registerClaim({ realmId, currency, signature });
+    if (!result.ok) return fail(res, result.status, result.error);
+    return ok(res, { realmId, currency, amountBase: result.amountBase });
+  }
+
+  if (url.pathname === '/internal/woc/fee/claimable') {
+    if (!feeOps) return fail(res, 404, 'unknown endpoint');
+    if (!authorize(req, res, 'WOC_OPS_SECRET', 'x-woc-ops-secret')) return;
+    return ok(res, { claimable: await feeOps.listClaimable() });
+  }
 
   if (url.pathname === '/internal/restart-countdown') {
     if (req.method !== 'POST') return fail(res, 404, 'unknown endpoint');

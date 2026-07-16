@@ -7378,4 +7378,37 @@
   .ro-realm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
   .ro-realm-actions .btn { min-height: 40px; padding: 7px 14px; font-size: 12px; }
   @media (max-width: 480px) { .ro-tiers { grid-template-columns: 1fr; } }
+
+  /* ---------- Levy Street Fund (launchpad phase 6: display-only portfolio) ---------- */
+  #levy-fund-panel { width: 100%; max-width: 640px; }
+  #levy-fund-body { margin: 6px 0 10px; max-height: 64vh; overflow-y: auto; padding-right: 2px; }
+  .levy-fund__sub { font-size: 12px; color: #b6a983; margin: 0 0 8px; line-height: 1.45; }
+  .levy-fund__note { font-size: 11px; color: #c9a240; margin: 0 0 14px; line-height: 1.4;
+    border-left: 2px solid #6e5a2c; padding-left: 9px; }
+  .levy-fund__aum { margin-bottom: 14px; padding: 12px 14px; border: 1px solid #463a1c; border-radius: 8px;
+    background: linear-gradient(#1c1812, #14110b); }
+  .levy-fund__aum-value { font-family: var(--title-font); font-size: 26px; color: var(--gold); line-height: 1.1; }
+  .levy-fund__aum-label { font-size: 12px; color: #b6a983; margin-top: 3px; }
+  .levy-fund__meta { font-size: 11px; color: #998d6a; margin-top: 6px; }
+  .levy-fund__clamp { font-size: 11px; color: #ffb27a; margin-top: 6px; }
+  .levy-fund__empty { font-size: 13px; color: #b6a983; line-height: 1.5; padding: 12px 2px; }
+  .levy-fund__table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .levy-fund__table th { text-align: left; font-family: var(--title-font); font-size: 11px; color: #c9b27a;
+    border-bottom: 1px solid #463a1c; padding: 6px 8px; }
+  .levy-fund__table td { padding: 8px; border-bottom: 1px solid #2a2418; color: #e7dcc0; }
+  .levy-fund__table td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+  .levy-fund__row--illiquid td { color: #8a8168; }
+  .levy-fund__mint { font-family: var(--mono-font, monospace); font-size: 11px; color: #7f765b; }
+  .levy-fund__src { font-size: 10px; color: #6fe08a; margin-left: 4px; }
+  .levy-fund__illiquid { font-size: 10px; color: #b6a983; margin-left: 4px; }
+
+  /* ---------- realm launches (launchpad phase 9: public vote/presale discovery) ---------- */
+  #realm-launches-panel { width: 100%; max-width: 560px; }
+  #realm-launches-body { margin: 6px 0 10px; max-height: 64vh; overflow-y: auto; padding-right: 2px; }
+  .rl__sub { font-size: 12px; color: #b6a983; margin: 0 0 12px; line-height: 1.45; }
+  .rl-row .ro-realm-actions { margin-top: 10px; }
+  .rl-progress { height: 6px; border-radius: 3px; background: #1a160f; border: 1px solid #2a2418;
+    overflow: hidden; margin-top: 8px; }
+  .rl-progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    border-radius: 3px; }
 }

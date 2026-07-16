@@ -38,7 +38,12 @@ import {
   type VcNationId,
 } from '../src/sim/types';
 import { isAtSowfield } from '../src/sim/vale_cup_layout';
-import { type BankBonusSource, type CommandName, isOverheadEmoteId } from '../src/world_api';
+import {
+  type BankBonusSource,
+  type CommandName,
+  type CurrencyIdentity,
+  isOverheadEmoteId,
+} from '../src/world_api';
 import { recordOnlineSample } from './admin_db';
 import { offensiveName } from './auth';
 import { recordBankOp } from './bank_ledger';
@@ -54,10 +59,6 @@ import {
   buildDetectionCalibrationSnapshot,
   type DetectionCalibrationSnapshot,
 } from './calibration_snapshot';
-import { reconcileReferral, withinReferralWindow } from './referral_bonus';
-import {
-  referrerForReferee, getReferralProgress, setReferralProgress, accrueReferralReward, claimReferralRewards,
-} from './referral_db';
 import { ChatFilter } from './chat_filter';
 import { applyChatStrike, loadChatFilterState, recordChatViolation } from './chat_filter_db';
 import { ChatLogger } from './chat_log';
@@ -109,6 +110,14 @@ import {
 import { consumeMsgToken, createMsgRateBucket, type MsgRateBucketState } from './msg_rate_limit';
 import { nextRaidResetMs } from './raid_reset';
 import { REALM, REALM_PUBLIC_ORIGIN, REALM_RESET_TIME_ZONE } from './realm';
+import { reconcileReferral, withinReferralWindow } from './referral_bonus';
+import {
+  accrueReferralReward,
+  claimReferralRewards,
+  getReferralProgress,
+  referrerForReferee,
+  setReferralProgress,
+} from './referral_db';
 import { createSerialWriter } from './serial_writer';
 import type { Presence, PresenceStatus, SocialActor, SocialTransport } from './social';
 import { SocialService } from './social';
@@ -881,6 +890,11 @@ export interface PerfCaptureStatus {
 
 export class GameServer {
   sim: Sim;
+  // The realm's currency display identity (launchpad phase 7), resolved from
+  // the realm_tokens registry at boot (main.ts sets it) and sent in `hello` so
+  // the client re-skins the money HUD. Defaults to the classic coin display;
+  // display-only, never a mint / decimals / RPC on the server hot path.
+  realmCurrency: CurrencyIdentity = { symbol: 'WOC', icon: '', realmToken: false };
   clients = new Map<number, ClientSession>(); // by pid
   private readonly sessionsByCharacterId = new Map<number, ClientSession>();
   private readonly accountCosmeticsByAccount = new Map<number, AccountCosmetics>();
@@ -1915,8 +1929,11 @@ export class GameServer {
       name,
       cls,
       realm: REALM,
+      // The realm's currency display identity (phase 7): the client re-skins the
+      // money HUD from this. Display-only; the sim balance stays opaque copper.
+      currency: this.realmCurrency,
       // Soft (cosmetic) words the client masks locally when its profanity
-      // filter is on. Hard words are never sent — they're enforced server-side.
+      // filter is on. Hard words are never sent, they are enforced server-side.
       softWords: this.chatFilter.softWords(),
       // Epoch ms of an active chat mute, or null. Lets the client show status
       // at login; sending is still gated server-side regardless.
@@ -1989,6 +2006,7 @@ export class GameServer {
       name: session.name,
       cls,
       realm: REALM,
+      currency: this.realmCurrency,
       softWords: this.chatFilter.softWords(),
       chatMutedUntil: session.chatMutedUntil ?? null,
     });
@@ -2164,7 +2182,9 @@ export class GameServer {
   private async loadReferralStatus(session: ClientSession): Promise<void> {
     try {
       const rel = await referrerForReferee(pool, session.accountId);
-      session.referral = rel ? { referrerAccountId: rel.referrerAccountId, referredAtMs: rel.referredAt.getTime() } : null;
+      session.referral = rel
+        ? { referrerAccountId: rel.referrerAccountId, referredAtMs: rel.referredAt.getTime() }
+        : null;
       const pending = await claimReferralRewards(pool, session.accountId);
       if (pending.xp <= 0 && pending.copper <= 0) return;
       const meta = this.clients.get(session.pid) === session ? this.sim.meta(session.pid) : null;
@@ -2174,6 +2194,26 @@ export class GameServer {
     } catch (err) {
       console.error('referral status load failed:', err);
     }
+  }
+
+  // Credit copper to an account's LIVE character (launchpad phase 7, the
+  // power-realm token-to-copper path). Reuses the server-only grantBonus, so
+  // the sim sees only opaque copper through its normal API and determinism is
+  // untouched. Returns false when the account has no live session (the credit
+  // path requires the player to be online, which they are: they just submitted
+  // the on-chain transfer). The verify + policy gate + ledger guard live in
+  // server/realm_power_credit.ts; this only applies the already-verified copper.
+  creditCopperToAccount(accountId: number, copper: number): boolean {
+    const grant = Math.max(0, Math.floor(copper));
+    if (grant <= 0) return false;
+    for (const session of this.clients.values()) {
+      if (session.accountId !== accountId) continue;
+      const meta = this.sim.meta(session.pid);
+      if (!meta) continue;
+      this.sim.grantBonus(meta, 0, grant);
+      return true;
+    }
+    return false;
   }
 
   // Apply the referred player's earnings bonus for this session: bonus the referee's
@@ -2195,8 +2235,10 @@ export class GameServer {
         lastLootCopper: cp?.lootCopper ?? 0,
         withinWindow: withinReferralWindow(ref.referredAtMs, Date.now()),
       });
-      if (r.refereeXp > 0 || r.refereeCopper > 0) this.sim.grantBonus(meta, r.refereeXp, r.refereeCopper);
-      if (r.referrerXp > 0 || r.referrerCopper > 0) await accrueReferralReward(pool, ref.referrerAccountId, r.referrerXp, r.referrerCopper);
+      if (r.refereeXp > 0 || r.refereeCopper > 0)
+        this.sim.grantBonus(meta, r.refereeXp, r.refereeCopper);
+      if (r.referrerXp > 0 || r.referrerCopper > 0)
+        await accrueReferralReward(pool, ref.referrerAccountId, r.referrerXp, r.referrerCopper);
       await setReferralProgress(pool, session.characterId, r.newLastXpGained, r.newLastLootCopper);
     } catch (err) {
       console.error('referral bonus reconcile failed:', err);

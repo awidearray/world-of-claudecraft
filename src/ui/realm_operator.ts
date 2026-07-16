@@ -9,10 +9,6 @@
 // error CODES map to realm.err.* below. Numbers go through formatNumber and
 // dates through formatDateTime, per the i18n rules.
 
-import { t, formatNumber, formatDateTime } from './i18n';
-import type { TranslationKey } from './i18n';
-import { esc } from './esc';
-import { ApiError } from '../net/online';
 import type {
   Api,
   OwnedRealm,
@@ -24,6 +20,10 @@ import type {
   RealmTiersInfo,
   RealmType,
 } from '../net/online';
+import { ApiError } from '../net/online';
+import { esc } from './esc';
+import type { TranslationKey } from './i18n';
+import { formatDateTime, formatNumber, t } from './i18n';
 
 // The payment method the founding screen is currently set to.
 export type PayMethod = 'stake' | 'buy';
@@ -54,6 +54,9 @@ export interface RealmOperatorHost {
   affiliateCode(): string | null;
   // Enter a realm the operator owns (reuses the realm-list selection flow).
   enterRealm(realm: OwnedRealm): void;
+  // Open the realm token launchpad panel for an owned realm (phases 0 to 2 of
+  // the realm token launchpad). Optional so hosts without the panel omit it.
+  openLaunchpad?(realm: OwnedRealm): void;
   // Close the panel (return to the realm list).
   close(): void;
 }
@@ -135,7 +138,8 @@ export function messageForError(err: unknown): string {
     if (key) return t(key);
     return t('realmOp.err.generic');
   }
-  if (err instanceof Error && err.message === 'wallet_mismatch') return t('realmOp.err.wallet_mismatch');
+  if (err instanceof Error && err.message === 'wallet_mismatch')
+    return t('realmOp.err.wallet_mismatch');
   if (err instanceof Error && err.message) return err.message;
   return t('realmOp.err.generic');
 }
@@ -339,12 +343,17 @@ export class RealmOperator {
     let html = tab('stake', 'realmOp.found.methodStake');
     if (this.buyAvailable) html += tab('buy', 'realmOp.found.methodBuy');
     this.methodBox.innerHTML = html;
-    for (const btn of Array.from(this.methodBox.querySelectorAll<HTMLButtonElement>('.ro-method-tab'))) {
+    for (const btn of Array.from(
+      this.methodBox.querySelectorAll<HTMLButtonElement>('.ro-method-tab'),
+    )) {
       btn.classList.toggle('ro-method-on', btn.dataset.method === this.payMethod);
       btn.addEventListener('click', () => this.selectMethod(btn.dataset.method as PayMethod));
     }
     const hint = this.root.querySelector('#ro-method-hint') as HTMLElement | null;
-    if (hint) hint.textContent = t(this.payMethod === 'buy' ? 'realmOp.found.methodBuyHint' : 'realmOp.found.methodStakeHint');
+    if (hint)
+      hint.textContent = t(
+        this.payMethod === 'buy' ? 'realmOp.found.methodBuyHint' : 'realmOp.found.methodStakeHint',
+      );
     this.renderCurrencies();
   }
 
@@ -379,7 +388,9 @@ export class RealmOperator {
           data-currency="${esc(c.key)}"${priced ? '' : ' disabled'}>${esc(label)}</button>`;
       })
       .join('');
-    for (const btn of Array.from(this.currencyBox.querySelectorAll<HTMLButtonElement>('.ro-method-tab'))) {
+    for (const btn of Array.from(
+      this.currencyBox.querySelectorAll<HTMLButtonElement>('.ro-method-tab'),
+    )) {
       btn.classList.toggle('ro-method-on', btn.dataset.currency === this.selectedCurrency);
       btn.addEventListener('click', () => this.selectCurrency(btn.dataset.currency as BuyCurrency));
     }
@@ -419,14 +430,19 @@ export class RealmOperator {
         let cost: string;
         if (buying) {
           const price = this.buyTierFor(tier.tier)?.prices[this.selectedCurrency] ?? null;
-          cost = price === null
-            ? t('realmOp.tier.priceUnavailable')
-            : t('realmOp.tier.price', { amount: formatAmount(price, decimals), currency: this.selectedCurrency });
+          cost =
+            price === null
+              ? t('realmOp.tier.priceUnavailable')
+              : t('realmOp.tier.price', {
+                  amount: formatAmount(price, decimals),
+                  currency: this.selectedCurrency,
+                });
         } else {
           cost = t('realmOp.tier.cost', { amount: formatTokens(tier.amountBase, info.decimals) });
         }
         const share = t('realmOp.tier.share', { pct: formatNumber(tier.bps / 100) });
-        const unbuyable = buying && (this.buyTierFor(tier.tier)?.prices[this.selectedCurrency] ?? null) === null;
+        const unbuyable =
+          buying && (this.buyTierFor(tier.tier)?.prices[this.selectedCurrency] ?? null) === null;
         return `
           <button class="ro-tier" type="button" aria-pressed="false" data-tier="${tier.tier}"${unbuyable ? ' disabled' : ''}>
             <span class="ro-tier-name">${esc(t(TIER_LABEL[tier.name]))}</span>
@@ -441,8 +457,9 @@ export class RealmOperator {
     // Re-applying the highlight + note keeps the picked tier visible across a
     // method/currency swap; clear it if the pick is no longer buyable.
     if (this.selectedTier) {
-      const stillValid = !buying
-        || (this.buyTierFor(this.selectedTier.tier)?.prices[this.selectedCurrency] ?? null) !== null;
+      const stillValid =
+        !buying ||
+        (this.buyTierFor(this.selectedTier.tier)?.prices[this.selectedCurrency] ?? null) !== null;
       if (stillValid) this.applyTierSelection(this.selectedTier.tier);
       else this.clearTierSelection();
     } else {
@@ -509,7 +526,9 @@ export class RealmOperator {
     const price = tier?.prices[this.selectedCurrency] ?? null;
     if (price !== null) {
       const amount = formatAmount(price, this.currencyDecimals());
-      lines.push(`<p class="ro-buy-line">${esc(t('realmOp.buy.note', { amount, currency: this.selectedCurrency }))}</p>`);
+      lines.push(
+        `<p class="ro-buy-line">${esc(t('realmOp.buy.note', { amount, currency: this.selectedCurrency }))}</p>`,
+      );
     }
     const split = t('realmOp.buy.splitNote', { treasuryPct: formatNumber(info.treasuryBps / 100) });
     lines.push(`<p class="ro-buy-line ro-hint-muted">${esc(split)}</p>`);
@@ -518,8 +537,12 @@ export class RealmOperator {
     // bonds are enabled (bondBps > 0) and a tier is picked, so the amount is concrete.
     if (info.bondBps > 0 && tier) {
       const bond = formatTokens(tier.bondBase, info.wocDecimals);
-      lines.push(`<p class="ro-buy-line ro-buy-bond">${esc(t('realmOp.buy.bondNote', { amount: bond }))}</p>`);
-      lines.push(`<p class="ro-buy-line ro-buy-bond ro-hint-muted">${esc(t('realmOp.buy.bondWhy', { currency: this.selectedCurrency }))}</p>`);
+      lines.push(
+        `<p class="ro-buy-line ro-buy-bond">${esc(t('realmOp.buy.bondNote', { amount: bond }))}</p>`,
+      );
+      lines.push(
+        `<p class="ro-buy-line ro-buy-bond ro-hint-muted">${esc(t('realmOp.buy.bondWhy', { currency: this.selectedCurrency }))}</p>`,
+      );
     }
     lines.push(`<p class="ro-buy-line ro-buy-final">${esc(t('realmOp.buy.finalNote'))}</p>`);
     return lines.join('');
@@ -529,13 +552,19 @@ export class RealmOperator {
     const linked = this.host.linkedWallet() !== null;
     const buying = this.payMethod === 'buy' && this.buyAvailable && this.buyInfo !== null;
     // The buy path also needs the selected tier to be priced in the chosen currency.
-    const tierOk = this.selectedTier !== null
-      && (!buying || (this.buyTierFor(this.selectedTier.tier)?.prices[this.selectedCurrency] ?? null) !== null);
+    const tierOk =
+      this.selectedTier !== null &&
+      (!buying ||
+        (this.buyTierFor(this.selectedTier.tier)?.prices[this.selectedCurrency] ?? null) !== null);
     const ready = !this.busy && this.nameInput.value.trim().length > 0 && tierOk;
     this.submitBtn.disabled = !ready;
     const submitKey: TranslationKey = buying
-      ? (linked ? 'realmOp.buy.submit' : 'realmOp.buy.submitConnect')
-      : (linked ? 'realmOp.found.submit' : 'realmOp.found.submitConnect');
+      ? linked
+        ? 'realmOp.buy.submit'
+        : 'realmOp.buy.submitConnect'
+      : linked
+        ? 'realmOp.found.submit'
+        : 'realmOp.found.submitConnect';
     this.submitBtn.textContent = this.busy ? t('realmOp.flow.quoting') : t(submitKey);
     this.nameInput.disabled = this.busy;
     this.typeSelect.disabled = this.busy;
@@ -571,7 +600,12 @@ export class RealmOperator {
 
       this.setStatus(t('realmOp.flow.quoting'), 'info');
       const type = (this.typeSelect.value as RealmType) || 'Normal';
-      const quote = await this.host.api.quoteRealm(name, type, tier.amountBase, this.host.affiliateCode() ?? undefined);
+      const quote = await this.host.api.quoteRealm(
+        name,
+        type,
+        tier.amountBase,
+        this.host.affiliateCode() ?? undefined,
+      );
 
       this.setStatus(t('realmOp.flow.locking'), 'info');
       const lockSig = await this.host.signLock(quote);
@@ -689,13 +723,24 @@ export class RealmOperator {
     } else {
       const buttons: string[] = [];
       if (r.status === 'active' && r.url) {
-        buttons.push(`<button class="btn btn-secondary ro-act" data-act="enter" data-id="${r.realmId}" type="button">${esc(t('realmOp.mine.enter'))}</button>`);
+        buttons.push(
+          `<button class="btn btn-secondary ro-act" data-act="enter" data-id="${r.realmId}" type="button">${esc(t('realmOp.mine.enter'))}</button>`,
+        );
+      }
+      if (r.status === 'active' && this.host.openLaunchpad) {
+        buttons.push(
+          `<button class="btn btn-secondary ro-act" data-act="launchpad" data-id="${r.realmId}" type="button">${esc(t('launchpad.open'))}</button>`,
+        );
       }
       if (r.status === 'active') {
-        buttons.push(`<button class="btn btn-secondary ro-act" data-act="confirm" data-id="${r.realmId}" type="button">${esc(t('realmOp.mine.decommission'))}</button>`);
+        buttons.push(
+          `<button class="btn btn-secondary ro-act" data-act="confirm" data-id="${r.realmId}" type="button">${esc(t('realmOp.mine.decommission'))}</button>`,
+        );
       }
       if (r.status === 'decommissioning') {
-        buttons.push(`<button class="btn btn-primary ro-act" data-act="finalize" data-id="${r.realmId}" type="button">${esc(t('realmOp.mine.release'))}</button>`);
+        buttons.push(
+          `<button class="btn btn-primary ro-act" data-act="finalize" data-id="${r.realmId}" type="button">${esc(t('realmOp.mine.release'))}</button>`,
+        );
       }
       actions = buttons.length ? `<div class="ro-realm-actions">${buttons.join('')}</div>` : '';
     }
@@ -739,6 +784,9 @@ export class RealmOperator {
       case 'enter':
         this.host.enterRealm(realm);
         return;
+      case 'launchpad':
+        this.host.openLaunchpad?.(realm);
+        return;
       case 'confirm':
         this.confirmingId = id;
         this.renderOwned();
@@ -766,7 +814,10 @@ export class RealmOperator {
       // and surfaces the finalize-close path via loadOwned() as before.
       const res = await this.host.api.decommissionRealm(realm.realmId);
       await this.loadOwned();
-      this.setMineStatus(res.closed === true ? t('realmOp.flow.closed') : '', res.closed === true ? 'success' : 'info');
+      this.setMineStatus(
+        res.closed === true ? t('realmOp.flow.closed') : '',
+        res.closed === true ? 'success' : 'info',
+      );
     } catch (err) {
       this.setMineStatus(messageForError(err), 'error');
     }

@@ -5,9 +5,6 @@ import './styles/index.css';
 import { syncAppViewport as syncAppViewportShared } from './game/app_viewport';
 import { audio } from './game/audio';
 import { AutoLoot } from './game/autoloot';
-import { RealmAffiliate } from './ui/realm_affiliate';
-import { RealmOperator } from './ui/realm_operator';
-import { setWocSeason, setWocSeasonUiEnabled } from './ui/woc_season';
 import {
   BROWSER_BODY_CLASSES,
   browserBodyClasses,
@@ -93,6 +90,7 @@ import {
   type OwnedRealm,
   type ProvisionQuote,
   type RealmBuyQuoteResponse,
+  type RealmPresaleQuote,
   type ReleaseEntry,
 } from './net/online';
 // The wallet module is loaded lazily via dynamic import() in the wallet
@@ -183,6 +181,7 @@ import {
 } from './ui/i18n';
 import { defaultIconPrewarmEntries, prewarmIconCache } from './ui/icon_prewarm';
 import { iconDataUrl } from './ui/icons';
+import { LevyFundPanel } from './ui/levy_fund_panel';
 import { applyNativeDeviceLanguage } from './ui/native_language';
 import { scheduleNativeUpdateCheck } from './ui/native_update_prompt';
 import { createMetricsSampler } from './ui/perf_metrics_sampler';
@@ -196,6 +195,10 @@ import {
   setStandingProvider,
 } from './ui/player_card_share';
 import { hydratePortraits, portraitChipHtml } from './ui/portrait_chip';
+import { RealmAffiliate } from './ui/realm_affiliate';
+import { RealmLaunches } from './ui/realm_launches';
+import { RealmLaunchpad } from './ui/realm_launchpad';
+import { RealmOperator } from './ui/realm_operator';
 import { hideReconnectOverlay, showReconnectOverlay } from './ui/reconnect_overlay';
 import { createSpectateBadge } from './ui/spectate_badge';
 import { type PresetId, type ThemeKnob, ThemeStore } from './ui/theme';
@@ -214,6 +217,7 @@ import {
   setWocBalance,
   shouldDisconnectUnverifiedWallet,
 } from './ui/wallet_balance';
+import { setWocSeason, setWocSeasonUiEnabled } from './ui/woc_season';
 import { formatXp } from './ui/xp_bar';
 import type { IWorld, LeaderboardEntry } from './world_api';
 
@@ -3186,6 +3190,8 @@ function show(el: string): void {
     '#realm-panel',
     '#realm-operator-panel',
     '#realm-affiliate-panel',
+    '#realm-launches-panel',
+    '#levy-fund-panel',
     '#charselect-panel',
     '#charcreate-panel',
     '#offline-select',
@@ -6450,6 +6456,52 @@ async function signRealmPurchase(quote: RealmBuyQuoteResponse): Promise<string |
   }
 }
 
+// Sign + send a presale contribution for a launchpad quote. Returns the payment
+// signature, or null if the player rejected/cancelled in their wallet. Mirrors
+// signRealmPurchase for the token launchpad's contribute flow.
+async function signPresaleContribution(quote: RealmPresaleQuote): Promise<string | null> {
+  const wallet = await loadWallet();
+  try {
+    return await wallet.signAndSendPresaleContribution({
+      native: quote.native,
+      currencyMint: quote.currencyMint,
+      currencyDecimals: quote.currencyDecimals,
+      escrowWallet: quote.escrowWallet,
+      amountBase: quote.amountBase,
+      memo: quote.memo,
+    });
+  } catch (err) {
+    if (wallet.isWalletSelectionCancelled(err)) return null;
+    throw err instanceof Error ? err : new Error(t('launchpad.err.generic'));
+  }
+}
+
+// Realm token launchpad (phases 0 to 2): rendered into the shared
+// realm-operator panel body for one realm. Reused from two entry points: the
+// OWNER's row action on the operator dashboard (Back returns there, the
+// default), and the public community-launches list any signed-in player can
+// reach (Back returns to that list instead). The panel itself gates
+// founder-only sections on the server's `isOwner` flag, so a non-owner opened
+// here sees vote/contribute controls but never register/config/finalize.
+function openRealmLaunchpad(realm: { realmId: number; name: string }, onClose?: () => void): void {
+  show('#realm-operator-panel');
+  const userEl = document.getElementById('realm-operator-user');
+  if (userEl) userEl.textContent = api.username ?? '';
+  const body = $('#realm-operator-body') as HTMLElement;
+  const launchpad = new RealmLaunchpad(body, {
+    api,
+    realm: { realmId: realm.realmId, name: realm.name },
+    linkedWallet: () => linkedWalletPubkey,
+    ensureWalletReady: ensureRealmWalletReady,
+    signContribution: signPresaleContribution,
+    close: () => {
+      realmOperator = null; // the panel body was repurposed; rebuild fresh
+      (onClose ?? openRealmOperator)();
+    },
+  });
+  void launchpad.open();
+}
+
 let realmOperator: RealmOperator | null = null;
 function openRealmOperator(): void {
   show('#realm-operator-panel');
@@ -6463,7 +6515,9 @@ function openRealmOperator(): void {
       signLock: signRealmLock,
       signPurchase: signRealmPurchase,
       affiliateCode: () => REFERRAL_CODE || null,
-      enterRealm: (realm: OwnedRealm) => selectRealm({ name: realm.name, url: realm.url, type: realm.type }),
+      enterRealm: (realm: OwnedRealm) =>
+        selectRealm({ name: realm.name, url: realm.url, type: realm.type }),
+      openLaunchpad: (realm: OwnedRealm) => openRealmLaunchpad(realm),
       close: () => showRealmList(),
     });
   }
@@ -6483,6 +6537,33 @@ function openRealmAffiliate(): void {
     });
   }
   void realmAffiliate.open();
+}
+
+// Public launch-discovery list (the community entry point, PRD section 9):
+// every realm currently voting or in presale, for any signed-in player. A
+// row opens the shared launchpad panel above; its Back returns here.
+let realmLaunches: RealmLaunches | null = null;
+function openRealmLaunches(): void {
+  show('#realm-launches-panel');
+  if (!realmLaunches) {
+    realmLaunches = new RealmLaunches($('#realm-launches-body') as HTMLElement, {
+      api,
+      openRealm: (realm) => openRealmLaunchpad(realm, () => openRealmLaunches()),
+      close: () => showRealmList(),
+    });
+  }
+  void realmLaunches.open();
+}
+
+// The public, display-only Levy Street Fund portfolio (launchpad phase 6). A
+// fresh panel each open (the body is repurposed) so the snapshot is re-fetched.
+function openLevyFund(): void {
+  show('#levy-fund-panel');
+  const panel = new LevyFundPanel($('#levy-fund-body') as HTMLElement, {
+    api,
+    close: () => showRealmList(),
+  });
+  void panel.open();
 }
 
 function wireWallet(): void {
@@ -7222,6 +7303,18 @@ function wireStartScreens(): void {
   ($('#btn-realm-affiliate') as HTMLElement).hidden = !WALLET_ENABLED;
   $('#btn-realm-affiliate').addEventListener('click', () => openRealmAffiliate());
   $('#btn-realm-affiliate-back').addEventListener('click', () => showRealmList());
+  // Community Launches: the public discovery list into the launch vote and
+  // presale panels (PRD section 9). Any signed-in player can vote or
+  // contribute here, not only a realm's owner. Wallet-gated like the other
+  // launchpad surfaces (voting/contributing needs a linked wallet server-side).
+  ($('#btn-realm-launches') as HTMLElement).hidden = !WALLET_ENABLED;
+  $('#btn-realm-launches').addEventListener('click', () => openRealmLaunches());
+  $('#btn-realm-launches-back').addEventListener('click', () => showRealmList());
+  // Levy Street Fund: the public display-only portfolio. Wallet-gated like the
+  // other launchpad surfaces (the fund only exists on a token-launching deploy).
+  ($('#btn-realm-levy-fund') as HTMLElement).hidden = !WALLET_ENABLED;
+  $('#btn-realm-levy-fund').addEventListener('click', () => openLevyFund());
+  $('#btn-levy-fund-back').addEventListener('click', () => showRealmList());
   // Change Realm is now an inline dropdown on the character-select screen.
   $('#btn-change-realm').addEventListener('click', (e) => {
     e.stopPropagation();

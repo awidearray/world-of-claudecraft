@@ -4,6 +4,7 @@ import { LEADERBOARD_MAX } from '../src/sim/leaderboard_page';
 import { sanitizeRemovedZone1Content } from '../src/sim/removed_zone1_content';
 import type { CharacterState, MailSave, MarketSave } from '../src/sim/sim';
 import type { ArenaFormat, PlayerClass } from '../src/sim/types';
+import { AFFILIATE_SCHEMA, accountForAffiliateCode } from './affiliate_db';
 import type { BankBonusFacts } from './bank_entitlements';
 import { seedChatFilterDefaults } from './chat_filter_db';
 import type { ChatLogRow } from './chat_log';
@@ -11,6 +12,7 @@ import { DISCORD_SCHEMA } from './discord_db';
 import { FLOW_LEDGER_SCHEMA } from './flow_ledger_db';
 import { GITHUB_SCHEMA } from './github_db';
 import { isUniqueViolation } from './http_util';
+import { LEVY_FUND_SCHEMA } from './levy_fund_db';
 import { MAPS_SCHEMA } from './maps_db';
 import {
   LEGACY_MARKET_KEY,
@@ -22,14 +24,19 @@ import {
 import { OAUTH_SCHEMA } from './oauth_db';
 import { BUYBACK_BATCHES_SCHEMA } from './payout_db';
 import { RATELIMIT_PRUNE_SQL, RATELIMIT_SCHEMA } from './ratelimit_db';
-import { AFFILIATE_SCHEMA, accountForAffiliateCode } from './affiliate_db';
-import { REFERRAL_REWARDS_SCHEMA } from './referral_db';
-import { REALM_SCHEMA, seedDefaultRealm, assertRealmSchema } from './realm_db';
-import { REALM_STAKE_SCHEMA } from './realm_stake_db';
-import { REALM_QUOTE_SCHEMA } from './realm_quote_db';
-import { REALM_BUY_SCHEMA } from './realm_buy_db';
 import { REALM } from './realm';
+import { REALM_BUY_SCHEMA } from './realm_buy_db';
+import { assertRealmSchema, REALM_SCHEMA, seedDefaultRealm } from './realm_db';
+import { REALM_FEE_SCHEMA } from './realm_fee_db';
+import { REALM_POWER_CREDIT_SCHEMA } from './realm_power_credit_db';
+import { REALM_PRESALE_SCHEMA } from './realm_presale_db';
+import { REALM_QUOTE_SCHEMA } from './realm_quote_db';
+import { REALM_STAKE_SCHEMA } from './realm_stake_db';
+import { REALM_TOKEN_SCHEMA } from './realm_token_db';
+import { REALM_LAUNCH_QUOTE_SCHEMA } from './realm_token_mint_db';
+import { REALM_VOTE_SCHEMA } from './realm_vote_db';
 import { chooseArchiveName } from './reclaim_name';
+import { REFERRAL_REWARDS_SCHEMA } from './referral_db';
 import { SOCIAL_SCHEMA } from './social_db';
 import { USER_ASSETS_SCHEMA } from './user_assets_db';
 
@@ -713,6 +720,13 @@ export async function ensureSchema(): Promise<void> {
     await client.query(REALM_STAKE_SCHEMA);
     await client.query(REALM_QUOTE_SCHEMA);
     await client.query(REALM_BUY_SCHEMA); // realm_buy_quotes + realm_purchases (references realms + accounts)
+    await client.query(REALM_TOKEN_SCHEMA); // realm_tokens registry (launchpad phase 0, references realms)
+    await client.query(REALM_VOTE_SCHEMA); // realm_votes launch-vote ledger (launchpad phase 1)
+    await client.query(REALM_PRESALE_SCHEMA); // realm_presales + quotes + contributions (launchpad phase 2)
+    await client.query(REALM_LAUNCH_QUOTE_SCHEMA); // realm_launch_quotes (launchpad phase 3, references realms + accounts)
+    await client.query(REALM_FEE_SCHEMA); // realm_fee_accruals + realm_fee_distributions (launchpad phase 5, references realms)
+    await client.query(LEVY_FUND_SCHEMA); // levy_fund_snapshots + holdings + marks (launchpad phase 6, display-only cache)
+    await client.query(REALM_POWER_CREDIT_SCHEMA); // realm_power_credits ledger (launchpad phase 7, power-realm token-to-copper)
     await client.query(AFFILIATE_SCHEMA); // affiliate_codes + realm_affiliates (references realms + accounts)
     await client.query(REFERRAL_REWARDS_SCHEMA); // referral_progress + referral_rewards (references characters + accounts)
     // Fail fast at boot on realm schema drift (CREATE IF NOT EXISTS is a no-op
@@ -1575,9 +1589,7 @@ export async function getPlayerCardBySlug(slug: string): Promise<PlayerCardRow |
 
 // Metadata-only read for the OG-unfurl HTML page, which doesn't need the (up to
 // ~4 MB) PNG bytes, keeps getPlayerCardBySlug's heavy SELECT for the image route.
-export async function getPlayerCardMetaBySlug(
-  slug: string,
-): Promise<{
+export async function getPlayerCardMetaBySlug(slug: string): Promise<{
   title: string;
   description: string;
   locale: string;
@@ -1616,7 +1628,10 @@ export async function accountForSlug(slug: string): Promise<number | null> {
 // The account that owns a character, by the character's (globally unique) name,
 // case-insensitive. Character names are the human-readable referral handle.
 export async function accountForCharacterName(name: string): Promise<number | null> {
-  const res = await pool.query('SELECT account_id FROM characters WHERE lower(name) = lower($1) LIMIT 1', [name]);
+  const res = await pool.query(
+    'SELECT account_id FROM characters WHERE lower(name) = lower($1) LIMIT 1',
+    [name],
+  );
   return res.rows[0]?.account_id ?? null;
 }
 

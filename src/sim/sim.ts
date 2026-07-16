@@ -1,6 +1,7 @@
 import type {
   AccountCosmetics,
   BankBonusSource,
+  CurrencyIdentity,
   DailyRewardHistory,
   DailyRewardLeaderboardPage,
   DailyRewardSpinResult,
@@ -1189,6 +1190,14 @@ export class Sim {
   // parties / partyByPid / partyInvites / nextPartyId moved to the PartyMachine
   // (src/sim/social/party.ts, session A1); reached via `this.party`.
   accountCosmetics: AccountCosmetics = { completedQuestIds: [], mechChromaIds: [] };
+  // Currency display identity (launchpad phase 7): the offline single-player Sim
+  // has no realm token, so it always uses the classic coin display. This is
+  // pure display data surfaced on IWorld; the sim never reads it for logic, and
+  // no mint / decimals / RPC / price ever enters here (the copper balance stays
+  // opaque). The online ClientWorld overrides it from the server's hello. The
+  // classic display is inlined here (not value-imported from world_api) so
+  // src/sim/ keeps its type-only edge to the seam.
+  readonly currencyIdentity: CurrencyIdentity = { symbol: 'WOC', icon: '', realmToken: false };
   private nextLootRollId = 1;
   private pendingLootRolls = new Map<number, PendingLootRoll>();
   trades = new Map<number, TradeSession>(); // pid -> shared session (both pids point at it)

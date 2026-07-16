@@ -120,6 +120,7 @@ export type {
   FiestaScoreboardPlayer,
 } from './world_api/duel_arena';
 export type { RaidLockout } from './world_api/dungeons';
+export { CLASSIC_CURRENCY, type CurrencyIdentity } from './world_api/inventory';
 export type { MailInfo, MailKindView, MailMessageView } from './world_api/mail';
 export type { MarketInfo, MarketListingView } from './world_api/market';
 export type { PartyInfo, PartyMemberAura, PartyMemberInfo } from './world_api/party';
