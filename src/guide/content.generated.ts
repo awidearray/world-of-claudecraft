@@ -3373,6 +3373,13 @@ export const GUIDE_DEEDS: GuideDeed[] = [
     "renown": 5,
     "feat": false,
     "crest": "/ui/deeds/chr_marsh_first_cast.webp"
+  },
+  {
+    "id": "soc_all_aboard",
+    "name": "All Aboard",
+    "category": "social",
+    "renown": 5,
+    "feat": false
   }
 ];
 

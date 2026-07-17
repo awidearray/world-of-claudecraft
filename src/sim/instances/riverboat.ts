@@ -10,8 +10,16 @@
 // never sees the boat. Reserved entity ids (outside the nextId sequence, after
 // the rng-driven world roster) keep world-gen determinism and the parity goldens'
 // pinned id sequence intact, exactly like the Vale Cup groundskeeper and Fury.
+import {
+  RIVERBOAT_CASHIER_PURSER_ID,
+  RIVERBOAT_DEALER_ID,
+  RIVERBOAT_HILO_CROUPIER_ID,
+  RIVERBOAT_NPCS,
+  RIVERBOAT_PIT_BOSS_ID,
+  RIVERBOAT_SLOTS_ATTENDANT_ID,
+} from '../content/riverboat';
 import { riverboatOrigin } from '../data';
-import { createGroundObject } from '../entity';
+import { createGroundObject, createNpc } from '../entity';
 import { GANGWAY_ENTRY, GANGWAY_EXIT } from '../riverboat_layout';
 import type { SimContext } from '../sim_context';
 import { dist2d, type Entity } from '../types';
@@ -23,6 +31,16 @@ export const RIVERBOAT_EXIT_ID = 1_000_000_003;
 
 export const RIVERBOAT_GANGWAY_TEMPLATE = 'riverboat_gangway';
 export const RIVERBOAT_EXIT_TEMPLATE = 'riverboat_exit';
+
+// Croupier reserved ids (004-008), each paired with its NPC templateId. Ordered;
+// spawnRiverboatCroupiers assigns ids by this order and never reuses one.
+const CROUPIER_SPAWNS: ReadonlyArray<{ id: number; npcId: string }> = [
+  { id: 1_000_000_004, npcId: RIVERBOAT_DEALER_ID },
+  { id: 1_000_000_005, npcId: RIVERBOAT_PIT_BOSS_ID },
+  { id: 1_000_000_006, npcId: RIVERBOAT_SLOTS_ATTENDANT_ID },
+  { id: 1_000_000_007, npcId: RIVERBOAT_HILO_CROUPIER_ID },
+  { id: 1_000_000_008, npcId: RIVERBOAT_CASHIER_PURSER_ID },
+];
 
 // Walking within this radius of the gangway (or the deck exit portal) teleports
 // through it, no click required, mirroring the dungeon DOOR_TRIGGER_RADIUS.
@@ -63,6 +81,20 @@ export function spawnRiverboatDeck(ctx: SimContext): void {
     exit.objectItemId = null;
     exit.lootable = true;
     ctx.addEntity(exit);
+  }
+}
+
+// Spawn the five croupiers on the deck under reserved ids. Draws no rng and
+// guards on presence, so it is idempotent and determinism-safe. Their NpcDef
+// pos is deck-local; the world position is riverboatOrigin() + that anchor.
+export function spawnRiverboatCroupiers(ctx: SimContext): void {
+  const origin = riverboatOrigin();
+  for (const { id, npcId } of CROUPIER_SPAWNS) {
+    if (ctx.entities.has(id)) continue;
+    const def = RIVERBOAT_NPCS[npcId];
+    if (!def) continue;
+    const npc = createNpc(id, def, ctx.groundPos(origin.x + def.pos.x, origin.z + def.pos.z));
+    ctx.addEntity(npc);
   }
 }
 

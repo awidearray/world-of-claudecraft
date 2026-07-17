@@ -1967,6 +1967,17 @@ export const DEEDS: Record<string, DeedDef> = {
     renown: 5,
     trigger: { kind: 'visit', markId: 'fish:mirefen_marsh' },
   },
+  // Cosmetic-only, and deliberately NOT tied to any wager: it marks stepping
+  // aboard and meeting the purser, never placing a bet (the RG posture forbids a
+  // deed that rewards or measures gambling).
+  soc_all_aboard: {
+    id: 'soc_all_aboard',
+    name: 'All Aboard',
+    desc: 'Step aboard the RiverBoat and pay your respects to Purser Odalie Finch at the cage.',
+    category: 'social',
+    renown: 5,
+    trigger: { kind: 'visit', markId: 'npc:riverboat_cashier_purser' },
+  },
 };
 
 for (const def of Object.values(DEEDS)) {

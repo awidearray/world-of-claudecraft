@@ -8734,6 +8734,31 @@ export const ja_JP: EnTranslations = {
         "title": "ソーンピーク高地の年代記",
         "greeting": "山は何ひとつ忘れない、{playerName}よ。私もだ。あなたの成したことを見せてもらおう。"
       },
+      "riverboat_dealer": {
+        "name": "ディーラー・マリベル",
+        "title": "グランドサルーンのいかさま師",
+        "greeting": "お座りください、{className}。山札は新しく、配りは公正です。一勝負いかがですか？"
+      },
+      "riverboat_pit_boss": {
+        "name": "ピットボス・クレイク",
+        "title": "賭け闘技場の主",
+        "greeting": "闘士は二人、賞金は一つ、{className}。リングに上がり、賭け金を告げてください。"
+      },
+      "riverboat_slots_attendant": {
+        "name": "ティリー・スプロケット",
+        "title": "リールの番人",
+        "greeting": "筐体は油を差して準備万端です、{className}。一日一回の無料回転、リールは決して嘘をつきません。"
+      },
+      "riverboat_hilo_croupier": {
+        "name": "補給官ノック",
+        "title": "骰子の呼び手",
+        "greeting": "ハイかロー、{className}、一振りで決まります。胴元は真ん中だけをいただきます。"
+      },
+      "riverboat_cashier_purser": {
+        "name": "パーサー・オダリー・フィンチ",
+        "title": "金庫の番人",
+        "greeting": "金庫は開いています、{className}。チップを入れ、コインを出し、どの帳簿も夜明けには釣り合います。"
+      },
       "tidewatcher_ondrel": {
         "name": "オンドレル・ヴェイン",
         "title": "潮見の番人",

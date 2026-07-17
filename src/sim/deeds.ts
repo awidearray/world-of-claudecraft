@@ -1708,6 +1708,10 @@ export function onNpcTalkedForDeeds(ctx: SimContext, meta: PlayerMeta, templateI
   if ((CHRONICLER_TEMPLATE_IDS as readonly string[]).includes(templateId)) {
     markVisited(ctx, meta, `npc:${templateId}`);
   }
+  // Meeting the RiverBoat purser marks the "All Aboard" visit deed (soc_all_aboard).
+  if (templateId === 'riverboat_cashier_purser') {
+    markVisited(ctx, meta, 'npc:riverboat_cashier_purser');
+  }
   if (templateId === SAUL_TEMPLATE_ID) {
     const talks = (ctx.deedRuntime.saulTalks.get(meta.entityId) ?? 0) + 1;
     ctx.deedRuntime.saulTalks.set(meta.entityId, talks);

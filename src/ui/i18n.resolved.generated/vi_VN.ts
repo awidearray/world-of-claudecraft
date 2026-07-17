@@ -8734,6 +8734,31 @@ export const vi_VN: EnTranslations = {
         "title": "Biên Niên Sử Đỉnh Núi",
         "greeting": "Ngọn núi không quên bất cứ điều gì, {playerName}, và ta cũng vậy. Để xem ngươi đã làm nên những gì nào."
       },
+      "riverboat_dealer": {
+        "name": "Dealer Maribel",
+        "title": "Cardsharp of the Grand Saloon",
+        "greeting": "Pull up a chair, {className}. The deck is fresh and the deal is honest. Care for a hand?"
+      },
+      "riverboat_pit_boss": {
+        "name": "Pit Boss Crake",
+        "title": "Master of the Wager Ring",
+        "greeting": "Two fighters, one purse, {className}. Step to the ring and name your stake."
+      },
+      "riverboat_slots_attendant": {
+        "name": "Tilly Sprocket",
+        "title": "Keeper of the Reels",
+        "greeting": "The cabinets are oiled and eager, {className}. One free pull a day, and the reels never lie."
+      },
+      "riverboat_hilo_croupier": {
+        "name": "Quartermaster Nock",
+        "title": "Caller of the Bones",
+        "greeting": "High or low, {className}, a single roll settles it. The house keeps only the middle."
+      },
+      "riverboat_cashier_purser": {
+        "name": "Purser Odalie Finch",
+        "title": "Keeper of the Cage",
+        "greeting": "The cage is open, {className}. Chips in, coin out, and every ledger balances by dawn."
+      },
       "tidewatcher_ondrel": {
         "name": "Ondrel Vane",
         "title": "Người Canh Thủy Triều",

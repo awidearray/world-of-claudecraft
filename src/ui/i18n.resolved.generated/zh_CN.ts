@@ -8734,6 +8734,31 @@ export const zh_CN: EnTranslations = {
         "title": "荆峰高地编年史",
         "greeting": "高山什么都不会忘记，{playerName}，我也一样。让我看看你都做过什么吧。"
       },
+      "riverboat_dealer": {
+        "name": "荷官玛丽贝尔",
+        "title": "大沙龙的老千",
+        "greeting": "请坐，{className}。牌堆是新的，发牌绝对公道。来一局吗？"
+      },
+      "riverboat_pit_boss": {
+        "name": "赌台经理克雷克",
+        "title": "赌斗擂台之主",
+        "greeting": "两名斗士，一份彩金，{className}。上擂台，报出你的赌注吧。"
+      },
+      "riverboat_slots_attendant": {
+        "name": "蒂莉·斯普罗基特",
+        "title": "转轮看守人",
+        "greeting": "机柜已上好油，跃跃欲试，{className}。每天一次免费转动，转轮从不说谎。"
+      },
+      "riverboat_hilo_croupier": {
+        "name": "军需官诺克",
+        "title": "掷骰唱数人",
+        "greeting": "猜大或猜小，{className}，一掷定胜负。庄家只吃中间那一点。"
+      },
+      "riverboat_cashier_purser": {
+        "name": "账房奥达莉·芬奇",
+        "title": "钱笼看守人",
+        "greeting": "钱笼已开，{className}。筹码进，钱币出，每一本账到天亮都要平。"
+      },
       "tidewatcher_ondrel": {
         "name": "翁德雷尔·凡恩",
         "title": "守潮者",

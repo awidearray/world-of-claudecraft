@@ -343,6 +343,7 @@ import {
 } from './instances/dungeons';
 import { buyHeroicVendorItem as buyHeroicVendorItemImpl } from './instances/heroic_vendor';
 import {
+  spawnRiverboatCroupiers as spawnRiverboatCroupiersImpl,
   spawnRiverboatDeck as spawnRiverboatDeckImpl,
   updateRiverboatDoorTriggers as updateRiverboatDoorTriggersImpl,
 } from './instances/riverboat';
@@ -1700,6 +1701,7 @@ export class Sim {
     // the gangway/exit portals here; the croupier NPCs join in the same block.
     if (this.cfg.riverboatCasino) {
       spawnRiverboatDeckImpl(this.ctx);
+      spawnRiverboatCroupiersImpl(this.ctx);
     }
 
     for (const delve of DELVE_LIST) {

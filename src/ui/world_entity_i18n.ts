@@ -144,6 +144,11 @@ const NPC_IDS = [
   'chronicler_saul', // Book of Deeds Chronicler (Eastbrook, zone 1)
   'chronicler_osric_fenn', // Book of Deeds Chronicler (Fenbridge, zone 2)
   'chronicler_edda_hartwell', // Book of Deeds Chronicler (Highwatch, zone 3)
+  'riverboat_dealer', // RiverBoat casino: card-table croupier
+  'riverboat_pit_boss', // RiverBoat casino: wager-pit host
+  'riverboat_slots_attendant', // RiverBoat casino: slots + gacha attendant
+  'riverboat_hilo_croupier', // RiverBoat casino: hi-lo table croupier
+  'riverboat_cashier_purser', // RiverBoat casino: cashier cage purser
 ] as const;
 
 const QUEST_IDS = [

@@ -8734,6 +8734,31 @@ export const ko_KR: EnTranslations = {
         "title": "쏜피크 고지 연대기",
         "greeting": "산은 아무것도 잊지 않네, {playerName}. 나도 마찬가지지. 자네가 이룬 일을 보여 주게."
       },
+      "riverboat_dealer": {
+        "name": "딜러 마리벨",
+        "title": "그랜드 살롱의 타짜",
+        "greeting": "앉으시죠, {className}. 카드는 새것이고 딜은 정직합니다. 한 판 하시겠어요?"
+      },
+      "riverboat_pit_boss": {
+        "name": "핏 보스 크레이크",
+        "title": "베팅 링의 주인",
+        "greeting": "두 명의 투사, 하나의 상금, {className}. 링에 올라 판돈을 말하십시오."
+      },
+      "riverboat_slots_attendant": {
+        "name": "틸리 스프로켓",
+        "title": "릴의 관리인",
+        "greeting": "기계는 기름칠이 되어 준비됐습니다, {className}. 하루 한 번 무료 회전, 릴은 결코 거짓말하지 않죠."
+      },
+      "riverboat_hilo_croupier": {
+        "name": "병참관 노크",
+        "title": "주사위를 부르는 자",
+        "greeting": "하이 아니면 로, {className}, 한 번의 굴림으로 정해집니다. 하우스는 가운데만 가져갑니다."
+      },
+      "riverboat_cashier_purser": {
+        "name": "퍼서 오달리 핀치",
+        "title": "금고의 관리인",
+        "greeting": "금고는 열려 있습니다, {className}. 칩은 들이고 동전은 내주며, 모든 장부는 동틀 녘에 맞아떨어집니다."
+      },
       "tidewatcher_ondrel": {
         "name": "온드렐 베인",
         "title": "조수지기",
