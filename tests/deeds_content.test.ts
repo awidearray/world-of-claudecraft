@@ -31,9 +31,9 @@ const PREFIX_CATEGORY: Record<string, DeedCategory> = {
 };
 
 describe('audited launch totals (literals: update deliberately with the catalog)', () => {
-  it('ships exactly 193 deeds worth 2370 total Renown', () => {
-    expect(DEED_ORDER.length).toBe(193);
-    expect(ALL.reduce((sum, d) => sum + d.renown, 0)).toBe(2370);
+  it('ships exactly 194 deeds worth 2375 total Renown', () => {
+    expect(DEED_ORDER.length).toBe(194);
+    expect(ALL.reduce((sum, d) => sum + d.renown, 0)).toBe(2375);
   });
 
   it('ships the audited per-category counts', () => {
@@ -46,7 +46,7 @@ describe('audited launch totals (literals: update deliberately with the catalog)
       delve: 13,
       chronicle: 24,
       collection: 24,
-      pvp: 27,
+      pvp: 28,
       social: 17,
       exploration: 9,
       feat: 3,
@@ -65,6 +65,7 @@ describe('audited launch totals (literals: update deliberately with the catalog)
       'prog_tools_of_the_trade',
       'dgn_nythraxis_crypt',
       'chr_marsh_first_cast',
+      'pvp_card_duel_first_win',
       'soc_all_aboard',
     ]);
     expect(DEEDS.prog_crown_below.renown).toBe(25);
@@ -73,6 +74,12 @@ describe('audited launch totals (literals: update deliberately with the catalog)
     expect(DEEDS.prog_tools_of_the_trade.renown).toBe(10);
     expect(DEEDS.dgn_nythraxis_crypt.renown).toBe(10);
     expect(DEEDS.chr_marsh_first_cast.renown).toBe(5);
+    expect(DEEDS.pvp_card_duel_first_win.renown).toBe(5);
+    expect(DEEDS.pvp_card_duel_first_win.trigger).toEqual({
+      kind: 'stat',
+      stat: 'cardDuelsWon',
+      count: 1,
+    });
     expect(DEEDS.soc_all_aboard.renown).toBe(5);
     expect(DEEDS.soc_all_aboard.trigger).toEqual({
       kind: 'visit',
@@ -146,7 +153,7 @@ describe('frozen trigger + renown catalog (design rule 9: never retro-edit a tri
   // Regenerate after a DELIBERATE catalog change, then paste the printed hex
   // into FROZEN_CATALOG_SHA256 below (run from the repo root):
   //   npx tsx -e "import {DEED_ORDER,DEEDS} from './src/sim/content/deeds'; import {createHash} from 'node:crypto'; console.log(createHash('sha256').update(JSON.stringify(DEED_ORDER.map((id)=>[id,DEEDS[id].trigger,DEEDS[id].renown])),'utf8').digest('hex'))"
-  const FROZEN_CATALOG_SHA256 = '5426ff4bdac12faf311e91c4f27a551b3fdc5cb3e7f2f8d795d35d17102f33f7';
+  const FROZEN_CATALOG_SHA256 = '025560ec65241f915d13358e5dc6b122328a0772b6220e5085fa53c5964c4d52';
 
   it('every shipped deed keeps its trigger and renown unchanged', () => {
     const canonical = JSON.stringify(

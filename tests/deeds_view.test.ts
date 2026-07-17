@@ -563,9 +563,9 @@ describe('real catalog integration', () => {
     const view = buildDeedsView(
       makeInput({ deeds: DEEDS, order: DEED_ORDER, category: 'progression' }),
     );
-    // 193 deeds - 3 feats - 9 hidden = 181 visible to a fresh character.
-    expect(view.summary.visibleTotal).toBe(181);
-    expect(view.categories.reduce((n, c) => n + c.visible, 0)).toBe(184);
+    // 194 deeds - 3 feats - 9 hidden = 182 visible to a fresh character.
+    expect(view.summary.visibleTotal).toBe(182);
+    expect(view.categories.reduce((n, c) => n + c.visible, 0)).toBe(185);
   });
 
   it('maps every live catalog category onto a display bucket', () => {

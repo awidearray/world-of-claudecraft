@@ -1967,6 +1967,14 @@ export const DEEDS: Record<string, DeedDef> = {
     renown: 5,
     trigger: { kind: 'visit', markId: 'fish:mirefen_marsh' },
   },
+  pvp_card_duel_first_win: {
+    id: 'pvp_card_duel_first_win',
+    name: 'House Rules',
+    desc: 'Win a Card Duel at the Card Master.',
+    category: 'pvp',
+    renown: 5,
+    trigger: { kind: 'stat', stat: 'cardDuelsWon', count: 1 },
+  },
   // Cosmetic-only, and deliberately NOT tied to any wager: it marks stepping
   // aboard and meeting the purser, never placing a bet (the RG posture forbids a
   // deed that rewards or measures gambling).
