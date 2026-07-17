@@ -202,6 +202,7 @@ import {
   resetFramePositionsOnce,
   TARGET_FRAME_POS_KEY,
 } from './frame_pos_reset';
+import { HiloWindow } from './hilo_window';
 import { holderTierBadgeDataUrl, holderTierByIndex, holderTierDisplayName } from './holder_tier';
 import { isSelfOnlyAbility } from './hud/action_bar/ability_self_only';
 import {
@@ -6966,10 +6967,18 @@ export class Hud {
     this.delveBoard.open(npcId);
   }
 
-  // Open the window for a RiverBoat casino station. A game leaf registers its
-  // real opener in CASINO_WINDOW_OPENERS (append-only); until then every station
-  // falls back to the placeholder modal, so the interaction seam works today.
+  // The Hi-Lo table's real window (a HUD-held controller, since it needs the
+  // world). Other stations open the placeholder until their leaf ships.
+  private readonly hiloWindow = new HiloWindow({ world: () => this.sim });
+
+  // Open the window for a RiverBoat casino station. Hi-Lo has its real window;
+  // a game leaf can register another station's opener in CASINO_WINDOW_OPENERS
+  // (append-only); anything unregistered falls back to the placeholder modal.
   openCasinoStation(station: string): void {
+    if (station === 'hilo') {
+      this.hiloWindow.open();
+      return;
+    }
     const opener = CASINO_WINDOW_OPENERS[station];
     if (opener) opener();
     else openCasinoStationWindow(station);
@@ -8105,6 +8114,18 @@ export class Hud {
           // Interact with a RiverBoat station croupier: open its game window.
           this.openCasinoStation(ev.station);
           break;
+        case 'hiloSettled': {
+          // Update the open Hi-Lo window, and give the copper move a beat of feedback.
+          this.hiloWindow.onSettled(ev);
+          const amount = formatLocalizedMoney(ev.outcome === 'win' ? ev.payout : ev.stake);
+          this.combatLog(
+            ev.outcome === 'win'
+              ? t('hudChrome.hilo.wonLog', { roll: ev.roll, amount })
+              : t('hudChrome.hilo.lostLog', { roll: ev.roll, amount }),
+            ev.outcome === 'win' ? '#ffd24a' : '#fa6',
+          );
+          break;
+        }
         case 'mailArrived': {
           // Player names splice verbatim; authored letters carry their
           // letterId, so the sender localizes through the entity dictionary

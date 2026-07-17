@@ -313,6 +313,21 @@ export const ko_KR: EnTranslations = {
       "comingSoon": "이 게임은 곧 열립니다. 리버보트 선원들이 아직 테이블을 준비하고 있습니다.",
       "close": "닫기"
     },
+    "hilo": {
+      "title": "병참관의 하이로",
+      "rules": "1에서 100 사이의 값에 하이 또는 로를 부릅니다. 로는 1에서 49, 하이는 52에서 100에서 이깁니다. 배당은 1대 1.",
+      "balance": "지갑: {amount}",
+      "stakeLabel": "판돈",
+      "prompt": "판돈을 고른 뒤 하이나 로를 부르세요.",
+      "low": "로 (1에서 49)",
+      "high": "하이 (52에서 100)",
+      "session": "이번 판: {wins}승 {losses}패",
+      "close": "닫기",
+      "wonLine": "{roll}이 나왔습니다. {amount}을 땄습니다.",
+      "lostLine": "{roll}이 나왔습니다. {amount}을 잃었습니다.",
+      "wonLog": "하이로: {roll}이 나와 {amount} 획득.",
+      "lostLog": "하이로: {roll}이 나와 {amount} 손실."
+    },
     "readyCheck": {
       "prompt": "{name} 님이 준비 확인을 시작했습니다. 준비되셨습니까?",
       "ready": "준비 완료",

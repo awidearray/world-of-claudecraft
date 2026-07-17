@@ -10883,4 +10883,83 @@
     color: var(--color-text-muted);
     text-align: center;
   }
+
+  /* ---------- riverboat casino windows ---------- */
+  /* Self-created modal overlays (the Hi-Lo table and the placeholder station
+     window build their own backdrop + panel via createElement). The backdrop
+     dims the page and centres the panel; the panel reuses the shared .window
+     .panel chrome. */
+  .window-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  .hilo-panel,
+  .casino-station-panel {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .hilo-rules,
+  .casino-station-body {
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+  .hilo-copper {
+    font-family: var(--title-font);
+    color: var(--color-quality-legendary, #ffb347);
+  }
+  .hilo-stakes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hilo-stake {
+    flex: 1 1 auto;
+    min-width: 64px;
+    min-height: 40px;
+    border: 1px solid var(--color-border, #4a3a1e);
+    background: var(--color-panel-2, #221a10);
+    color: var(--color-text, #f0ead8);
+    border-radius: 4px;
+    cursor: var(--cursor-point);
+  }
+  .hilo-stake.sel {
+    border-color: var(--color-quality-legendary, #ffb347);
+    box-shadow: inset 0 0 0 1px var(--color-quality-legendary, #ffb347);
+  }
+  .hilo-stake:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .hilo-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .hilo-actions .btn {
+    flex: 1 1 50%;
+    min-height: 44px;
+  }
+  .hilo-result {
+    min-height: 1.4em;
+    text-align: center;
+  }
+  .hilo-result.win {
+    color: var(--color-quality-legendary, #ffd24a);
+  }
+  .hilo-result.lose {
+    color: var(--color-quality-poor, #fa6);
+  }
+  .hilo-session {
+    color: var(--color-text-muted);
+    text-align: center;
+    font-size: 12px;
+  }
 }

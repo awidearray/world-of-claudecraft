@@ -313,6 +313,21 @@ export const zh_TW: EnTranslations = {
       "comingSoon": "遊戲即將開放。船上的夥計還在佈置牌桌。",
       "close": "關閉"
     },
+    "hilo": {
+      "title": "軍需官的猜大小",
+      "rules": "在 1 到 100 的點數上猜大或猜小。小猜中 1 到 49，大猜中 52 到 100。等額賠付。",
+      "balance": "錢袋：{amount}",
+      "stakeLabel": "賭注",
+      "prompt": "先選擇賭注，再猜大或猜小。",
+      "low": "小（1 到 49）",
+      "high": "大（52 到 100）",
+      "session": "本次：勝 {wins}，負 {losses}",
+      "close": "關閉",
+      "wonLine": "擲出 {roll}。你贏得 {amount}。",
+      "lostLine": "擲出 {roll}。你輸掉 {amount}。",
+      "wonLog": "猜大小：擲出 {roll}，贏得 {amount}。",
+      "lostLog": "猜大小：擲出 {roll}，輸掉 {amount}。"
+    },
     "readyCheck": {
       "prompt": "{name} 發起了準備確認。你準備好了嗎？",
       "ready": "準備就緒",

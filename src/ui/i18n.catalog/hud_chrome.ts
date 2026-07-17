@@ -26,6 +26,23 @@ export const hudChromeStrings = {
     comingSoon: 'This game opens soon. The RiverBoat crew is still setting the table.',
     close: 'Close',
   },
+  // Quartermaster's Hi-Lo table.
+  hilo: {
+    title: "Quartermaster's Hi-Lo",
+    rules:
+      'Call High or Low on a roll of 1 to 100. Low wins 1 to 49, High wins 52 to 100. Even money.',
+    balance: 'Purse: {amount}',
+    stakeLabel: 'Stake',
+    prompt: 'Pick a stake, then call it High or Low.',
+    low: 'Low (1 to 49)',
+    high: 'High (52 to 100)',
+    session: 'This session: {wins} won, {losses} lost',
+    close: 'Close',
+    wonLine: 'Rolled {roll}. You win {amount}.',
+    lostLine: 'Rolled {roll}. You lose {amount}.',
+    wonLog: 'Hi-Lo: rolled {roll}, won {amount}.',
+    lostLog: 'Hi-Lo: rolled {roll}, lost {amount}.',
+  },
   // Raid/party ready-check prompt (the leader ran /ready). The buttons answer the
   // yes/no prompt; the outcome is announced in chat by the sim.
   readyCheck: {

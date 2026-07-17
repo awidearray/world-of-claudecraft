@@ -313,6 +313,21 @@ export const ja_JP: EnTranslations = {
       "comingSoon": "このゲームはまもなく開場します。船の一同がまだ台を整えています。",
       "close": "閉じる"
     },
+    "hilo": {
+      "title": "補給官のハイロー",
+      "rules": "1 から 100 の目でハイかローを宣言。ローは 1 から 49、ハイは 52 から 100 で的中。配当は等倍。",
+      "balance": "所持金：{amount}",
+      "stakeLabel": "賭け金",
+      "prompt": "賭け金を選んで、ハイかローを宣言してください。",
+      "low": "ロー（1 から 49）",
+      "high": "ハイ（52 から 100）",
+      "session": "今回：{wins} 勝 {losses} 敗",
+      "close": "閉じる",
+      "wonLine": "{roll} が出ました。{amount} の勝ちです。",
+      "lostLine": "{roll} が出ました。{amount} の負けです。",
+      "wonLog": "ハイロー：{roll} が出て {amount} の勝ち。",
+      "lostLog": "ハイロー：{roll} が出て {amount} の負け。"
+    },
     "readyCheck": {
       "prompt": "{name} が準備確認を開始しました。準備はいいですか？",
       "ready": "準備完了",
