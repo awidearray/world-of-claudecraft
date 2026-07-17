@@ -109,6 +109,7 @@ import { buildPropMaterialPrewarmGroup, buildProps } from './props';
 import { buildGroundQuestObject } from './quest_objects';
 import { isOwnedPetHostile } from './reaction';
 import { RenderBudgetGovernor, type RenderBudgetState } from './render_budget';
+import { buildRiverboatSaloon } from './riverboat_saloon';
 import { downscaleDims } from './screenshot';
 import { drapeRingLocalY } from './selection_ring';
 import { type SelfMotionFrame, SelfMotionPredictor } from './self_motion';
@@ -1374,6 +1375,19 @@ export class Renderer {
     const jailScene = buildJailScene(this.sim.cfg.seed);
     setRenderCategory(jailScene, 'props');
     this.scene.add(jailScene);
+
+    // The moored RiverBoat casino saloon: built once, only on the casino realm
+    // (cfg.riverboatCasino), at its far-band origin. Procedural geometry, so no
+    // asset dependency; its lanterns ride the constant fireLights budget.
+    if (this.sim.cfg.riverboatCasino) {
+      const saloon = buildRiverboatSaloon(this.sim.cfg.seed);
+      setRenderCategory(saloon.group, 'props');
+      this.scene.add(saloon.group);
+      for (const light of saloon.lights) {
+        this.scene.add(light);
+        this.fireLights.push(light);
+      }
+    }
 
     const gatherNodes = buildGatherNodes(this.sim.cfg.seed);
     setRenderCategory(gatherNodes.group, 'props');
