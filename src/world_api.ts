@@ -397,6 +397,8 @@ export const COMMAND_NAMES = [
   // RiverBoat casino: interact with a station croupier (opens its game window) or
   // the gangway/exit portals (board / disembark).
   'casino_interact',
+  // RiverBoat Hi-Lo: call high or low for a copper stake.
+  'hilo_play',
 ] as const;
 
 // The union both the send path (`online.ts`) and the dispatch switch
@@ -639,6 +641,7 @@ export const COMMAND_FACETS = {
   // design). deedsEarned/deedStats/renown/activeTitle are snapshot reads (no
   // send, untagged).
   deed_set_title: 'IWorldDeeds',
-  // IWorldCasino: interact with a RiverBoat station or portal.
+  // IWorldCasino: interact with a RiverBoat station or portal; play Hi-Lo.
   casino_interact: 'IWorldCasino',
+  hilo_play: 'IWorldCasino',
 } as const satisfies Partial<Record<ClientCommand, WorldFacet>>;

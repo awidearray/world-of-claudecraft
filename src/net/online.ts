@@ -3034,6 +3034,9 @@ export class ClientWorld implements IWorld {
   casinoInteract(entityId: number): void {
     this.cmd({ cmd: 'casino_interact', entityId });
   }
+  hiloPlay(call: 'hi' | 'lo', stake: number, clientSeed: string): void {
+    this.cmd({ cmd: 'hilo_play', call, stake, clientSeed });
+  }
   dungeonDifficulty(): DungeonDifficulty {
     return this.selectedDungeonDifficulty ?? 'normal';
   }

@@ -134,6 +134,7 @@ import { formatDuration } from './duration';
 import { mergedPrsForLogin } from './github_contributors';
 import { githubForAccount } from './github_db';
 import { forEachGuarded, runGuarded } from './guarded_iter';
+import { HiloRoller } from './hilo';
 import { gameMetricsCounters } from './http/game_signals';
 import { IpBlockList } from './ip_block';
 import { loadActiveBlockedIps } from './ip_block_db';
@@ -1140,6 +1141,9 @@ export class GameServer {
   private lastKeepaliveSweepAt = Date.now();
   private holderTierRefreshing = false; // overlap guard for the refresh cycle
   private playtimeInterval: NodeJS.Timeout | null = null;
+  // The RiverBoat Hi-Lo fair roller (server secret + per-account nonce). One per
+  // process; the sim never sees the secret, only the resolved 1 to 100 roll.
+  private readonly hiloRoller = new HiloRoller();
   private lastPlaytimeGrantAt = new Map<number, number>(); // accountId -> sim time of last grant
   private dailyRewardActivityInterval: NodeJS.Timeout | null = null;
   private readonly valeCupRewardCompletions = new WeakMap<
@@ -4725,6 +4729,17 @@ export class GameServer {
         // the client only names the fixture entity it interacted with.
         if (typeof msg.entityId === 'number' && Number.isFinite(msg.entityId))
           sim.casinoInteract(msg.entityId, pid);
+        break;
+      }
+      case 'hilo_play': {
+        // The server derives the fair roll (never the client), then the sim
+        // validates stake/proximity/funds and resolves the copper. clientSeed is
+        // bounded to keep the digest input small and the wire payload sane.
+        if (msg.call !== 'hi' && msg.call !== 'lo') break;
+        if (typeof msg.stake !== 'number' || !Number.isInteger(msg.stake)) break;
+        const clientSeed = typeof msg.clientSeed === 'string' ? msg.clientSeed.slice(0, 128) : '';
+        const { roll } = this.hiloRoller.roll(session.accountId, clientSeed);
+        sim.hiloResolve(pid, msg.call, msg.stake, roll);
         break;
       }
       case 'heroic_buy': {

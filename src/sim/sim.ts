@@ -354,6 +354,7 @@ import {
   onInventoryChangedForQuests,
   onMobKilledForQuests,
 } from './quests/quest_credit';
+import { type HiloCall, hiloResolve as hiloResolveImpl } from './social/riverboat_hilo';
 
 // computeQuestState (the pure quest-state fn) moved to quests/quest_commands.ts (W4);
 // re-export it here so ClientWorld's `import { computeQuestState } from '../sim/sim'`
@@ -1007,6 +1008,11 @@ export interface PlayerMeta {
   vcupBetWins: number;
   vcupBetLosses: number;
   vcupBetNet: number;
+  // RiverBoat Hi-Lo record (persisted; absent until the first settled play).
+  // hiloNet is net copper across all plays (may be negative).
+  hiloWins: number;
+  hiloLosses: number;
+  hiloNet: number;
   // Talents & Specializations. `talents` is the active allocation; `talentMods`
   // is its precomputed flat struct — resolved only on allocation/respec/loadout
   // change (recomputeTalents), never walked on the combat or stat hot path.
@@ -1191,6 +1197,9 @@ export interface CharacterState {
   vcupBetWins?: number;
   vcupBetLosses?: number;
   vcupBetNet?: number;
+  hiloWins?: number;
+  hiloLosses?: number;
+  hiloNet?: number;
   // Talents & Specializations (JSONB; no schema migration). All optional so
   // characters saved before talents existed load cleanly (default: no points spent).
   talents?: TalentAllocation;
@@ -1967,6 +1976,9 @@ export class Sim {
       vcupBetWins: savedState?.vcupBetWins ?? 0,
       vcupBetLosses: savedState?.vcupBetLosses ?? 0,
       vcupBetNet: savedState?.vcupBetNet ?? 0,
+      hiloWins: savedState?.hiloWins ?? 0,
+      hiloLosses: savedState?.hiloLosses ?? 0,
+      hiloNet: savedState?.hiloNet ?? 0,
       talents: emptyAllocation(),
       talentMods: emptyModifiers(),
       fiestaAugments: [],
@@ -2508,6 +2520,10 @@ export class Sim {
             vcupBetLosses: meta.vcupBetLosses,
             vcupBetNet: meta.vcupBetNet,
           }
+        : {}),
+      // Absent until the first settled Hi-Lo play (parity-stable saves).
+      ...(meta.hiloWins || meta.hiloLosses || meta.hiloNet
+        ? { hiloWins: meta.hiloWins, hiloLosses: meta.hiloLosses, hiloNet: meta.hiloNet }
         : {}),
       talents: cloneAllocation(restore ? restore.talents : meta.talents),
       loadouts: meta.loadouts.map((l) => ({
@@ -7593,6 +7609,20 @@ export class Sim {
 
   casinoInteract(entityId: number, pid?: number): void {
     casinoInteractImpl(this.ctx, entityId, pid);
+  }
+
+  // IWorld facet: offline single-player Hi-Lo. Offline there is no adversary and
+  // no server secret, so the roll is a deterministic ctx.rng draw; the clientSeed
+  // is ignored (it only matters against a server that could otherwise grind).
+  hiloPlay(call: HiloCall, stake: number, _clientSeed: string): void {
+    hiloResolveImpl(this.ctx, undefined, call, stake, this.rng.int(1, 100));
+  }
+
+  // Server-facing: resolve a Hi-Lo play with the roll the server derived from its
+  // secret (server/hilo.ts). Not on IWorld: the online client sends hilo_play and
+  // the server computes the fair roll, never the client.
+  hiloResolve(pid: number, call: HiloCall, stake: number, roll: number): void {
+    hiloResolveImpl(this.ctx, pid, call, stake, roll);
   }
 
   resetDungeonInstances(pid?: number): void {

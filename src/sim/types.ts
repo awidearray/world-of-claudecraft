@@ -2368,6 +2368,17 @@ export type SimEvent = { pid?: number } & (
   // registry key (card_duel/wager_pit/slots/gacha/hilo/cashier); the HUD maps it
   // to that game's window. Carries no prose (client builds every string).
   | { type: 'casinoStation'; station: string }
+  // A RiverBoat Hi-Lo play settled: the call, the stake, the 1-100 roll, the
+  // outcome, and the copper paid out (0 on a loss). Client renders it. Carries
+  // no prose; pid delivers it to the one player.
+  | {
+      type: 'hiloSettled';
+      call: 'hi' | 'lo';
+      stake: number;
+      roll: number;
+      outcome: 'win' | 'lose';
+      payout: number;
+    }
   | { type: 'mailArrived'; senderName: string; letterId?: string }
   | { type: 'mailResult'; code: MailResultCode; value?: number; name?: string }
   // Guild calendar outcome. Emitted only by the server's SocialService (the

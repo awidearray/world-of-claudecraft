@@ -8,4 +8,9 @@
 // append-only registry the game leaves extend (src/sim/casino.ts).
 export interface IWorldCasino {
   casinoInteract(entityId: number): void;
+  // Play one round of Quartermaster's Hi-Lo: call 'hi' or 'lo' for a copper
+  // `stake`. `clientSeed` is player-supplied entropy folded into the server's
+  // fair roll so the house cannot grind a player's outcome (offline it is
+  // ignored). The result arrives as a `hiloSettled` event.
+  hiloPlay(call: 'hi' | 'lo', stake: number, clientSeed: string): void;
 }
