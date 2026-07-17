@@ -342,6 +342,10 @@ import {
   updateInstances as updateInstancesImpl,
 } from './instances/dungeons';
 import { buyHeroicVendorItem as buyHeroicVendorItemImpl } from './instances/heroic_vendor';
+import {
+  spawnRiverboatDeck as spawnRiverboatDeckImpl,
+  updateRiverboatDoorTriggers as updateRiverboatDoorTriggersImpl,
+} from './instances/riverboat';
 import * as questCommands from './quests/quest_commands';
 import {
   checkQuestReady,
@@ -1688,6 +1692,14 @@ export class Sim {
         const fury = createNpc(FURY_ENTITY_ID, furyDef, this.groundPos(safe.x, safe.z));
         this.addEntity(fury);
       }
+    }
+
+    // The RiverBoat casino: only on a realm whose features advertise it. Reserved
+    // ids after the rng roster, so a non-casino realm's world-gen and the parity
+    // goldens (which run with riverboatCasino:false) are byte-identical. Spawns
+    // the gangway/exit portals here; the croupier NPCs join in the same block.
+    if (this.cfg.riverboatCasino) {
+      spawnRiverboatDeckImpl(this.ctx);
     }
 
     for (const delve of DELVE_LIST) {
@@ -3845,6 +3857,7 @@ export class Sim {
         this.updatePlayerMovement(p, meta);
         lap?.('p.move');
         this.updateDoorTriggers(p);
+        this.updateRiverboatDoorTriggers(p);
         lap?.('p.doors');
         this.updateCasting(p, meta);
         lap?.('p.casting');
@@ -7559,6 +7572,12 @@ export class Sim {
 
   private updateDoorTriggers(p: Entity): void {
     updateDoorTriggersImpl(this.ctx, p);
+  }
+
+  // The moored casino boat's gangway/exit portals (a fixed shared instance, not a
+  // dungeon). No-op unless this realm runs the casino.
+  private updateRiverboatDoorTriggers(p: Entity): void {
+    updateRiverboatDoorTriggersImpl(this.ctx, p);
   }
 
   enterDungeon(dungeonId: string, pid?: number): void {
