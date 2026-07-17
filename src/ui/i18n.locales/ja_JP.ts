@@ -7561,4 +7561,13 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.npcs.riverboat_cashier_purser.name': 'パーサー・オダリー・フィンチ',
   'entities.npcs.riverboat_cashier_purser.title': '金庫の番人',
   'entities.npcs.riverboat_cashier_purser.greeting': '金庫は開いています、{className}。チップを入れ、コインを出し、どの帳簿も夜明けには釣り合います。',
+  'hudChrome.casino.stationTitle': 'カジノ台',
+  'hudChrome.casino.cardDuelTitle': 'カードテーブル',
+  'hudChrome.casino.wagerPitTitle': '賭けの闘技場',
+  'hudChrome.casino.slotsTitle': 'スロット',
+  'hudChrome.casino.gachaTitle': '珍品キャビネット',
+  'hudChrome.casino.hiloTitle': '補給官のハイロー',
+  'hudChrome.casino.cashierTitle': '両替所',
+  'hudChrome.casino.comingSoon': 'このゲームはまもなく開場します。船の一同がまだ台を整えています。',
+  'hudChrome.casino.close': '閉じる',
 };

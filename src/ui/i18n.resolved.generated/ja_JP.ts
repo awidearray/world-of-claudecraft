@@ -302,6 +302,17 @@ export const ja_JP: EnTranslations = {
     "spectate": {
       "banner": "{name}を観戦中"
     },
+    "casino": {
+      "stationTitle": "カジノ台",
+      "cardDuelTitle": "カードテーブル",
+      "wagerPitTitle": "賭けの闘技場",
+      "slotsTitle": "スロット",
+      "gachaTitle": "珍品キャビネット",
+      "hiloTitle": "補給官のハイロー",
+      "cashierTitle": "両替所",
+      "comingSoon": "このゲームはまもなく開場します。船の一同がまだ台を整えています。",
+      "close": "閉じる"
+    },
     "readyCheck": {
       "prompt": "{name} が準備確認を開始しました。準備はいいですか？",
       "ready": "準備完了",

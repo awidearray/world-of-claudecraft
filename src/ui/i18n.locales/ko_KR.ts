@@ -7544,4 +7544,13 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'entities.npcs.riverboat_cashier_purser.name': '퍼서 오달리 핀치',
   'entities.npcs.riverboat_cashier_purser.title': '금고의 관리인',
   'entities.npcs.riverboat_cashier_purser.greeting': '금고는 열려 있습니다, {className}. 칩은 들이고 동전은 내주며, 모든 장부는 동틀 녘에 맞아떨어집니다.',
+  'hudChrome.casino.stationTitle': '카지노 자리',
+  'hudChrome.casino.cardDuelTitle': '카드 테이블',
+  'hudChrome.casino.wagerPitTitle': '내기 링',
+  'hudChrome.casino.slotsTitle': '슬롯',
+  'hudChrome.casino.gachaTitle': '진열장',
+  'hudChrome.casino.hiloTitle': '병참관의 하이로',
+  'hudChrome.casino.cashierTitle': '환전 창구',
+  'hudChrome.casino.comingSoon': '이 게임은 곧 열립니다. 리버보트 선원들이 아직 테이블을 준비하고 있습니다.',
+  'hudChrome.casino.close': '닫기',
 };

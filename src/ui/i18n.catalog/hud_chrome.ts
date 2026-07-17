@@ -13,6 +13,19 @@ export const hudChromeStrings = {
   spectate: {
     banner: 'Spectating {name}',
   },
+  // RiverBoat casino station windows. Each station's real window ships with its
+  // game leaf; until then the HUD opens a placeholder titled by these keys.
+  casino: {
+    stationTitle: 'Casino Station',
+    cardDuelTitle: 'Card Tables',
+    wagerPitTitle: 'Wager Pit',
+    slotsTitle: 'Slots',
+    gachaTitle: 'Curio Cabinets',
+    hiloTitle: "Quartermaster's Hi-Lo",
+    cashierTitle: 'Cashier Cage',
+    comingSoon: 'This game opens soon. The RiverBoat crew is still setting the table.',
+    close: 'Close',
+  },
   // Raid/party ready-check prompt (the leader ran /ready). The buttons answer the
   // yes/no prompt; the outcome is announced in chat by the sim.
   readyCheck: {

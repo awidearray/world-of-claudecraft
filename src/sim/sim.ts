@@ -320,6 +320,7 @@ export type { MailSave } from './mail/post_office';
 // stays valid now that the type lives in market.ts.
 export type { MarketSave } from './market';
 
+import { casinoInteract as casinoInteractImpl } from './casino';
 import {
   applyHeroicMobTuning,
   mobLevelForDungeonDifficulty,
@@ -7588,6 +7589,10 @@ export class Sim {
 
   leaveDungeon(pid?: number): void {
     leaveDungeonImpl(this.ctx, pid);
+  }
+
+  casinoInteract(entityId: number, pid?: number): void {
+    casinoInteractImpl(this.ctx, entityId, pid);
   }
 
   resetDungeonInstances(pid?: number): void {

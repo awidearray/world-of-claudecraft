@@ -145,6 +145,7 @@ const UI_PURE_CORES = [
   'src/ui/social_view.ts',
   'src/ui/bags_view.ts',
   'src/ui/bank_view.ts',
+  'src/ui/casino_station_view.ts',
   'src/ui/item_set_tooltip_view.ts',
   'src/ui/weapon_proc_view.ts',
   'src/ui/options_view.ts',

@@ -302,6 +302,17 @@ export const da_DK: EnTranslations = {
     "spectate": {
       "banner": "Tilskuer til {name}"
     },
+    "casino": {
+      "stationTitle": "Casino Station",
+      "cardDuelTitle": "Card Tables",
+      "wagerPitTitle": "Wager Pit",
+      "slotsTitle": "Slots",
+      "gachaTitle": "Curio Cabinets",
+      "hiloTitle": "Quartermaster's Hi-Lo",
+      "cashierTitle": "Cashier Cage",
+      "comingSoon": "This game opens soon. The RiverBoat crew is still setting the table.",
+      "close": "Close"
+    },
     "readyCheck": {
       "prompt": "{name} har startet et klar-tjek. Er du klar?",
       "ready": "Klar",

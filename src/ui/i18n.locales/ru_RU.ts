@@ -7700,4 +7700,13 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'entities.npcs.riverboat_cashier_purser.name': 'Казначей Одали Финч',
   'entities.npcs.riverboat_cashier_purser.title': 'Хранительница клетки',
   'entities.npcs.riverboat_cashier_purser.greeting': 'Касса открыта, {className}. Фишки внутрь, монеты наружу, и к рассвету всякий счёт сходится.',
+  'hudChrome.casino.stationTitle': 'Игровой стол',
+  'hudChrome.casino.cardDuelTitle': 'Карточные столы',
+  'hudChrome.casino.wagerPitTitle': 'Ставочный ринг',
+  'hudChrome.casino.slotsTitle': 'Автоматы',
+  'hudChrome.casino.gachaTitle': 'Витрины диковин',
+  'hudChrome.casino.hiloTitle': 'Больше-меньше интенданта',
+  'hudChrome.casino.cashierTitle': 'Касса',
+  'hudChrome.casino.comingSoon': 'Эта игра скоро откроется. Команда «Ривербоута» ещё накрывает стол.',
+  'hudChrome.casino.close': 'Закрыть',
 };

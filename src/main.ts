@@ -2173,12 +2173,21 @@ async function startGame(
         hud.openMailbox();
         return;
       }
+      // The RiverBoat gangway / deck exit portals: interacting boards or
+      // disembarks (the sim routes by templateId).
+      if (obj.templateId === 'riverboat_gangway' || obj.templateId === 'riverboat_exit') {
+        world.casinoInteract(bestObj);
+        return;
+      }
       world.pickUpObject(bestObj);
       return;
     }
     if (bestNpc !== null) {
       const npc = world.entities.get(bestNpc);
       if (npc?.kind === 'npc' && npc.templateId === 'brother_halven') hud.openDelveBoard(bestNpc);
+      // A RiverBoat croupier opens its game station window instead of a quest dialog.
+      else if (npc?.kind === 'npc' && npc.templateId?.startsWith('riverboat_'))
+        world.casinoInteract(bestNpc);
       else hud.openQuestDialog(bestNpc);
       return;
     }

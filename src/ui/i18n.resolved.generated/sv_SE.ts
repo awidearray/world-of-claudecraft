@@ -302,6 +302,17 @@ export const sv_SE: EnTranslations = {
     "spectate": {
       "banner": "Åskådar {name}"
     },
+    "casino": {
+      "stationTitle": "Casino Station",
+      "cardDuelTitle": "Card Tables",
+      "wagerPitTitle": "Wager Pit",
+      "slotsTitle": "Slots",
+      "gachaTitle": "Curio Cabinets",
+      "hiloTitle": "Quartermaster's Hi-Lo",
+      "cashierTitle": "Cashier Cage",
+      "comingSoon": "This game opens soon. The RiverBoat crew is still setting the table.",
+      "close": "Close"
+    },
     "readyCheck": {
       "prompt": "{name} har startat en beredskapskontroll. Är du redo?",
       "ready": "Redo",

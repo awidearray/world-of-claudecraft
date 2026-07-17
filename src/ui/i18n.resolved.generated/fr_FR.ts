@@ -302,6 +302,17 @@ export const fr_FR: EnTranslations = {
     "spectate": {
       "banner": "Vous observez {name}"
     },
+    "casino": {
+      "stationTitle": "Casino Station",
+      "cardDuelTitle": "Card Tables",
+      "wagerPitTitle": "Wager Pit",
+      "slotsTitle": "Slots",
+      "gachaTitle": "Curio Cabinets",
+      "hiloTitle": "Quartermaster's Hi-Lo",
+      "cashierTitle": "Cashier Cage",
+      "comingSoon": "This game opens soon. The RiverBoat crew is still setting the table.",
+      "close": "Close"
+    },
     "readyCheck": {
       "prompt": "{name} a lancé une vérification de disponibilité. Êtes-vous prêt ?",
       "ready": "Prêt",

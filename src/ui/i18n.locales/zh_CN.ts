@@ -7196,4 +7196,13 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'entities.npcs.riverboat_cashier_purser.name': '账房奥达莉·芬奇',
   'entities.npcs.riverboat_cashier_purser.title': '钱笼看守人',
   'entities.npcs.riverboat_cashier_purser.greeting': '钱笼已开，{className}。筹码进，钱币出，每一本账到天亮都要平。',
+  'hudChrome.casino.stationTitle': '赌桌',
+  'hudChrome.casino.cardDuelTitle': '牌桌',
+  'hudChrome.casino.wagerPitTitle': '对赌擂台',
+  'hudChrome.casino.slotsTitle': '角子机',
+  'hudChrome.casino.gachaTitle': '珍玩柜',
+  'hudChrome.casino.hiloTitle': '军需官的猜大小',
+  'hudChrome.casino.cashierTitle': '收银笼',
+  'hudChrome.casino.comingSoon': '游戏即将开放。船上的伙计还在布置牌桌。',
+  'hudChrome.casino.close': '关闭',
 };

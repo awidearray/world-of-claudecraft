@@ -302,6 +302,17 @@ export const en_XA: EnTranslations = {
     "spectate": {
       "banner": "[Šþéçţáţíñĝ {name}]"
     },
+    "casino": {
+      "stationTitle": "[Çášíñó Šţáţíóñ]",
+      "cardDuelTitle": "[Çáŕð Ţáƀļéš]",
+      "wagerPitTitle": "[Ŵáĝéŕ Þíţ]",
+      "slotsTitle": "[Šļóţš]",
+      "gachaTitle": "[Çúŕíó Çáƀíñéţš]",
+      "hiloTitle": "[Ɋúáŕţéŕɱášţéŕ'š Ĥí-Ļó]",
+      "cashierTitle": "[Çášĥíéŕ Çáĝé]",
+      "comingSoon": "[Ţĥíš ĝáɱé óþéñš šóóñ. Ţĥé ŔíʋéŕƁóáţ çŕéŵ íš šţíļļ šéţţíñĝ ţĥé ţáƀļé.]",
+      "close": "[Çļóšé]"
+    },
     "readyCheck": {
       "prompt": "[{name} ĥáš šţáŕţéð á ŕéáðý çĥéçķ. Áŕé ýóú ŕéáðý?]",
       "ready": "[Ŕéáðý]",

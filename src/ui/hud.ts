@@ -120,6 +120,7 @@ import { bagsWindowShown } from './bags_view';
 import { BagsWindow, dismissBagPrompts } from './bags_window';
 import { BankWindow } from './bank_window';
 import { CalendarWindow } from './calendar_window';
+import { CASINO_WINDOW_OPENERS, openCasinoStationWindow } from './casino_station_window';
 import { CastBarPainter } from './cast_bar_painter';
 import { charBagsPaired } from './char_bags_pairing_core';
 import { buildPaperdollView, type PaperdollSlot } from './char_view';
@@ -6965,6 +6966,15 @@ export class Hud {
     this.delveBoard.open(npcId);
   }
 
+  // Open the window for a RiverBoat casino station. A game leaf registers its
+  // real opener in CASINO_WINDOW_OPENERS (append-only); until then every station
+  // falls back to the placeholder modal, so the interaction seam works today.
+  openCasinoStation(station: string): void {
+    const opener = CASINO_WINDOW_OPENERS[station];
+    if (opener) opener();
+    else openCasinoStationWindow(station);
+  }
+
   private renderDelveBoard(focus = false): void {
     this.delveBoard.render(focus);
   }
@@ -8090,6 +8100,10 @@ export class Hud {
         case 'bank':
           // Keyboard/sim interact at a banker NPC: open the bank window.
           this.openBank();
+          break;
+        case 'casinoStation':
+          // Interact with a RiverBoat station croupier: open its game window.
+          this.openCasinoStation(ev.station);
           break;
         case 'mailArrived': {
           // Player names splice verbatim; authored letters carry their

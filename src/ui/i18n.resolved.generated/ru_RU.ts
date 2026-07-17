@@ -302,6 +302,17 @@ export const ru_RU: EnTranslations = {
     "spectate": {
       "banner": "Наблюдение за {name}"
     },
+    "casino": {
+      "stationTitle": "Игровой стол",
+      "cardDuelTitle": "Карточные столы",
+      "wagerPitTitle": "Ставочный ринг",
+      "slotsTitle": "Автоматы",
+      "gachaTitle": "Витрины диковин",
+      "hiloTitle": "Больше-меньше интенданта",
+      "cashierTitle": "Касса",
+      "comingSoon": "Эта игра скоро откроется. Команда «Ривербоута» ещё накрывает стол.",
+      "close": "Закрыть"
+    },
     "readyCheck": {
       "prompt": "{name} начал проверку готовности. Вы готовы?",
       "ready": "Готов",

@@ -2364,6 +2364,10 @@ export type SimEvent = { pid?: number } & (
   // Structured data only (pid supplied by the union intersection); the client
   // builds every visible string, the mailbox precedent.
   | { type: 'bank' }
+  // Asks the client to open a RiverBoat casino station window. `station` is the
+  // registry key (card_duel/wager_pit/slots/gacha/hilo/cashier); the HUD maps it
+  // to that game's window. Carries no prose (client builds every string).
+  | { type: 'casinoStation'; station: string }
   | { type: 'mailArrived'; senderName: string; letterId?: string }
   | { type: 'mailResult'; code: MailResultCode; value?: number; name?: string }
   // Guild calendar outcome. Emitted only by the server's SocialService (the

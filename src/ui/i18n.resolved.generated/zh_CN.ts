@@ -302,6 +302,17 @@ export const zh_CN: EnTranslations = {
     "spectate": {
       "banner": "正在观察 {name}"
     },
+    "casino": {
+      "stationTitle": "赌桌",
+      "cardDuelTitle": "牌桌",
+      "wagerPitTitle": "对赌擂台",
+      "slotsTitle": "角子机",
+      "gachaTitle": "珍玩柜",
+      "hiloTitle": "军需官的猜大小",
+      "cashierTitle": "收银笼",
+      "comingSoon": "游戏即将开放。船上的伙计还在布置牌桌。",
+      "close": "关闭"
+    },
     "readyCheck": {
       "prompt": "{name} 发起了准备确认。你准备好了吗？",
       "ready": "准备就绪",

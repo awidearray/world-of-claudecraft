@@ -58,6 +58,7 @@
 // ---------------------------------------------------------------------------
 
 import type { IWorldBank } from './world_api/bank';
+import type { IWorldCasino } from './world_api/casino';
 import type { IWorldChat } from './world_api/chat';
 import type { IWorldCombat } from './world_api/combat';
 import type { IWorldCosmetics } from './world_api/cosmetics';
@@ -213,6 +214,7 @@ export interface IWorld
     IWorldBank,
     IWorldValeCup,
     IWorldDungeonFinder,
+    IWorldCasino,
     IWorldDeeds {}
 
 // ---------------------------------------------------------------------------
@@ -392,6 +394,9 @@ export const COMMAND_NAMES = [
   'ignore_add',
   'ignore_remove',
   'stow_weapon',
+  // RiverBoat casino: interact with a station croupier (opens its game window) or
+  // the gangway/exit portals (board / disembark).
+  'casino_interact',
 ] as const;
 
 // The union both the send path (`online.ts`) and the dispatch switch
@@ -459,6 +464,7 @@ export type WorldFacet =
   | 'IWorldBank'
   | 'IWorldValeCup'
   | 'IWorldDungeonFinder'
+  | 'IWorldCasino'
   | 'IWorldDeeds';
 
 export const COMMAND_FACETS = {
@@ -633,4 +639,6 @@ export const COMMAND_FACETS = {
   // design). deedsEarned/deedStats/renown/activeTitle are snapshot reads (no
   // send, untagged).
   deed_set_title: 'IWorldDeeds',
+  // IWorldCasino: interact with a RiverBoat station or portal.
+  casino_interact: 'IWorldCasino',
 } as const satisfies Partial<Record<ClientCommand, WorldFacet>>;

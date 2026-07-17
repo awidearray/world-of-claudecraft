@@ -302,6 +302,17 @@ export const ko_KR: EnTranslations = {
     "spectate": {
       "banner": "{name} 관전 중"
     },
+    "casino": {
+      "stationTitle": "카지노 자리",
+      "cardDuelTitle": "카드 테이블",
+      "wagerPitTitle": "내기 링",
+      "slotsTitle": "슬롯",
+      "gachaTitle": "진열장",
+      "hiloTitle": "병참관의 하이로",
+      "cashierTitle": "환전 창구",
+      "comingSoon": "이 게임은 곧 열립니다. 리버보트 선원들이 아직 테이블을 준비하고 있습니다.",
+      "close": "닫기"
+    },
     "readyCheck": {
       "prompt": "{name} 님이 준비 확인을 시작했습니다. 준비되셨습니까?",
       "ready": "준비 완료",

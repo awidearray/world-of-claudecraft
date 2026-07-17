@@ -4720,6 +4720,13 @@ export class GameServer {
         if (isDungeonDifficulty(msg.difficulty)) sim.setDungeonDifficulty(msg.difficulty, pid);
         break;
       }
+      case 'casino_interact': {
+        // The sim re-checks the casino flag, proximity, and the station registry;
+        // the client only names the fixture entity it interacted with.
+        if (typeof msg.entityId === 'number' && Number.isFinite(msg.entityId))
+          sim.casinoInteract(msg.entityId, pid);
+        break;
+      }
       case 'heroic_buy': {
         // Range, stock, balance, and bag space all re-validate in the sim
         // handler (instances/heroic_vendor.ts); the client only sends intent.
